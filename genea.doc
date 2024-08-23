@@ -10,7 +10,8 @@ In other printout versions the Henry numbers are at the start of the line.
 Things after a semicolon are either private or for cross-checking.
 
 This version is the family tree of Spock, based on  
-Based on https://www.reddit.com/r/UsefulCharts/comments/14dy9yc/family_tree_of_spock_from_star_trek/#lightbox.
+Based on https://www.reddit.com/r/UsefulCharts/comments/14dy9yc/family_tree_of_spock_from_star_trek/#lightbox
+and ![Spock's family tree](./family-tree-spock.png).
 
  1 0 0 0 0 0 0 0 0 0 M 1 0 0         Solkar\Primal ancestor of the tree
  1 1 0 0 0 0 0 0 0 0 M 2 2 0         Skon
@@ -18,6 +19,18 @@ Based on https://www.reddit.com/r/UsefulCharts/comments/14dy9yc/family_tree_of_s
  1 1 0 0 0 0 0 0 0 0 F 0 0 2         T'Rama
  1 1 1 0 0 0 0 0 0 0 M 3 3 0         Sarek\Vulcan pioneer
  1 1 1 0 0 0 0 0 0 0 F 1 0 1         T'Rea\First wife of Sarek
+ 1 1 1 1 0 0 0 0 0 0 M 1 0 0         Sybok
+ 1 1 1 1 1 0 0 0 0 0 M 0 0 0         Teska\Spock's niece from the novel Mind Meld, unknown parentage
  1 1 1 0 0 0 0 0 0 0 F 2 0 2         Amanda Grayson\Human
+ 1 1 1 2 0 0 0 0 0 0 M 2 3 0         Spock\The man himself!
+ 1 1 1 2 0 0 0 0 0 0 M 1 0 1         Zarabeth
+ 1 1 1 2 1 0 0 0 0 0 M 0 0 0         Zar;XXX Need to fill in his family details
+ 1 1 1 2 0 0 0 0 0 0 M 1 0 2         Alexandra Tremontaine\Marries Spock in The Fire and The Rose
+ 1 1 1 2 2 0 0 0 0 0 M 1 0 1         T'Amanda\
+ 1 1 1 2 0 0 0 0 0 0 M 0 0 3         Saavik\Marries Spock in the novel Vulcan's Heart
+ 1 1 1 3 0 0 0 0 0 0 F 1 1 0         Michael Burnham\Adopted human
+ 1 1 1 3 0 0 0 0 0 0 F 1 0 1         Book\See final season of Discovery
+ 1 1 1 3 1 0 0 0 0 0 F 0 0 0         Son
  1 1 1 0 0 0 0 0 0 0 F 0 0 3         Perrin Landover\Human
+ 
  
