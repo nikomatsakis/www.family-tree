@@ -1,0 +1,23 @@
+The tree is based on 8 "primal ancestors" (which are never indented).
+Everyone is identified by Henry numbers, which give position in tree relative to a "Primal Ancestor"
+The 1st child of the 2nd child of the fourth child of the eigth Primal Ancestor (Matsakis line) would be: 8421000000.
+Those 10 numbers are called Henry Numbers.
+All spouses have the same indentation as their mates, including if one person had two spouses.
+After the Henry numbers is the sex (M or F), the number of children, and the number of spouses. The next number is which spouse the person is.
+Sometimes the spouse is a descendent of someone else on the tree, and then the spouse's duplicate set of Henry Numbers is given.
+In some printout versions, children are indented from their parents and the Henry numbers appear towards the end of the line.
+In other printout versions the Henry numbers are at the start of the line.
+Things after a semicolon are either private or for cross-checking.
+
+This version is the family tree of Spock, based on  
+Based on https://www.reddit.com/r/UsefulCharts/comments/14dy9yc/family_tree_of_spock_from_star_trek/#lightbox.
+
+ 1 0 0 0 0 0 0 0 0 0 M 1 0 0         Solkar\Primal ancestor of the tree
+ 1 1 0 0 0 0 0 0 0 0 M 2 2 0         Skon
+ 1 1 0 0 0 0 0 0 0 0 F 0 0 1         T'Melis
+ 1 1 0 0 0 0 0 0 0 0 F 0 0 2         T'Rama
+ 1 1 1 0 0 0 0 0 0 0 M 3 3 0         Sarek\Vulcan pioneer
+ 1 1 1 0 0 0 0 0 0 0 F 1 0 1         T'Rea\First wife of Sarek
+ 1 1 1 0 0 0 0 0 0 0 F 2 0 2         Amanda Grayson\Human
+ 1 1 1 0 0 0 0 0 0 0 F 0 0 3         Perrin Landover\Human
+ 
