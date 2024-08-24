@@ -31,6 +31,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Npm install
+        run: npm install
       - name: Build
         run: cargo run -- build
       - name: Setup Pages
