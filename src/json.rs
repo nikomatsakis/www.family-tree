@@ -20,7 +20,7 @@ pub fn generate(genea: &Genea, output_path: impl AsRef<Path>) -> anyhow::Result<
 
     for person in genea.people() {
         gen.person_response(person)
-            .write_to(&output_path.join("persons").join(gen.id(person)))?;
+            .write_to(&output_path.join("people").join(gen.id(person)))?;
     }
 
     for partnership in genea.partnerships() {
@@ -71,11 +71,11 @@ impl<'a> JsonGen<'a> {
     }
 
     fn root_response(&self) -> Response {
-        Response::new(self.root_datum()).include(self.all_datums())
+        Response::new(self.root_datum())
     }
 
     fn person_response(&self, person: Person) -> Response {
-        Response::new(self.person_datum(person)).include(self.all_datums())
+        Response::new(self.person_datum(person))
     }
 
     fn partnership_response(&self, partnership: Partnership) -> Response {

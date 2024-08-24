@@ -7,7 +7,7 @@ export default class PeopleRoute extends Route {
 
   async model(params) {
     const { content } = await this.store.request(
-      findRecord('people', params.id),
+      findRecord('person', params.id),
     );
     return content.data;
   }
