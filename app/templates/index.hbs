@@ -1,0 +1,9 @@
+Hi
+
+<ul>
+    {{#async-await @model.rootPeople as |rootPeople|}}
+    {{#each rootPeople as |p|}}
+    <PersonOutline @id={{p.id}} />
+    {{/each}}
+    {{/async-await}}
+</ul>
