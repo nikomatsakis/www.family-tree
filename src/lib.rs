@@ -33,6 +33,8 @@ enum Args {
     },
 
     Serve {},
+
+    Build {},
 }
 
 pub fn main() -> anyhow::Result<()> {
@@ -72,6 +74,11 @@ pub fn main() -> anyhow::Result<()> {
             let genea = Genea::from_genea_doc("genea.doc")?;
             json::generate(&genea, "public/api/v1")?;
             Command::new("npm").arg("start").status()?;
+        }
+        Args::Build {} => {
+            let genea = Genea::from_genea_doc("genea.doc")?;
+            json::generate(&genea, "public/api/v1")?;
+            Command::new("npm").arg("run").arg("build").status()?;
         }
     }
 
