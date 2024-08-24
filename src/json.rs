@@ -16,24 +16,18 @@ pub fn generate(genea: &Genea, output_path: impl AsRef<Path>) -> anyhow::Result<
 
     let gen = JsonGen::new(genea);
 
-    gen.root_response()
-        .write_to(&output_path.join("roots").with_extension("json"))?;
+    gen.root_response().write_to(&output_path.join("roots"))?;
 
     for person in genea.people() {
-        gen.person_response(person).write_to(
-            &output_path
-                .join("persons")
-                .join(gen.id(person))
-                .with_extension("json"),
-        )?;
+        gen.person_response(person)
+            .write_to(&output_path.join("persons").join(gen.id(person)))?;
     }
 
     for partnership in genea.partnerships() {
         gen.partnership_response(partnership).write_to(
             &output_path
                 .join("partnerships")
-                .join(partnership.as_usize().to_string())
-                .with_extension("json"),
+                .join(partnership.as_usize().to_string()),
         )?;
     }
 
