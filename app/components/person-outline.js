@@ -7,9 +7,8 @@ export default class PersonOutlineComponent extends Component {
     get outline() {
         return (async () => {
             let { id } = this.args;
-            debugger;
             const person = await this.store.findRecord('person', id);
-            return person.name;
+            return `${person.name}: ${person.comments}`;
         })();
     }
 }
