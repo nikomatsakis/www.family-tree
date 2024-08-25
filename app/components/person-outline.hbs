@@ -1,23 +1,42 @@
-{{#if this.isSingle}}
+{{#if this.zeroPartnerships}}
 <li>
     <PersonLink @person={{@person}} />
 </li>
 {{else}}
-{{#each this.partnerships as |p|}}
+{{#let this.firstPartnership as |partnership1|}}
 <li>
     <PersonLink @person={{@person}} />
-    {{#if p.partner}}
+    {{#if partnership1.partner}}
     +
-    <PersonLink @person={{p.partner}} />
+    <PersonLink @person={{partnership1.partner}} />
     {{/if}}
 
-    {{#if p.children}}
+    {{#if partnership1.children}}
     <ul>
-        {{#each p.children as |child|}}
+        {{#each partnership1.children as |child|}}
+        <PersonOutline @person={{child}} />
+        {{/each}}
+    </ul>
+    {{/if}}
+</li>
+{{/let}}
+
+{{#each this.nextPartnerships as |partnership|}}
+<li>
+    ...
+    {{#if partnership.partner}}
+    +
+    <PersonLink @person={{partnership.partner}} />
+    {{/if}}
+
+    {{#if partnership.children}}
+    <ul>
+        {{#each partnership.children as |child|}}
         <PersonOutline @person={{child}} />
         {{/each}}
     </ul>
     {{/if}}
 </li>
 {{/each}}
+
 {{/if}}

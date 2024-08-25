@@ -41,6 +41,9 @@ export default class GeneaService extends Service {
     }
 
     _person(r) {
+        if (r === null) {
+            return null;
+        }
         if (r.type !== "person") {
             throw new Error(`unexpected reference to have type "person": ${JSON.stringify(r)} `);
         }
@@ -48,6 +51,9 @@ export default class GeneaService extends Service {
     }
 
     _partnership(r) {
+        if (r === null) {
+            return null;
+        }
         if (r.type !== "partnership") {
             throw new Error(`unexpected reference to have type "partnership": ${JSON.stringify(r)} `);
         }
@@ -98,8 +104,12 @@ export class Person {
         return this._attributes.comments;
     }
 
+    get isSpouse() {
+        return this._attributes.isSpouse;
+    }
+
     get childIn() {
-        return this._relationships.childIn.data.map(r => this._genea._partnership(r));
+        return this._genea._partnership(this._relationships.childIn.data);
     }
 
     get parentIn() {
@@ -121,6 +131,14 @@ export class Partnership {
 
     get parents() {
         return this._relationships.parents.data.map(r => this._genea._person(r));
+    }
+
+    get firstParent() {
+        return this.parents[0];
+    }
+
+    get nextParents() {
+        return this.parents.slice(1);
     }
 
     partnerTo(person) {

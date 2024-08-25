@@ -40,6 +40,8 @@ struct PersonAttributes {
     name: String,
     comments: String,
     gender: String,
+    #[serde(rename = "isSpouse")]
+    is_spouse: bool,
 }
 
 #[derive(Serialize)]
@@ -104,6 +106,7 @@ impl<'a> JsonGen<'a> {
                 name: person_data.name.to_string(),
                 comments: person_data.comments.clone(),
                 gender: person_data.gender.to_string(),
+                is_spouse: person_data.henry_number().is_none(),
             },
             PersonRelationships {
                 parent_in: person_data

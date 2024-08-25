@@ -3,8 +3,21 @@
 <h1>{{@model.name}}</h1>
 {{@model.comments}}
 
+{{#if @model.childIn}}
+<ul>
+    <PersonLink @person={{@model.childIn.firstParent}} />
+    {{#each @model.childIn.nextParents as |parent|}}
+    +
+    <PersonLink @person={{parent}} />
+    {{/each}}
+    <ul>
+        <PersonOutline @person={{@model}} />
+    </ul>
+</ul>
+{{else}}
 <ul>
     <PersonOutline @person={{@model}} />
 </ul>
+{{/if}}
 
 {{outlet}}
