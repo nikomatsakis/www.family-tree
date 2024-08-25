@@ -1,0 +1,10 @@
+{{page-title "Person"}}
+
+<h1>{{@model.name}}</h1>
+{{@model.comments}}
+
+<ul>
+    <PersonOutline @person={{@model}} />
+</ul>
+
+{{outlet}}

@@ -1,11 +1,23 @@
-{{#each this.outline as |o|}}
-<li> {{o.names}}
-    {{#if o.children}}
+{{#if this.isSingle}}
+<li>
+    <PersonLink @person={{@person}} />
+</li>
+{{else}}
+{{#each this.partnerships as |p|}}
+<li>
+    <PersonLink @person={{@person}} />
+    {{#if p.partner}}
+    +
+    <PersonLink @person={{p.partner}} />
+    {{/if}}
+
+    {{#if p.children}}
     <ul>
-        {{#each o.children as |c|}}
-        <PersonOutline @id={{c.id}} />
+        {{#each p.children as |child|}}
+        <PersonOutline @person={{child}} />
         {{/each}}
     </ul>
     {{/if}}
 </li>
 {{/each}}
+{{/if}}

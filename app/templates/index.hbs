@@ -1,9 +1,9 @@
-Hi
+# Family tree
 
 <ul>
     {{#async-await @model.rootPeople as |rootPeople|}}
-    {{#each rootPeople as |p|}}
-    <PersonOutline @id={{p.id}} />
+    {{#each rootPeople as |person|}}
+    <PersonOutline @person={{person}} />
     {{/each}}
     {{/async-await}}
 </ul>
