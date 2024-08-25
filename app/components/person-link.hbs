@@ -1,3 +1,7 @@
+{{#if this.isPagePerson}}
+<b>{{@person.name}}</b>
+{{else}}
 <LinkTo @route="person" @model={{@person}}>
     {{@person.name}}
 </LinkTo>
+{{/if}}

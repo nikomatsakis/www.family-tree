@@ -5,19 +5,22 @@
 
 {{#if @model.childIn}}
 <ul>
-    <PersonLink @person={{@model.childIn.firstParent}} />
+    <PersonLink @person={{@model.childIn.firstParent}} @pagePerson={{@model}} />
     {{#each @model.childIn.nextParents as |parent|}}
     +
-    <PersonLink @person={{parent}} />
+    <PersonLink @person={{parent}} @pagePerson={{@model}} />
     {{/each}}
     <ul>
-        <PersonOutline @person={{@model}} />
+        <PersonOutline @person={{@model}} @pagePerson={{@model}} />
     </ul>
 </ul>
 {{else}}
 <ul>
-    <PersonOutline @person={{@model}} />
+    <PersonOutline @person={{@model}} @pagePerson={{@model}} />
 </ul>
 {{/if}}
 
+<hr>
+
+<LinkTo @route="index">Back to root</LinkTo>
 {{outlet}}
