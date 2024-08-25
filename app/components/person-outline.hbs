@@ -1,3 +1,11 @@
-{{#async-await this.outline as |outline|}}
-<li> {{outline}} </li>
-{{/async-await}}
+{{#each this.outline as |o|}}
+<li> {{o.names}}
+    {{#if o.children}}
+    <ul>
+        {{#each o.children as |c|}}
+        <PersonOutline @id={{c.id}} />
+        {{/each}}
+    </ul>
+    {{/if}}
+</li>
+{{/each}}

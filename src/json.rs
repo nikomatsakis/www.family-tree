@@ -10,26 +10,17 @@ use crate::{
 pub fn generate(genea: &Genea, output_path: impl AsRef<Path>) -> anyhow::Result<()> {
     let output_path = output_path.as_ref();
 
-    if output_path.exists() && !output_path.is_dir() {
-        anyhow::bail!("path `{}` is not a directory", output_path.display());
+    if output_path.exists() {
+        if !output_path.is_dir() {
+            anyhow::bail!("path `{}` is not a directory", output_path.display());
+        }
+        std::fs::remove_dir_all(output_path)?;
     }
 
     let gen = JsonGen::new(genea);
 
-    gen.root_response().write_to(&output_path.join("roots"))?;
-
-    for person in genea.people() {
-        gen.person_response(person)
-            .write_to(&output_path.join("people").join(gen.id(person)))?;
-    }
-
-    for partnership in genea.partnerships() {
-        gen.partnership_response(partnership).write_to(
-            &output_path
-                .join("partnerships")
-                .join(partnership.as_usize().to_string()),
-        )?;
-    }
+    gen.root_response()
+        .write_to(&output_path.join("roots").with_extension("json"))?;
 
     Ok(())
 }
@@ -71,7 +62,7 @@ impl<'a> JsonGen<'a> {
     }
 
     fn root_response(&self) -> Response {
-        Response::new(self.root_datum())
+        Response::new(self.root_datum()).include(self.all_datums())
     }
 
     fn person_response(&self, person: Person) -> Response {
