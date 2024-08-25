@@ -1,7 +1,11 @@
 {{page-title "Person"}}
 
 <h1>{{@model.name}}</h1>
-{{@model.comments}}
+
+<p>
+    {{@model.comments}}
+</p>
+
 
 {{#if @model.childIn}}
 <ul>
@@ -21,6 +25,9 @@
 {{/if}}
 
 <hr>
-
-<LinkTo @route="index">Back to root</LinkTo>
+<CurrentReferencePerson @pagePerson={{@model}} />
+<br>
+<MakeReferencePerson @person={{@model}} />
+<br>
+<LinkTo @route="index">Return to the root listing</LinkTo>
 {{outlet}}
