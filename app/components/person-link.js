@@ -5,7 +5,7 @@ export default class PersonLinkComponent extends Component {
         return this.args.person === this.args.pagePerson;
     }
 
-    get isReferencePerson() {
-        return this.args.person === this.args.referencePerson;
+    get boldReferencePerson() {
+        return this.args.pagePerson && this.args.person === this.args.referencePerson;
     }
 }
