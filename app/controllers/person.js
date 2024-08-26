@@ -9,11 +9,6 @@ export default class PersonController extends Controller {
     @service genea;
     @tracked referencePersonId = null;
 
-    @action
-    makeReference() {
-        this.referencePersonId = this.model.id;
-    }
-
     get isReferencePerson() {
         return this.referencePerson === this.model;
     }
@@ -23,5 +18,12 @@ export default class PersonController extends Controller {
             return this.genea.person(this.referencePersonId);
         else
             return null;
+    }
+
+    get commonAncestralPartnerships() {
+        if (this.referencePerson)
+            return this.model.commonAncestralPartnershipsWith(this.referencePerson);
+        else
+            return [];
     }
 }

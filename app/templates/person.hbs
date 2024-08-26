@@ -6,6 +6,8 @@
     {{@model.comments}}
 </p>
 
+<hr>
+<h2>Parents, partners, and children</h2>
 
 {{#if @model.childIn}}
 <ul>
@@ -28,9 +30,16 @@
 <hr>
 {{#if this.isReferencePerson}}
 {{@model.name}} is the reference person. Go click on somebody else in <IndexLink
-    @referencePerson={{this.referencePerson}}>the tree</IndexLink>.
+    @referencePerson={{this.referencePerson}}>the tree</IndexLink> to see how they are related to one another.
 {{else if this.referencePerson}}
-Relationship to {{this.referencePerson.name}}
+<h2>Relationship to {{this.referencePerson.name}}</h2>
+
+<ul>
+    {{#each this.commonAncestralPartnerships as |p|}}
+    <PersonOutline @person={{p.firstParent}} @pagePerson={{@model}} @referencePerson={{this.referencePerson}} />
+    {{/each}}
+</ul>
+
 <MakeReferencePerson @person={{@model}} />
 {{else}}
 <MakeReferencePerson @person={{@model}} />

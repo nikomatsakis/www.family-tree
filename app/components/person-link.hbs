@@ -1,5 +1,7 @@
 {{#if this.isPagePerson}}
 <b>{{@person.name}}</b>
+{{else if this.isReferencePerson}}
+<b>{{@person.name}}</b>
 {{else if @referencePerson}}
 <LinkTo @route="person" @model={{@person}} @query={{hash referencePersonId=@referencePerson.id}}>
     {{@person.name}}

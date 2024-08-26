@@ -108,12 +108,97 @@ export class Person {
         return this._attributes.isSpouse;
     }
 
+    /// Spouses or other partners
+    get partners() {
+        return this.parentIn.flatMap(partnership => partnership.partnersTo(this));
+    }
+
+    allPartnerships() {
+        let result = [];
+
+        for (let partnership of this.parentIn)
+            result.push(partnership);
+
+        if (this.childIn)
+            result.push(this.childIn);
+
+        return result;
+    }
+
+    /// List of person's biological parents
+    get biologicalParents() {
+        return (this.childIn ? this.childIn.parents : []);
+    }
+
+    /// Parents of partners
+    inlaws() {
+        return this.partners.flatMap(partner => partner.biologicalParents);
+    }
+
+    /// Set of parents of this person or any of their spouses
+    parentsOrInlaws() {
+        let parents = this.biologicalParents;
+        this.inlaws().forEach(inlaw => parents.push(inlaw));
+        return parents;
+    }
+
+    /// Relationship in which this person is a child, or null.
     get childIn() {
         return this._genea._partnership(this._relationships.childIn.data);
     }
 
+    /// Array of relationships in which this person is a parent (or partner).
     get parentIn() {
         return this._relationships.parentIn.data.map(r => this._genea._partnership(r));
+    }
+
+    /// Returns a list of the closest ancestors between `this` and `person`.
+    /// This includes inlaws.
+    commonAncestralPartnershipsWith(person) {
+        let myAncestors = this.ancestralPartnerships();
+
+        let queue = person.allPartnerships();
+        let visited = new Set(queue);
+        let result = [];
+
+        // Walk the ancestors of `person` in breadth-first
+        // order, looking for those that appear in `
+        while (queue.length) {
+            let partnership = queue.shift();
+
+            if (myAncestors.has(partnership)) {
+                result.push(partnership);
+                continue;
+            }
+
+            for (let parentPartnership of partnership.parents.flatMap(p => p.allPartnerships())) {
+                if (!visited.has(parentPartnership)) {
+                    visited.add(parentPartnership);
+                    queue.push(parentPartnership);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /// Returns a set of all partnerships involving this person or an ancestor of this person
+    /// (includes in-laws).
+    ancestralPartnerships() {
+        let stack = this.allPartnerships();
+        let visited = new Set(this.allPartnerships());
+
+        while (stack.length) {
+            let partnership = stack.pop();
+            for (let parentPartnership of partnership.parents.flatMap(p => p.allPartnerships())) {
+                if (!visited.has(parentPartnership)) {
+                    visited.add(parentPartnership);
+                    stack.push(parentPartnership);
+                }
+            }
+        }
+
+        return visited;
     }
 }
 
@@ -143,5 +228,9 @@ export class Partnership {
 
     partnerTo(person) {
         return this.parents.find(p => p.id !== person.id);
+    }
+
+    partnersTo(person) {
+        return this.parents.filter(p => p.id !== person.id);
     }
 }
