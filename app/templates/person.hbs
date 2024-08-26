@@ -1,49 +1,5 @@
 {{page-title "Person"}}
 
-<h1>{{@model.name}}</h1>
+<Person @model={{@model}} @reference={{this.reference}} />
 
-<p>
-    {{@model.comments}}
-</p>
-
-<hr>
-{{#if this.showSiblings}}
-<h2>Parents, partners, and children</h2>
-<IndexLink @referencePerson={{@model}}>See how {{@model.name}} is related to other people.</IndexLink>
-
-{{#if @model.childIn}}
-<ul>
-    <PersonLink @person={{@model.childIn.firstParent}} @pagePerson={{@model}}
-        @referencePerson={{this.referencePerson}} />
-    {{#each @model.childIn.nextParents as |parent|}}
-    +
-    <PersonLink @person={{parent}} @pagePerson={{@model}} @referencePerson={{this.referencePerson}} />
-    {{/each}}
-    <ul>
-        <PersonOutline @person={{@model}} @pagePerson={{@model}} @referencePerson={{this.referencePerson}} />
-    </ul>
-</ul>
-{{else}}
-<ul>
-    <PersonOutline @person={{@model}} @pagePerson={{@model}} @referencePerson={{this.referencePerson}} />
-</ul>
-{{/if}}
-{{else if this.referencePerson}}
-<h2>How is
-    <PersonLink @person={{this.referencePerson}} />
-    related to {{@model.name}}?
-</h2>
-
-<button type="button" {{on "click" this.clearReferencePerson}}>(clear}</button>
-
-<ul>
-    {{#each this.commonAncestralPartnerships as |p|}}
-    <PersonOutline @person={{p.firstParent}} @pagePerson={{@model}} @referencePerson={{this.referencePerson}}
-        @includeSet={{this.ancestors}} />
-    {{/each}}
-</ul>
-{{/if}}
-
-<hr>
-<IndexLink @referencePerson={{this.referencePerson}}>Return to the root listing</IndexLink>
 {{outlet}}
