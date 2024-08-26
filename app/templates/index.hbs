@@ -1,5 +1,10 @@
 <h1>Family tree</h1>
 
+{{#if this.referencePerson}}
+Pick someone to see how
+<PersonLink @person={{this.referencePerson}} /> is related to them...
+{{/if}}
+
 <ul>
     {{#async-await @model.rootPeople as |rootPeople|}}
     {{#each rootPeople as |person|}}

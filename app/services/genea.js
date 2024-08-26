@@ -200,6 +200,11 @@ export class Person {
 
         return visited;
     }
+
+    /// Return a set of all ancestors
+    allAncestors() {
+        return new Set(Array.from(this.ancestralPartnerships()).flatMap(p => p.parents));
+    }
 }
 
 export class Partnership {

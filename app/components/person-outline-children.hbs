@@ -1,0 +1,15 @@
+{{#if @partnership.children}}
+<ul>
+    {{#each @partnership.children as |child|}}
+    {{#if (this.isIncluded @includeSet child)}}
+    <PersonOutline @person={{child}} @pagePerson={{@pagePerson}} @referencePerson={{@referencePerson}}
+        @includeSet={{@includeSet}} />
+    {{else}}
+    <li>
+        <PersonLink @person={{child}} @pagePerson={{@pagePerson}} @referencePerson={{@referencePerson}}
+            @includeSet={{@includeSet}} /> ...
+    </li>
+    {{/if}}
+    {{/each}}
+</ul>
+{{/if}}

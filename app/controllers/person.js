@@ -26,4 +26,15 @@ export default class PersonController extends Controller {
         else
             return [];
     }
+
+    get ancestors() {
+        console.log("ancestors", this.referencePerson, this.model);
+        if (this.referencePerson) {
+            let result = this.model.allAncestors().union(this.referencePerson.allAncestors());
+            console.log("ancestors", result);
+            return result;
+        } else {
+            return null;
+        }
+    }
 }
