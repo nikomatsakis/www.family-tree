@@ -28,10 +28,10 @@ export default class PersonController extends Controller {
     }
 
     get ancestors() {
-        console.log("ancestors", this.referencePerson, this.model);
         if (this.referencePerson) {
             let result = this.model.allAncestors().union(this.referencePerson.allAncestors());
-            console.log("ancestors", result);
+            result.add(this.model);
+            result.add(this.referencePerson);
             return result;
         } else {
             return null;
