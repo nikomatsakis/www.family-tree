@@ -1,4 +1,3 @@
-<button type="button" {{on "click" this.makeReference}}>
-    Make {{@person.name}} the reference
-    person
-</button>
+<LinkTo @route="person" @query={{hash referencePersonId=@person.id}}>
+    (make {{@person.name}} the reference person)
+</LinkTo>

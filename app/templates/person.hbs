@@ -9,25 +9,33 @@
 
 {{#if @model.childIn}}
 <ul>
-    <PersonLink @person={{@model.childIn.firstParent}} @pagePerson={{@model}} />
+    <PersonLink @person={{@model.childIn.firstParent}} @pagePerson={{@model}}
+        @referencePerson={{this.referencePerson}} />
     {{#each @model.childIn.nextParents as |parent|}}
     +
-    <PersonLink @person={{parent}} @pagePerson={{@model}} />
+    <PersonLink @person={{parent}} @pagePerson={{@model}} @referencePerson={{this.referencePerson}} />
     {{/each}}
     <ul>
-        <PersonOutline @person={{@model}} @pagePerson={{@model}} />
+        <PersonOutline @person={{@model}} @pagePerson={{@model}} @referencePerson={{this.referencePerson}} />
     </ul>
 </ul>
 {{else}}
 <ul>
-    <PersonOutline @person={{@model}} @pagePerson={{@model}} />
+    <PersonOutline @person={{@model}} @pagePerson={{@model}} @referencePerson={{this.referencePerson}} />
 </ul>
 {{/if}}
 
 <hr>
-<CurrentReferencePerson @pagePerson={{@model}} />
-<br>
+{{#if this.isReferencePerson}}
+{{@model.name}} is the reference person. Go click on somebody else in <IndexLink
+    @referencePerson={{this.referencePerson}}>the tree</IndexLink>.
+{{else if this.referencePerson}}
+Relationship to {{this.referencePerson.name}}
 <MakeReferencePerson @person={{@model}} />
-<br>
-<LinkTo @route="index">Return to the root listing</LinkTo>
+{{else}}
+<MakeReferencePerson @person={{@model}} />
+{{/if}}
+
+<hr>
+<IndexLink @referencePerson={{this.referencePerson}}>Return to the root listing</IndexLink>
 {{outlet}}

@@ -3,7 +3,7 @@
 <ul>
     {{#async-await @model.rootPeople as |rootPeople|}}
     {{#each rootPeople as |person|}}
-    <PersonOutline @person={{person}} />
+    <PersonOutline @person={{person}} @referencePerson={{this.referencePerson}} />
     {{/each}}
     {{/async-await}}
 </ul>

@@ -1,0 +1,9 @@
+{{#if @referencePerson}}
+<LinkTo @route="index" @query={{hash referencePersonId=@referencePerson.id}}>
+    {{yield}}
+</LinkTo>
+{{else}}
+<LinkTo @route="index">
+    {{yield}}
+</LinkTo>
+{{/if}}
