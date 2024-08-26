@@ -32,9 +32,13 @@ enum Args {
         output_path: PathBuf,
     },
 
-    Serve {},
+    Serve {
+        genea_path: PathBuf,
+    },
 
-    Build {},
+    Build {
+        genea_path: PathBuf,
+    },
 }
 
 pub fn main() -> anyhow::Result<()> {
@@ -70,13 +74,13 @@ pub fn main() -> anyhow::Result<()> {
             let genea = Genea::from_genea_doc(genea_path)?;
             html::generate(&genea, output_path)?;
         }
-        Args::Serve {} => {
-            let genea = Genea::from_genea_doc("genea.doc")?;
+        Args::Serve { genea_path } => {
+            let genea = Genea::from_genea_doc(genea_path)?;
             json::generate(&genea, "public/api/v1")?;
             Command::new("npm").arg("start").status()?;
         }
-        Args::Build {} => {
-            let genea = Genea::from_genea_doc("genea.doc")?;
+        Args::Build { genea_path } => {
+            let genea = Genea::from_genea_doc(genea_path)?;
             json::generate(&genea, "public/api/v1")?;
             Command::new("npm").arg("run").arg("build").status()?;
         }
