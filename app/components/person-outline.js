@@ -17,9 +17,16 @@ export default class PersonOutlineComponent extends Component {
     }
 
     get partnerships() {
-        return this.args.person.parentIn.map(partnership => ({
+        let parentIn = this.args.person.parentIn;
+
+        if (this.args.includeSet) {
+            parentIn = parentIn.filter(p => p.parentSet.isSubsetOf(this.args.includeSet));
+        }
+
+        return parentIn.map(partnership => ({
             partner: partnership.partnerTo(this.args.person),
             children: partnership.children
         }));
+
     }
 }

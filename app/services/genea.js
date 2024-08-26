@@ -212,7 +212,7 @@ export class Partnership {
         this._genea = genea;
         this.id = id;
         this._attributes = attributes;
-        this._relationships = relationships;
+        this._relationships = relationships;g
     }
 
     get children() {
@@ -221,6 +221,10 @@ export class Partnership {
 
     get parents() {
         return this._relationships.parents.data.map(r => this._genea._person(r));
+    }
+
+    get parentSet() {
+        return new Set(this.parents);
     }
 
     get firstParent() {

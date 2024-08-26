@@ -4,15 +4,15 @@
 </li>
 {{else}}
 
-{{#let this.firstPartnership as |partnership1|}}
+{{#let this.firstPartnership as |partnership|}}
 <li>
     <PersonLink @person={{@person}} @pagePerson={{@pagePerson}} @referencePerson={{@referencePerson}} />
-    {{#if partnership1.partner}}
+    {{#if partnership.partner}}
     +
-    <PersonLink @person={{partnership1.partner}} @pagePerson={{@pagePerson}} @referencePerson={{@referencePerson}} />
+    <PersonLink @person={{partnership.partner}} @pagePerson={{@pagePerson}} @referencePerson={{@referencePerson}} />
     {{/if}}
 
-    <PersonOutlineChildren @partnership={{partnership1}} @pagePerson={{@pagePerson}}
+    <PersonOutlineChildren @partnership={{partnership}} @pagePerson={{@pagePerson}}
         @referencePerson={{@referencePerson}} @includeSet={{@includeSet}} />
 </li>
 {{/let}}
