@@ -9,8 +9,13 @@ export default class PersonController extends Controller {
     @service genea;
     @tracked referencePersonId = null;
 
-    get isReferencePerson() {
-        return this.referencePerson === this.model;
+    get showSiblings() {
+        return this.referencePerson === null || this.referencePerson === this.model;
+    }
+
+    @action
+    clearReferencePerson() {
+        this.referencePersonId = null;
     }
 
     get referencePerson() {

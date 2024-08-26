@@ -6,23 +6,10 @@
     {{@model.comments}}
 </p>
 
-{{#if this.isReferencePerson}}
-{{else if this.referencePerson}}
 <hr>
-<h2>How is
-    <PersonLink @person={{this.referencePerson}} />
-    related to {{@model.name}}?
-</h2>
-<ul>
-    {{#each this.commonAncestralPartnerships as |p|}}
-    <PersonOutline @person={{p.firstParent}} @pagePerson={{@model}} @referencePerson={{this.referencePerson}}
-        @includeSet={{this.ancestors}} />
-    {{/each}}
-</ul>
-{{/if}}
-
-<hr>
+{{#if this.showSiblings}}
 <h2>Parents, partners, and children</h2>
+<IndexLink @referencePerson={{@model}}>See how {{@model.name}} is related to other people.</IndexLink>
 
 {{#if @model.childIn}}
 <ul>
@@ -41,8 +28,21 @@
     <PersonOutline @person={{@model}} @pagePerson={{@model}} @referencePerson={{this.referencePerson}} />
 </ul>
 {{/if}}
+{{else if this.referencePerson}}
+<h2>How is
+    <PersonLink @person={{this.referencePerson}} />
+    related to {{@model.name}}?
+</h2>
 
-<IndexLink @referencePerson={{@model}}>See how {{@model.name}} is related to other people.</IndexLink>
+<a {{on "click" this.clearReferencePerson}}>(Stop viewing how {{this.referencePerson.name}} is related}</a>
+
+<ul>
+    {{#each this.commonAncestralPartnerships as |p|}}
+    <PersonOutline @person={{p.firstParent}} @pagePerson={{@model}} @referencePerson={{this.referencePerson}}
+        @includeSet={{this.ancestors}} />
+    {{/each}}
+</ul>
+{{/if}}
 
 <hr>
 <IndexLink @referencePerson={{this.referencePerson}}>Return to the root listing</IndexLink>
