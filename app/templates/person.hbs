@@ -34,7 +34,7 @@
     related to {{@model.name}}?
 </h2>
 
-<a {{on "click" this.clearReferencePerson}}>(Stop viewing how {{this.referencePerson.name}} is related}</a>
+<button type="button" {{on "click" this.clearReferencePerson}}>(clear}</button>
 
 <ul>
     {{#each this.commonAncestralPartnerships as |p|}}
