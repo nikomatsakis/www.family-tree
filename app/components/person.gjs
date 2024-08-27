@@ -94,11 +94,6 @@ export default class Person extends Component {
     );
   }
 
-  @action
-  clearReferencePerson() {
-    this.args.reference.setId(null);
-  }
-
   get referencePerson() {
     if (this.args.reference.getId())
       return this.genea.person(this.args.reference.getId());
