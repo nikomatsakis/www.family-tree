@@ -77,7 +77,7 @@ pub fn main() -> anyhow::Result<()> {
         Args::Serve { genea_path } => {
             let genea = Genea::from_genea_doc(genea_path)?;
             json::generate(&genea, "public/api/v1")?;
-            Command::new("npm").arg("start").status()?;
+            Command::new("pnpm").arg("start").status()?;
         }
         Args::Build { genea_path } => {
             let genea = Genea::from_genea_doc(genea_path)?;
