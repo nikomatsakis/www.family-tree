@@ -305,7 +305,7 @@ export function relationshipName(
     let minGeneration = Math.min(fromGenerations, toGenerations);
     let maxGeneration = Math.max(fromGenerations, toGenerations);
     let removed = maxGeneration - minGeneration;
-    return `${ordinal(fromGenerations)} cousin ${times(removed)} removed`;
+    return `${ordinal(minGeneration)} cousin ${times(removed)} removed`;
 }
 
 function lineageModifiers(generations, relationship) {
