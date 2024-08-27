@@ -80,6 +80,8 @@ export default class Person extends Component {
     <hr />
     <MaintainerLink @person={{@model}} />
 
+    <br />
+
     <IndexLink @referencePerson={{this.referencePerson}}>
       Return to the root listing
       {{#if this.referencePerson}}for {{this.referencePerson.name}}{{/if}}
