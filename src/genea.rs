@@ -8,13 +8,14 @@ mod parser;
 /// The family tree. Indexable via `Person` and `Partnership` values.
 #[derive(Default)]
 pub struct Genea {
+    maintainer_link: Option<String>,
     people: Vec<PersonData>,
     partnerships: Vec<PartnershipData>,
 }
 
 impl Genea {
     pub fn from_genea_doc(path: impl AsRef<Path>) -> anyhow::Result<Self> {
-        let path =  path.as_ref();
+        let path = path.as_ref();
         let text = std::fs::read_to_string(path)
             .with_context(|| format!("reading `{}`", path.display()))?;
         parser::parse_text(path, &text)
@@ -50,6 +51,10 @@ impl Genea {
                 .map(|h| h.is_root_ancestor())
                 .unwrap_or(false)
         })
+    }
+
+    pub fn maintainer_link(&self) -> &Option<String> {
+        &self.maintainer_link
     }
 }
 

@@ -76,14 +76,22 @@ export default class GeneaService extends Service {
 }
 
 export class Roots {
+    #genea;
+    #attributes;
+    #relationships;
+
     constructor(genea, attributes, relationships) {
-        this._genea = genea;
-        this._attributes = attributes;
-        this._relationships = relationships;
+        this.#genea = genea;
+        this.#attributes = attributes;
+        this.#relationships = relationships;
+    }
+
+    get maintainerLink() {
+        return this.#attributes.maintainerLink;
     }
 
     get rootPeople() {
-        return this._relationships.rootPeople.data.map(r => this._genea._person(r))
+        return this.#relationships.rootPeople.data.map(r => this.#genea._person(r))
     }
 }
 

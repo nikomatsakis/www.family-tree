@@ -1,6 +1,7 @@
 import { action } from '@ember/object';
 import { service } from '@ember/service';
 import IndexLink from './index-link';
+import MaintainerLink from './maintainer-link';
 import { LinkTo } from '@ember/routing';
 import PersonLink from './person-link';
 import PersonOutline from './person-outline';
@@ -44,15 +45,27 @@ export default class Person extends Component {
         {{@model.name}}?
       </h2>
 
-      <LinkTo @query={{hash referencePersonId=null}}>(clear)</LinkTo>
+      <LinkTo @query={{hash referencePersonId=null}}>(stop comparing
+        relationships)</LinkTo>
+      |
+      <LinkTo
+        @model={{this.referencePerson}}
+        @query={{hash referencePersonId=@model.id}}
+      >(switch)</LinkTo>
+
+      <br />
+      <br />
+
+      {{#if this.notRelated}}
+        No relation!
+      {{/if}}
 
       {{#each this.commonAncestralPartnerships as |p|}}
         {{@model.name}}
         is
         {{this.referencePerson.name}}'s
-        {{relationshipName @model this.referencePerson p}}. They are both
-        descended from
-        {{p.parentNames}}:
+        {{relationshipName @model this.referencePerson p}}
+        (<a href='/family-tree-explainer.png' target='_blank'>explain</a>):
         <ul>
           <PersonOutline
             @person={{p.firstParent}}
@@ -65,10 +78,12 @@ export default class Person extends Component {
     {{/if}}
 
     <hr />
+    <MaintainerLink @person={{@model}} />
+
     <IndexLink @referencePerson={{this.referencePerson}}>
       Return to the root listing
       {{#if this.referencePerson}}for {{this.referencePerson.name}}{{/if}}
-    </IndexLink>
+    </IndexLink><br />
   </template>
 
   get showSiblings() {
@@ -86,6 +101,10 @@ export default class Person extends Component {
     if (this.args.reference.getId())
       return this.genea.person(this.args.reference.getId());
     else return null;
+  }
+
+  get notRelated() {
+    return this.commonAncestralPartnerships.length === 0;
   }
 
   get commonAncestralPartnerships() {

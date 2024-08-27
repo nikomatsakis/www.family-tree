@@ -29,6 +29,12 @@ lazy_static::lazy_static! {
     ).unwrap();
 }
 
+lazy_static::lazy_static! {
+    static ref MAINTAINER_LINE: Regex = Regex::new(
+        r"Maintainer URL: <(?P<url>[^>]*)>"
+    ).unwrap();
+}
+
 struct Parser {
     /// Initially true, becomes false once we see the first person's data
     preamble: bool,
@@ -92,6 +98,9 @@ impl Parser {
 
         if !PERSON_LINE.is_match(line) {
             if self.preamble {
+                if let Some(m) = MAINTAINER_LINE.captures(line) {
+                    self.genea.maintainer_link = Some(m.name("url").unwrap().as_str().to_string());
+                }
                 return Ok(());
             }
 

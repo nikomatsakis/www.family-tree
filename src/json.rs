@@ -30,6 +30,12 @@ struct JsonGen<'a> {
 }
 
 #[derive(Serialize)]
+struct RootAttributes {
+    #[serde(rename = "maintainerLink")]
+    maintainer_link: Option<String>,
+}
+
+#[derive(Serialize)]
 struct RootRelationships {
     #[serde(rename = "rootPeople")]
     root_people: ToManyRelationship,
@@ -79,7 +85,9 @@ impl<'a> JsonGen<'a> {
         Datum::new(
             "root",
             0,
-            (),
+            RootAttributes {
+                maintainer_link: self.genea.maintainer_link().clone(),
+            },
             RootRelationships {
                 root_people: self
                     .genea
