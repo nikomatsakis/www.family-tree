@@ -108,6 +108,10 @@ export class Person {
         return this._attributes.name;
     }
 
+    get firstName() {
+        return this.name.split(" ")[0];
+    }
+
     get comments() {
         return this._attributes.comments;
     }
@@ -184,7 +188,7 @@ export class Person {
         return result;
     }
 
-    /// Returns a set of all partnerships involving this person or an ancestor of this person.
+    /// Returns a set of all partnerships with an ancestor of this person as a parent.
     ancestralPartnerships() {
         let stack = this.childInArray();
         let visited = new Set(stack);
@@ -279,7 +283,12 @@ export function relationshipName(
     let toGenerations = toPerson.generationsFromAncestralPartnership(commonAncestralPartnership);
 
     if (fromGenerations == 0) {
-        return lineageModifiers(toGenerations, parentName(fromPerson));
+        switch (toGenerations) {
+            case 0: return "self";
+            case 1: return parentName(fromPerson);
+            default:
+                return `${lineageModifiers(toGenerations, parentName(fromPerson))} ${onWhoseSide(toPerson, commonAncestralPartnership)}`;
+        }
     }
 
     if (toGenerations == 0) {
@@ -290,22 +299,59 @@ export function relationshipName(
         if (fromGenerations == 1) {
             return siblingName(fromPerson);
         } else {
-            return `${ordinal(fromGenerations - 1)} cousin`;
+            return `${ordinal(fromGenerations - 1)} cousin ${onWhoseSide(fromPerson, commonAncestralPartnership)}`;
         }
     }
 
     if (fromGenerations == 1) {
-        return lineageModifiers(toGenerations - 1, piblingName(fromPerson));
+        return `${piblingModifiers(toGenerations - 1, piblingName(fromPerson))} ${onWhoseSide(toPerson, commonAncestralPartnership)}`;
     }
 
     if (toGenerations == 1) {
-        return lineageModifiers(fromGenerations - 1, niblingName(toPerson));
+        return `${lineageModifiers(fromGenerations - 1, niblingName(toPerson))} ${onWhoseSide(toPerson, commonAncestralPartnership)}`;
     }
     
     let minGeneration = Math.min(fromGenerations, toGenerations);
     let maxGeneration = Math.max(fromGenerations, toGenerations);
     let removed = maxGeneration - minGeneration;
-    return `${ordinal(minGeneration)} cousin ${times(removed)} removed`;
+    return `${ordinal(minGeneration)} cousin ${times(removed)} removed ${onWhoseSide(fromPerson, commonAncestralPartnership)}`;
+}
+
+function onWhoseSide(
+    fromPerson,
+    commonAncestralPartnership
+) {
+    return characterizeParent(fromPerson, fromSide(fromPerson, commonAncestralPartnership));
+}
+
+function fromSide(
+    fromPerson,
+    commonAncestralPartnership,
+) {
+    for (let parent of fromPerson.parents) {
+        if (parent.ancestralPartnerships().has(commonAncestralPartnership)) {
+            return parent;
+        }
+    }
+    return null;
+}
+
+function characterizeParent(
+    fromPerson,
+    parent
+) {
+    if (parent) {
+        if (fromPerson.parents.every(p => p == parent || p.gender != parent.gender)) {
+            return `on ${possessive(fromPerson)} ${parentName(parent)}'s side`;
+        } else {
+            return `via ${parent.name}`;
+        }    
+    }
+    return "";
+}
+
+function possessive(person) {
+    return `${person.firstName}'s`;
 }
 
 function lineageModifiers(generations, relationship) {
@@ -318,6 +364,24 @@ function lineageModifiers(generations, relationship) {
             return relationship;
 
         default:
+            let greats = "great ".repeat(generations - 2);
+            return `${greats}grand${relationship}`;
+    }
+}
+
+function piblingModifiers(generations, relationship) {
+    console.log("pniblingModifiers", generations, relationship);
+    switch (generations) {
+        case 0:
+            return "self";
+        
+        case 1:
+            return relationship;
+
+        case 2:
+            return "great";
+
+        case 3:
             let greats = "great ".repeat(generations - 2);
             return `${greats}grand${relationship}`;
     }
