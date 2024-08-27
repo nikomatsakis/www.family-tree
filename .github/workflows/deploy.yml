@@ -34,13 +34,13 @@ jobs:
       - name: Npm install
         run: npm install
       - name: Build
-        run: cargo run -- build
+        run: cargo run -- build genea.doc
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'dist'
+          path: "dist"
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
