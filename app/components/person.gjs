@@ -6,7 +6,7 @@ import PersonLink from './person-link';
 import PersonOutline from './person-outline';
 import { on } from '@ember/modifier';
 import { hash } from '@ember/helper';
-
+import { relationshipName } from '../services/genea';
 import Component from '@glimmer/component';
 
 export default class Person extends Component {
@@ -46,16 +46,22 @@ export default class Person extends Component {
 
       <LinkTo @query={{hash referencePersonId=null}}>(clear)</LinkTo>
 
-      <ul>
-        {{#each this.commonAncestralPartnerships as |p|}}
+      {{#each this.commonAncestralPartnerships as |p|}}
+        {{@model.name}}
+        is
+        {{this.referencePerson.name}}'s
+        {{relationshipName @model this.referencePerson p}}. They are both
+        descended from
+        {{p.parentNames}}:
+        <ul>
           <PersonOutline
             @person={{p.firstParent}}
             @pagePerson={{@model}}
             @referencePerson={{this.referencePerson}}
             @includeSet={{this.ancestors}}
           />
-        {{/each}}
-      </ul>
+        </ul>
+      {{/each}}
     {{/if}}
 
     <hr />
@@ -102,6 +108,9 @@ export default class Person extends Component {
       return null;
     }
   }
+
+  generationsFrom = (person, partnership) =>
+    person.generationsFromAncestralPartnership(partnership);
 }
 
 const Child = <template>

@@ -104,6 +104,10 @@ export class Person {
         return this._attributes.comments;
     }
 
+    get gender() {
+        return this._attributes.gender;
+    }
+
     get isSpouse() {
         return this._attributes.isSpouse;
     }
@@ -111,6 +115,11 @@ export class Person {
     /// Spouses or other partners
     get partners() {
         return this.parentIn.flatMap(partnership => partnership.partnersTo(this));
+    }
+
+    /// Spouses or other partners
+    get parents() {
+        return (this.childIn ? this.childIn.parents : []);
     }
 
     /// Relationship in which this person is a child, or null.
@@ -189,6 +198,20 @@ export class Person {
     allAncestors() {
         return new Set(Array.from(this.ancestralPartnerships()).flatMap(p => p.parents));
     }
+
+    generationsFromAncestralPartnership(ancestralPartnership) {
+        if (ancestralPartnership.parentSet.has(this))
+            return 0;
+
+        if (this.childIn === ancestralPartnership)
+            return 1;
+
+        if (!this.childIn)
+            return Infinity;
+
+        let parentGens = this.parents.map(p => p.generationsFromAncestralPartnership(ancestralPartnership));
+        return Math.min(...parentGens) + 1;
+    }
 }
 
 export class Partnership {
@@ -219,11 +242,160 @@ export class Partnership {
         return this.parents.slice(1);
     }
 
+    get parentNames() {
+        return this.parents.map(p => p.name).join(" + ");
+    }
+
     partnerTo(person) {
         return this.parents.find(p => p.id !== person.id);
     }
 
     partnersTo(person) {
         return this.parents.filter(p => p.id !== person.id);
+    }
+}
+
+/// Returns a relationship $R such that $FROM is $TO's $R.
+///
+/// e.g. Spock is Leto's uncle.
+///
+/// Sarin is Spock's father.
+///
+/// Spock is Sarin's son.
+export function relationshipName(
+    fromPerson,
+    toPerson,
+    commonAncestralPartnership,
+) {
+    let fromGenerations = fromPerson.generationsFromAncestralPartnership(commonAncestralPartnership);
+    let toGenerations = toPerson.generationsFromAncestralPartnership(commonAncestralPartnership);
+
+    if (fromGenerations == 0) {
+        return lineageModifiers(toGenerations, parentName(fromPerson));
+    }
+
+    if (toGenerations == 0) {
+        return lineageModifiers(fromGenerations, childName(fromPerson));
+    }
+
+    if (fromGenerations == toGenerations) {
+        if (fromGenerations == 1) {
+            return siblingName(fromPerson);
+        } else {
+            return `${ordinal(fromGenerations - 1)} cousin`;
+        }
+    }
+
+    if (fromGenerations == 1) {
+        return lineageModifiers(toGenerations - 1, piblingName(fromPerson));
+    }
+
+    if (toGenerations == 1) {
+        return lineageModifiers(fromGenerations - 1, niblingName(toPerson));
+    }
+    
+    let minGeneration = Math.min(fromGenerations, toGenerations);
+    let maxGeneration = Math.max(fromGenerations, toGenerations);
+    let removed = maxGeneration - minGeneration;
+    return `${ordinal(fromGenerations)} cousin ${times(removed)} removed`;
+}
+
+function lineageModifiers(generations, relationship) {
+    console.log("lineageModifiers", generations, relationship);
+    switch (generations) {
+        case 0:
+            return "self";
+        
+        case 1:
+            return relationship;
+
+        default:
+            let greats = "great ".repeat(generations - 2);
+            return `${greats}grand${relationship}`;
+    }
+}
+
+function parentName(person) {
+    switch (person.gender) {
+        case "male":
+            return "father";
+        case "female":
+            return "mother";
+        default:
+            return "parent";
+    }
+}
+
+function childName(person) {
+    switch (person.gender) {
+        case "male":
+            return "son";
+        case "female":
+            return "daughter";
+        default:
+            return "child";
+    }
+}
+
+function piblingName(person) {
+    switch (person.gender) {
+        case "male":
+            return "uncle";
+        case "female":
+            return "aunt";
+        default:
+            return "pibling";
+    }
+}
+
+function niblingName(person) {
+    console.log("nibling", person, "has gender", person.gender);
+    switch (person.gender) {
+        case "male":
+            return "nephew";
+        case "female":
+            return "niece";
+        default:
+            return "nibling";
+    }
+}
+
+function siblingName(person) {
+    switch (person.gender) {
+        case "male":
+            return "brother";
+        case "female":
+            return "sister";
+        default:
+            return "sibling";
+    }
+}
+
+function ordinal(n) {
+    switch (n) {
+        case 1: return "first";
+        case 2: return "second";
+        case 3: return "third";
+        default:
+            switch (n % 10) {
+                case 0: return `${n}th`;
+                case 1: return `${n}st`;
+                case 2: return `${n}nd`;
+                case 3: return `${n}rd`;
+                case 4: return `${n}th`;
+                case 5: return `${n}th`;
+                case 6: return `${n}th`;
+                case 7: return `${n}th`;
+                case 8: return `${n}th`;
+                case 9: return `${n}th`;
+            }
+    }
+}
+
+function times(n) {
+    switch (n) {
+        case 1: return "once";
+        case 2: return "twice";
+        default: return `${n} times`;
     }
 }
