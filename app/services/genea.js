@@ -1,28 +1,28 @@
 import Service from '@ember/service';
 
 export default class GeneaService extends Service {
-    _roots = null;
-    _people = {};
-    _partnerships = {};
+    #roots = null;
+    #people = {};
+    #partnerships = {};
 
     isPopulated() {
-        return this._roots !== null;
+        return this.#roots !== null;
     }
 
     async populate() {
-        if (this._roots === null) {
+        if (this.#roots === null) {
             let rootsFetch = await fetch('/api/v1/roots.json');
             let { data, included } = await rootsFetch.json();
 
-            this._roots = new Roots(this, data.attributes, data.relationships);
+            this.#roots = new Roots(this, data.attributes, data.relationships);
             for (let object of included) {
                 switch (object.type) {
                     case "person":
-                        this._people[object.id] = new Person(this, object.id, object.attributes, object.relationships);
+                        this.#people[object.id] = new Person(this, object.id, object.attributes, object.relationships);
                         break;
 
                     case "partnership":
-                        this._partnerships[object.id] = new Partnership(this, object.id, object.attributes, object.relationships);
+                        this.#partnerships[object.id] = new Partnership(this, object.id, object.attributes, object.relationships);
                         break;
 
                     default:
@@ -33,7 +33,7 @@ export default class GeneaService extends Service {
     }
 
     _getPerson(id) {
-        const p = this._people[id];
+        const p = this.#people[id];
         if (p === undefined) {
             throw new Error(`no person defined with id ${id}`);
         }
@@ -47,7 +47,7 @@ export default class GeneaService extends Service {
         if (r.type !== "person") {
             throw new Error(`unexpected reference to have type "person": ${JSON.stringify(r)} `);
         }
-        return this._getPerson(r.id);
+        return this.getPersonById(r.id);
     }
 
     _partnership(r) {
@@ -57,21 +57,21 @@ export default class GeneaService extends Service {
         if (r.type !== "partnership") {
             throw new Error(`unexpected reference to have type "partnership": ${JSON.stringify(r)} `);
         }
-        return this._partnerships[r.id];
+        return this.#partnerships[r.id];
     }
 
     roots() {
         if (!this.isPopulated()) {
             throw new Error("genea not populated");
         }
-        return this._roots;
+        return this.#roots;
     }
 
     person(id) {
         if (!this.isPopulated()) {
             throw new Error("genea not populated");
         }
-        return this._getPerson(id);
+        return this.getPersonById(id);
     }
 }
 
@@ -97,15 +97,19 @@ export class Roots {
 
 
 export class Person {
+    #genea;
+    #attributes;
+    #relationships;
+
     constructor(genea, id, attributes, relationships) {
-        this._genea = genea;
+        this.#genea = genea;
         this.id = id;
-        this._attributes = attributes;
-        this._relationships = relationships;
+        this.#attributes = attributes;
+        this.#relationships = relationships;
     }
 
     get name() {
-        return this._attributes.name;
+        return this.#attributes.name;
     }
 
     get firstName() {
@@ -113,15 +117,15 @@ export class Person {
     }
 
     get comments() {
-        return this._attributes.comments;
+        return this.#attributes.comments;
     }
 
     get gender() {
-        return this._attributes.gender;
+        return this.#attributes.gender;
     }
 
     get isSpouse() {
-        return this._attributes.isSpouse;
+        return this.#attributes.isSpouse;
     }
 
     /// Spouses or other partners
@@ -136,12 +140,12 @@ export class Person {
 
     /// Relationship in which this person is a child, or null.
     get childIn() {
-        return this._genea._partnership(this._relationships.childIn.data);
+        return this.#genea._partnership(this.#relationships.childIn.data);
     }
 
     /// Array of relationships in which this person is a parent (or partner).
     get parentIn() {
-        return this._relationships.parentIn.data.map(r => this._genea._partnership(r));
+        return this.#relationships.parentIn.data.map(r => this.#genea._partnership(r));
     }
 
     childInArray() {
@@ -227,19 +231,23 @@ export class Person {
 }
 
 export class Partnership {
+    #genea;
+    #attributes;
+    #relationships;
+
     constructor(genea, id, attributes, relationships) {
-        this._genea = genea;
+        this.#genea = genea;
         this.id = id;
-        this._attributes = attributes;
-        this._relationships = relationships;
+        this.#attributes = attributes;
+        this.#relationships = relationships;
     }
 
     get children() {
-        return this._relationships.children.data.map(r => this._genea._person(r));
+        return this.#relationships.children.data.map(r => this.#genea._person(r));
     }
 
     get parents() {
-        return this._relationships.parents.data.map(r => this._genea._person(r));
+        return this.#relationships.parents.data.map(r => this.#genea._person(r));
     }
 
     get parentSet() {
