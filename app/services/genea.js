@@ -32,7 +32,7 @@ export default class GeneaService extends Service {
         }
     }
 
-    _getPerson(id) {
+    populatedPersonById(id) {
         const p = this.#people[id];
         if (p === undefined) {
             throw new Error(`no person defined with id ${id}`);
@@ -40,14 +40,14 @@ export default class GeneaService extends Service {
         return p;
     }
 
-    _person(r) {
+    populatedPersonFromRelationship(r) {
         if (r === null) {
             return null;
         }
         if (r.type !== "person") {
             throw new Error(`unexpected reference to have type "person": ${JSON.stringify(r)} `);
         }
-        return this.getPersonById(r.id);
+        return this.populatedPersonById(r.id);
     }
 
     _partnership(r) {
@@ -91,7 +91,7 @@ export class Roots {
     }
 
     get rootPeople() {
-        return this.#relationships.rootPeople.data.map(r => this.#genea._person(r))
+        return this.#relationships.rootPeople.data.map(r => this.#genea.populatedPersonFromRelationship(r))
     }
 }
 
@@ -243,11 +243,11 @@ export class Partnership {
     }
 
     get children() {
-        return this.#relationships.children.data.map(r => this.#genea._person(r));
+        return this.#relationships.children.data.map(r => this.#genea.populatedPersonFromRelationship(r));
     }
 
     get parents() {
-        return this.#relationships.parents.data.map(r => this.#genea._person(r));
+        return this.#relationships.parents.data.map(r => this.#genea.populatedPersonFromRelationship(r));
     }
 
     get parentSet() {
