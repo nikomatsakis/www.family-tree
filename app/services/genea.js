@@ -148,15 +148,24 @@ export class Person {
         return this.#relationships.parentIn.data.map(r => this.#genea._partnership(r));
     }
 
-    childInArray() {
-        return (this.childIn ? [this.childIn] : []);
+    /// Array of partnerships in which `this` participates.
+    partnerships(includeChildIn, includePartners) {
+        let result = [];
+
+        if (includeChildIn && this.childIn)
+            result.push(this.childIn);
+
+        if (includePartners)
+            result = result.concat(this.parentIn);
+
+        return result;
     }
 
     /// Returns a list of the closest ancestors between `this` and `person`.
     commonAncestralPartnershipsWith(person) {
         let myAncestors = this.ancestralPartnerships();
 
-        let queue = person.childInArray();
+        let queue = person.partnerships(true, false);
         let visited = new Set(queue);
         let result = [];
 
@@ -175,7 +184,7 @@ export class Person {
                 continue;
             }
 
-            for (let parentPartnership of partnership.parents.flatMap(p => p.childInArray())) {
+            for (let parentPartnership of partnership.parents.flatMap(p => p.partnerships(true, false))) {
                 if (!visited.has(parentPartnership)) {
                     visited.add(parentPartnership);
                     queue.push(parentPartnership);
@@ -194,12 +203,12 @@ export class Person {
 
     /// Returns a set of all partnerships with an ancestor of this person as a parent.
     ancestralPartnerships() {
-        let stack = this.childInArray();
+        let stack = this.partnerships(true, false);
         let visited = new Set(stack);
 
         while (stack.length) {
             let partnership = stack.pop();
-            for (let parentPartnership of partnership.parents.flatMap(p => p.childInArray())) {
+            for (let parentPartnership of partnership.parents.flatMap(p => p.partnerships(true, false))) {
                 if (!visited.has(parentPartnership)) {
                     visited.add(parentPartnership);
                     stack.push(parentPartnership);
