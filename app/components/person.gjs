@@ -114,12 +114,9 @@ export default class Person extends Component {
 
   get ancestors() {
     if (this.referencePerson) {
-      let result = this.args.model
+      return this.args.model
         .allAncestors()
         .union(this.referencePerson.allAncestors());
-      result.add(this.args.model);
-      result.add(this.referencePerson);
-      return result;
     } else {
       return null;
     }

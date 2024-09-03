@@ -71,7 +71,7 @@ export default class GeneaService extends Service {
         if (!this.isPopulated()) {
             throw new Error("genea not populated");
         }
-        return this.getPersonById(id);
+        return this.populatedPersonById(id);
     }
 }
 
@@ -138,6 +138,20 @@ export class Person {
         return (this.childIn ? this.childIn.parents : []);
     }
 
+    allAncestors() {
+        return new Traversal(this).visitInLaws().visitStep().allPeople();
+    }
+
+    parentPartnerships(inlaws) {
+        let result = this.partnerships(true, false);
+
+        if (inlaws) {
+            return result.concat(this.partners.flatMap(p => p.parentPartnerships(false)));
+        }
+
+        return result;
+    }
+
     /// Relationship in which this person is a child, or null.
     get childIn() {
         return this.#genea._partnership(this.#relationships.childIn.data);
@@ -163,79 +177,14 @@ export class Person {
 
     /// Returns a list of the closest ancestors between `this` and `person`.
     commonAncestralPartnershipsWith(person) {
-        let myAncestors = this.ancestralPartnerships();
-
-        let queue = person.partnerships(true, false);
-        let visited = new Set(queue);
-        let result = [];
-
-        // Walk the ancestors of `person` in breadth-first
-        // order, looking for those that appear in `
-        while (queue.length) {
-            let partnership = queue.shift();
-
-            if (myAncestors.has(partnership)) {
-                result.push(partnership);
-                continue;
-            }
-
-            if (partnership.parentSet.has(this)) {
-                result.push(partnership);
-                continue;
-            }
-
-            for (let parentPartnership of partnership.parents.flatMap(p => p.partnerships(true, false))) {
-                if (!visited.has(parentPartnership)) {
-                    visited.add(parentPartnership);
-                    queue.push(parentPartnership);
-                }
-            }
-        }
-
-        for (let ancestor of myAncestors) {
-            if (ancestor.parentSet.has(person)) {
-                result.push(ancestor);
-            }
-        }
-
+        // Get the set of all my ancestors (including inlaws).
+        let myAncestors = new Traversal(this).visitInLaws().visitStep().allPeople();
+        let result = new Traversal(person).visitInLaws().visitStep().partnershipsUntil(myAncestors);
         return result;
     }
 
-    /// Returns a set of all partnerships with an ancestor of this person as a parent.
-    ancestralPartnerships() {
-        let stack = this.partnerships(true, false);
-        let visited = new Set(stack);
-
-        while (stack.length) {
-            let partnership = stack.pop();
-            for (let parentPartnership of partnership.parents.flatMap(p => p.partnerships(true, false))) {
-                if (!visited.has(parentPartnership)) {
-                    visited.add(parentPartnership);
-                    stack.push(parentPartnership);
-                }
-            }
-        }
-
-        return visited;
-    }
-
-    /// Return a set of all ancestors
-    allAncestors() {
-        return new Set(Array.from(this.ancestralPartnerships()).flatMap(p => p.parents));
-    }
-
     generationsFromAncestralPartnership(ancestralPartnership) {
-        if (ancestralPartnership.parentSet.has(this))
-            return 0;
-
-        if (this.childIn === ancestralPartnership)
-            return 1;
-
-        if (!this.childIn)
-            return Infinity;
-
-        let parentGens = this.parents.map(p => p.generationsFromAncestralPartnership(ancestralPartnership));
-        return Math.min(...parentGens) + 1;
+        return new Traversal(this).visitInLaws().visitStep().generationsUntil(ancestralPartnership);
     }
 }
 
@@ -263,6 +212,10 @@ export class Partnership {
         return new Set(this.parents);
     }
 
+    get parentAndStepParentSet() {
+        return new Set(this.parents.concat(this.parents.flatMap(p => p.partners)));
+    }
+
     get firstParent() {
         return this.parents[0];
     }
@@ -282,6 +235,97 @@ export class Partnership {
     partnersTo(person) {
         return this.parents.filter(p => p.id !== person.id);
     }
+}
+
+class Traversal {
+    #startPeople;
+    #includeStep = false;
+
+    constructor(person) {
+        this.#startPeople = [person];
+    }
+
+    /// Called during initialization to indicate that this traversal should also visit in-laws and step relations.
+    /// Returns `this` for use in chaining.
+    visitInLaws() {
+        let startPerson = this.#startPeople[0];
+        this.#startPeople = this.#startPeople.concat(startPerson.partners);
+        return this;
+    }
+
+    visitStep() {
+        this.#includeStep = true;
+        return this;
+    }
+
+    /// Returns a list of the closest ancestral partnerships that contain a member of `peopleSet`.
+    partnershipsUntil(peopleSet) {
+        let {reached} = this.#walk(peopleSet);
+        return reached;
+    }
+
+    /// Returns a list of the closest ancestral partnerships that contain a member of `peopleSet`.
+    generationsUntil(partnership) {
+        if (this.#startPeople.some(p => partnership.parentAndStepParentSet.has(p)))
+            return 0;
+
+        let {generation} = this.#walk(new Set(), partnership);
+        if (!generation) {
+            console.log("failed to find generation count", this.#startPeople, partnership);
+            throw new Error(`failed to find generation count`);
+        }
+
+        return generation;
+    }
+
+    /// Returns a set of all reachable partnerships.
+    allPartnerships() {
+        let {visited} = this.#walk(new Set());
+        return visited;
+    }
+
+    /// Returns a set containing the start people + their ancestors.
+    allPeople() {
+        let set = new Set([...this.allPartnerships()].flatMap(p => p.parents));
+        for (let person of this.#startPeople)
+            set.add(person);
+        return set;
+    }
+
+    #walk(peopleSet, targetPartnership) {
+        let reached = [];
+        let queue = this.#startPeople.flatMap(p => p.partnerships(true, false)).map(p => [p, 1]);
+        let visited = new Set(queue);
+        while (queue.length !== 0) {
+            // we walk in breadth-first search order so that, if we are in `findSomeoneIn`,
+            // we stop at closer relations.
+            let [partnership, generation] = queue.shift();
+
+            console.log(partnership, generation, targetPartnership);
+
+            if (partnership.parents.some(p => peopleSet.has(p))) {
+                reached.push(partnership);
+                continue;
+            }
+
+            if (partnership === targetPartnership)
+                return {generation};
+
+            let parentPartnerships = partnership.parents.flatMap(p => p.partnerships(true, this.#includeStep));
+            for (let parentPartnership of parentPartnerships) {
+                if (!visited.has(parentPartnership)) {
+                    visited.add(parentPartnership);
+                    queue.push([parentPartnership, generation + 1]);
+                }
+            }
+        }
+
+        return {reached, visited};
+    }
+
+
+
+
 }
 
 /// Returns a relationship $R such that $FROM is $TO's $R.
@@ -346,7 +390,7 @@ function fromSide(
     commonAncestralPartnership,
 ) {
     for (let parent of fromPerson.parents) {
-        if (parent.ancestralPartnerships().has(commonAncestralPartnership)) {
+        if (parent.ancestralPartnerships(true).has(commonAncestralPartnership)) {
             return parent;
         }
     }
