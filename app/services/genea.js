@@ -1,4 +1,6 @@
 import Service from '@ember/service';
+import { assert } from 'qunit';
+import invariant from 'tiny-invariant';
 
 export default class GeneaService extends Service {
     #roots = null;
@@ -175,23 +177,52 @@ export class Person {
         return result;
     }
 
-    /// Returns a list of the closest ancestors between `this` and `person`.
-    commonAncestralPartnershipsWith(person) {
-        // Get the set of all my ancestors (including inlaws).
-        let myAncestors = new Traversal(this).visitInLaws().visitStep().allPeople();
-        let result = new Traversal(person).visitInLaws().visitStep().partnershipsUntil(myAncestors);
-        return result;
+    /// Returns an array of `Relationship` objects between `this` and `thatPerson`.
+    relationshipsTo(thatPerson) {
+        // Find all ancestors of `person`
+        let thatPersonPaths = thatPerson.#paths();
+
+        // Create a map from an ancestor `A` to the path leading from `person` to `A`
+        let thatPersonAncestors = new Map(thatPersonPaths.map(path => [path.endPerson, path]));
+
+        // Find paths from `this` to some ancestor `A` of `person`
+        let thisPaths = this.#paths().filter(path => thatPersonAncestors.has(path.endPerson));
+
+        // Create the final path by going from `this` to `A` and then down to `person`
+        return thisPaths.map(thisPath => {
+            let thatPath = thatPersonAncestors.get(thisPath.endPerson);
+            return new Relationship(thisPath, thatPath);
+        });
     }
 
-    generationsFromAncestralPartnership(ancestralPartnership) {
-        return new Traversal(this).visitInLaws().visitStep().generationsUntil(ancestralPartnership);
+    /// Returns a set containing this person, their partners, and their collective ancestors.
+    allAncestors() {
+        return new Set(this.#paths().map(path => path.endPerson));
     }
+    
+    /// Returns an array of `Paths` starting from `startPerson`.
+    /// These paths reach the person, their partners, and any ancestors of them or their partners.
+    #paths() {
+        let queue = [new Path(this, [])];
+        let result = 0;
+
+        while (result < queue.length) {
+            let path = queue[result];
+            result += 1;
+            for (let extension of path.extendUpAndOver())
+                queue.push(extension);
+        }
+
+        return queue;
+    }
+
 }
 
 export class Partnership {
     #genea;
     #attributes;
     #relationships;
+    id;
 
     constructor(genea, id, attributes, relationships) {
         this.#genea = genea;
@@ -237,178 +268,185 @@ export class Partnership {
     }
 }
 
-class Traversal {
-    #startPeople;
-    #includeStep = false;
+class Path {
+    startPerson;
+    links;
 
-    constructor(person) {
-        this.#startPeople = [person];
+    constructor(startPerson, links) {
+        this.startPerson = startPerson;
+        this.links = links;
     }
 
-    /// Called during initialization to indicate that this traversal should also visit in-laws and step relations.
-    /// Returns `this` for use in chaining.
-    visitInLaws() {
-        let startPerson = this.#startPeople[0];
-        this.#startPeople = this.#startPeople.concat(startPerson.partners);
-        return this;
+    get endPerson() {
+        if (this.links.length !== 0)
+            return this.links[this.links.length - 1].toPerson;
+        return this.startPerson;
     }
 
-    visitStep() {
-        this.#includeStep = true;
-        return this;
+    get generations() {
+        return this.links.filter(l => l.relation === "parent" || l.relation === "child").length;
     }
 
-    /// Returns a list of the closest ancestral partnerships that contain a member of `peopleSet`.
-    partnershipsUntil(peopleSet) {
-        let {reached} = this.#walk(peopleSet);
-        return reached;
-    }
-
-    /// Returns a list of the closest ancestral partnerships that contain a member of `peopleSet`.
-    generationsUntil(partnership) {
-        if (this.#startPeople.some(p => partnership.parentAndStepParentSet.has(p)))
-            return 0;
-
-        let {generation} = this.#walk(new Set(), partnership);
-        if (!generation) {
-            console.log("failed to find generation count", this.#startPeople, partnership);
-            throw new Error(`failed to find generation count`);
+    reversed() {
+        let reversedLinks = [];
+        for (let i = this.links.length - 1; i >= 0; i--) {
+            reversedLinks.push(this.links[i].reversed());
         }
-
-        return generation;
+        return new Path(this.endPerson, reversedLinks);
     }
 
-    /// Returns a set of all reachable partnerships.
-    allPartnerships() {
-        let {visited} = this.#walk(new Set());
-        return visited;
+    /// True if `person` appears on this path (including as the start person).
+    #visits(person) {
+        this.startPerson === person || this.links.some(l => l.toPerson === person)
     }
 
-    /// Returns a set containing the start people + their ancestors.
-    allPeople() {
-        let set = new Set([...this.allPartnerships()].flatMap(p => p.parents));
-        for (let person of this.#startPeople)
-            set.add(person);
-        return set;
+    /// Tries to create a new path that extends `this` but with `(relation, person)` as the next step.
+    /// Returns `[]` if `person` is already on the path or if this would be extending a partner path with
+    /// another partner. Otherwise returns a singleton array with the new path.
+    #tryExtend(relation, person) {
+        if (this.#visits(person))
+            return [];
+
+        if (relation === "partner" && last(this.steps).some(p => p.relation === "partner"))
+            return [];
+
+        let link = new Link(
+            this.endPerson,
+            relation,
+            person,
+        );
+        return [new Path(this.startPerson, this.links.concat([link]))];
     }
 
-    #walk(peopleSet, targetPartnership) {
-        let reached = [];
-        let queue = this.#startPeople.flatMap(p => p.partnerships(true, false)).map(p => [p, 1]);
-        let visited = new Set(queue);
-        while (queue.length !== 0) {
-            // we walk in breadth-first search order so that, if we are in `findSomeoneIn`,
-            // we stop at closer relations.
-            let [partnership, generation] = queue.shift();
-
-            console.log(partnership, generation, targetPartnership);
-
-            if (partnership.parents.some(p => peopleSet.has(p))) {
-                reached.push(partnership);
-                continue;
-            }
-
-            if (partnership === targetPartnership)
-                return {generation};
-
-            let parentPartnerships = partnership.parents.flatMap(p => p.partnerships(true, this.#includeStep));
-            for (let parentPartnership of parentPartnerships) {
-                if (!visited.has(parentPartnership)) {
-                    visited.add(parentPartnership);
-                    queue.push([parentPartnership, generation + 1]);
-                }
-            }
-        }
-
-        return {reached, visited};
+    /// Returns an array of paths going up (to parents) and over (to partners).
+    extendUpAndOver() {
+        return this.endPerson.partners.flatMap(partner => this.#tryExtend("partner", partner))
+            .concat(this.endPerson.parents.flatMap(parent => this.#tryExtend("parent", parent)));
     }
-
-
-
-
 }
 
-/// Returns a relationship $R such that $FROM is $TO's $R.
-///
-/// e.g. Spock is Leto's uncle.
-///
-/// Sarin is Spock's father.
-///
-/// Spock is Sarin's son.
-export function relationshipName(
-    fromPerson,
-    toPerson,
-    commonAncestralPartnership,
-) {
-    let fromGenerations = fromPerson.generationsFromAncestralPartnership(commonAncestralPartnership);
-    let toGenerations = toPerson.generationsFromAncestralPartnership(commonAncestralPartnership);
+/// Returns singleton array with the first item in `array` (or empty array if `array` is empty)
+function first(array) {
+    if (array.length === 0)
+        return [];
+    return [array[0]];
+}
 
-    if (fromGenerations == 0) {
-        switch (toGenerations) {
-            case 0: return "self";
-            case 1: return parentName(fromPerson);
-            default:
-                return `${lineageModifiers(toGenerations, parentName(fromPerson))} ${onWhoseSide(toPerson, commonAncestralPartnership)}`;
+/// Returns singleton array with the last item in `array` (or empty array if `array` is empty)
+function last(array) {
+    if (array.length === 0)
+        return [];
+    return [array[array.length - 1]];
+}
+
+class Link {
+    /// Person we are stepping "from"
+    fromPerson;
+
+    /// Either "parent", "partner", or "child"
+    relation;
+
+    /// Person we have stepped to
+    toPerson;
+
+    constructor(fromPerson, relation, toPerson) {
+        invariant(this.relation === "child" || this.relation === "parent" || this.relation === "partner");
+        this.relation = relation;
+        this.fromPerson = toPerson;
+    }
+
+    reversed() {
+        switch (this.relation) {
+            case "parent": return new Link(this.toPerson, "child", this.fromPerson);
+            case "child": return new Link(this.toPerson, "parent", this.fromPerson);
+            case "partner": return new Link(this.toPerson, "partner", this.fromPerson);
         }
+        invariant(false);
+    }
+}
+
+/// Defines how two people ("this" person and "that" person) are related.
+/// Their relationship is defined by two paths that end at some common ancestor
+/// (which could be one of them).
+export class Relationship {
+    #thisPath;
+    #thatPath;
+
+    constructor(thisPath, thatPath) {
+        invariant(thisPath.endPerson === thatPath.endPerson);
+        invariant(thisPath.startPerson !== thatPath.startPerson);
+        
+        this.#thisPath = thisPath;
+        this.#thatPath = thatPath;
     }
 
-    if (toGenerations == 0) {
-        return lineageModifiers(fromGenerations, childName(fromPerson));
-    }
+    name() {
+        let thisPerson = this.#thisPath.startPerson;
+        let thatPerson = this.#thatPath.startPerson;
+        let thisGenerations = this.#thisPath.generations;
+        let thatGenerations = this.#thatPath.generations;
 
-    if (fromGenerations == toGenerations) {
-        if (fromGenerations == 1) {
-            return siblingName(fromPerson);
-        } else {
-            return `${ordinal(fromGenerations - 1)} cousin ${onWhoseSide(fromPerson, commonAncestralPartnership)}`;
+        /// thisPerson and thatPerson are partners
+        if (thisGenerations === 0 && thatGenerations === 0) {
+            return partnerName(thisPerson);
         }
-    }
 
-    if (fromGenerations == 1) {
-        return `${piblingModifiers(toGenerations - 1, piblingName(fromPerson))} ${onWhoseSide(toPerson, commonAncestralPartnership)}`;
-    }
+        /// thisPerson is an ancestor of thatPerson
+        if (thisGenerations === 0) {
+            let path = this.#thatPath.reversed();
+            invariant(path.startPerson === thisPerson);
+            invariant(path.endPerson === thatPerson);
+            return ancestorName(path);
+        }
+                
+        /// thisPerson is a descendant of thatPerson
+        if (thatGenerations === 0) {
+            let path = this.#thisPath;
+            invariant(path.startPerson == thisPerson);
+            invariant(path.endPerson == thatPerson);
+            return descendantName(path);
+        }
 
-    if (toGenerations == 1) {
-        return `${lineageModifiers(fromGenerations - 1, niblingName(toPerson))} ${onWhoseSide(toPerson, commonAncestralPartnership)}`;
-    }
+        /// thisPerson and thatPerson are siblings or (first, second, third) cousins
+        if (thisGenerations === thatGenerations) {
+            if (thatGenerations == 1) {
+                return siblingName(thatPerson);
+            } else {
+                return `${ordinal(thatGenerations - 1)} cousin ${via(this.#thisPath)}`;
+            }    
+        }
+
+        let sides = `via ${via(this.#thisPath)} and ${via(this.#thatPath)}`;
+
+        if (thisGenerations == 1) {
+            return `${piblingModifiers(thatGenerations - 1, piblingName(thisPerson))} ${sides}`;
+        }
     
-    let minGeneration = Math.min(fromGenerations, toGenerations);
-    let maxGeneration = Math.max(fromGenerations, toGenerations);
-    let removed = maxGeneration - minGeneration;
-    return `${ordinal(minGeneration)} cousin ${times(removed)} removed ${onWhoseSide(fromPerson, commonAncestralPartnership)}`;
+        if (thatGenerations == 1) {
+            return `${lineageModifiers(thisGenerations - 1, niblingName(thatPerson))} ${sides}`;
+        }
+
+        let minGeneration = Math.min(thisGenerations, thatGenerations);
+        let maxGeneration = Math.max(thisGenerations, thatGenerations);
+        let removed = maxGeneration - minGeneration;
+        return `${ordinal(minGeneration)} cousin ${times(removed)} removed ${sides}`;
+    }
 }
 
-function onWhoseSide(
-    fromPerson,
-    commonAncestralPartnership
+function via(
+    path
 ) {
-    return characterizeParent(fromPerson, fromSide(fromPerson, commonAncestralPartnership));
-}
-
-function fromSide(
-    fromPerson,
-    commonAncestralPartnership,
-) {
-    for (let parent of fromPerson.parents) {
-        if (parent.ancestralPartnerships(true).has(commonAncestralPartnership)) {
-            return parent;
+    for (let link of path.links) {
+        if (link.relation === "parent") {
+            let {fromPerson: child, toPerson: parent} = link;
+            if (child.parents.every(p => p == parent || p.gender != parent.gender)) {
+                return `${possessive(child)} ${parentName(parent)}`;
+            } else {
+                return `${parent.name}`;
+            }    
         }
     }
-    return null;
-}
-
-function characterizeParent(
-    fromPerson,
-    parent
-) {
-    if (parent) {
-        if (fromPerson.parents.every(p => p == parent || p.gender != parent.gender)) {
-            return `on ${possessive(fromPerson)} ${parentName(parent)}'s side`;
-        } else {
-            return `via ${parent.name}`;
-        }    
-    }
-    return "";
+    invariant(false);   
 }
 
 function possessive(person) {
@@ -445,6 +483,37 @@ function piblingModifiers(generations, relationship) {
         case 3:
             let greats = "great ".repeat(generations - 2);
             return `${greats}grand${relationship}`;
+    }
+}
+
+function partnerName(person) {
+    switch (person.gender) {
+        case "male":
+            return "husband";
+        case "female":
+            return "wife";
+        default:
+            return "partner";
+    }
+}
+
+function ancestorName(path) {
+    switch (path.generations) {
+        case 1:
+            return parentName(path.startPerson);
+
+        default:
+            return `${lineageModifiers(path.generations, parentName(path.startPerson))}`;
+    }
+}
+
+function descendantName(path) {
+    switch (path.generations) {
+        case 1:
+            return childName(path.startPerson);
+
+        default:
+            return `${lineageModifiers(path.generations, childName(path.startPerson))}`;
     }
 }
 

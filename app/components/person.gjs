@@ -7,7 +7,6 @@ import PersonLink from './person-link';
 import PersonOutline from './person-outline';
 import { on } from '@ember/modifier';
 import { hash } from '@ember/helper';
-import { relationshipName } from '../services/genea';
 import Component from '@glimmer/component';
 
 export default class Person extends Component {
@@ -60,11 +59,11 @@ export default class Person extends Component {
         No relation!
       {{/if}}
 
-      {{#each this.commonAncestralPartnerships as |p|}}
+      {{#each this.relationships as |r|}}
         {{@model.name}}
         is
         {{this.referencePerson.name}}'s
-        {{relationshipName @model this.referencePerson p}}
+        {{this.relationshipName r}}
         (<a href='/family-tree-explainer.png' target='_blank'>explain</a>):
         <ul>
           <PersonOutline
@@ -88,6 +87,8 @@ export default class Person extends Component {
     </IndexLink><br />
   </template>
 
+  relationshipName = (r) => r.name;
+
   get showSiblings() {
     return (
       this.referencePerson === null || this.referencePerson === this.args.model
@@ -104,11 +105,9 @@ export default class Person extends Component {
     return this.commonAncestralPartnerships.length === 0;
   }
 
-  get commonAncestralPartnerships() {
+  get relationships() {
     if (this.referencePerson)
-      return this.args.model.commonAncestralPartnershipsWith(
-        this.referencePerson,
-      );
+      return this.args.model.relationshipsTo(this.referencePerson);
     else return [];
   }
 
