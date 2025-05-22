@@ -62,8 +62,16 @@ struct PartnershipData {
 ### Input Data Format (`genea.doc`)
 ```
 Henry Numbers | Gender | #Kids | #Spouses | SpouseIndex | AltID | Name\Comments;PrivateComments
-1 0 0 0 0 0 0 0 0 0 M 2 1 0         George Sakellaridis\priest,died bee sting
-1 1 0 0 0 0 0 0 0 0 M 2 1 0         Kosti Sakellarides\second born
+
+ 1 0 0 0 0 0 0 0 0 0 M 1 0 0         Solkar\Primal ancestor of the tree
+ 1 1 0 0 0 0 0 0 0 0 M 2 2 0         Skon
+ 1 1 0 0 0 0 0 0 0 0 F 0 0 1         T'Melis
+ 1 1 0 0 0 0 0 0 0 0 F 0 0 2         T'Rama
+ 1 1 1 0 0 0 0 0 0 0 M 3 3 0         Sarek\Vulcan pioneer
+ 1 1 1 0 0 0 0 0 0 0 F 1 0 1         T'Rea\First wife of Sarek
+ 1 1 1 1 0 0 0 0 0 0 M 1 0 0         Sybok
+ 1 1 1 1 1 0 0 0 0 0 M 0 0 0         Teska\Spock's niece from the novel Mind Meld, unknown parentage
+ 1 1 1 0 0 0 0 0 0 0 F 2 0 2 2100000 Amanda Grayson\Human
 ```
 
 **Field meanings:**
