@@ -1,11 +1,9 @@
-import { action } from '@ember/object';
 import { service } from '@ember/service';
 import IndexLink from './index-link';
 import MaintainerLink from './maintainer-link';
 import { LinkTo } from '@ember/routing';
 import PersonLink from './person-link';
 import PersonOutline from './person-outline';
-import { on } from '@ember/modifier';
 import { hash } from '@ember/helper';
 import Component from '@glimmer/component';
 
@@ -64,7 +62,11 @@ export default class Person extends Component {
         is
         {{this.referencePerson.name}}'s
         {{this.relationshipName r}}
-        (<a href='/family-tree-explainer.png' target='_blank'>explain</a>):
+        (<a
+          href='/family-tree-explainer.png'
+          target='_blank'
+          rel='noopener noreferrer'
+        >explain</a>):
         <ul>
           <PersonOutline
             @person={{r.commonAncestor}}

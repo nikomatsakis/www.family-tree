@@ -6,8 +6,11 @@ export default class MaintainerLink extends Component {
 
   <template>
     {{#if this.maintainerLink}}
-      <a target='_blank' href={{this.maintainerLink}}>See a mistake? Suggest an
-        edit!</a>
+      <a
+        target='_blank'
+        href={{this.maintainerLink}}
+        rel='noopener noreferrer'
+      >See a mistake? Suggest an edit!</a>
     {{/if}}
   </template>
 
