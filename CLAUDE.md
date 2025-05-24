@@ -23,6 +23,7 @@ This is a family tree application that:
 ### Testing
 - `npm test` - Run all lints and tests
 - `npm run test:ember` - Run Ember tests only
+- `npm run test:node` - Run Node.js-based relationship tests (headless)
 - `cargo test` - Run Rust tests
 
 ### Linting
@@ -61,9 +62,32 @@ Custom genealogy format where each line represents a person:
 3. Ember app fetches JSON via genea service
 4. Components render family tree visualization
 
+## Testing Infrastructure
+
+### Headless Testing (Preferred)
+The project includes a Node.js-based test suite for testing complex relationship calculations without requiring a browser:
+- **Location**: `tests/node/test-relationships.js`
+- **Run with**: `npm run test:node`
+- **Features**:
+  - Tests relationship calculations in isolation
+  - Includes 26+ edge case scenarios
+  - Runs faster than browser-based tests
+  - Easier to debug complex family relationships
+
+### Test Helpers
+- **Mock Data Factory**: `tests/helpers/mock-genea-data.js` - Creates test families for unit tests
+- **Test Examples**: Step-siblings, half-siblings, double cousins, complex multi-path relationships
+
+### Browser Testing
+When browser testing is necessary:
+- `testem.js` configures the test runner
+- Ember tests require Chrome/Firefox installed
+- Use `npm run test:ember` for browser-based component tests
+
 ## Important Notes
 
 - The genea.doc file must be sorted by henry number
 - JSON generation happens at build/serve time, not runtime
 - Ember uses tracked properties and async data patterns
 - All styling in `app/styles/app.css`
+- **Testing Preference**: Use headless Node.js tests when possible for faster feedback and easier debugging
