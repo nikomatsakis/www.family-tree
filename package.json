@@ -23,6 +23,7 @@
     "start": "ember serve",
     "start:build": "cargo run -- serve genea.doc",
     "test": "concurrently \"npm:lint\" \"npm:test:*\" --names \"lint,test:\"",
+    "test:node": "node tests/node/test-relationships.js",
     "test:ember": "ember test"
   },
   "devDependencies": {
@@ -88,6 +89,7 @@
   },
   "dependencies": {
     "ember-async-data": "^1.0.3",
-    "rsvp": "^4.8.5"
+    "rsvp": "^4.8.5",
+    "tiny-invariant": "^1.3.3"
   }
 }
