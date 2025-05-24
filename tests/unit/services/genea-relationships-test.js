@@ -93,14 +93,25 @@ module('Unit | Service | genea - Relationship Calculations', function (hooks) {
     // The common ancestor for siblings should be their parent partnership
     assert.ok(relationship.commonAncestor, 'Should have a common ancestor');
 
-    // The relationship name should indicate siblinghood
+    // The relationship name should be "sister" since c1 is male and c2 is female
     const relationshipName = relationship.name;
-    const isSibling =
-      relationshipName.includes('sister') ||
-      relationshipName.includes('sibling');
-    assert.ok(
-      isSibling,
-      `Relationship name should indicate sibling: got "${relationshipName}"`,
+    assert.strictEqual(
+      relationshipName,
+      'sister',
+      'Should be sister relationship',
+    );
+
+    // Test reverse relationship
+    const reverseRelationships = child2.relationshipsTo(child1);
+    assert.strictEqual(
+      reverseRelationships.length,
+      1,
+      'Should find exactly one reverse relationship path',
+    );
+    assert.strictEqual(
+      reverseRelationships[0].name,
+      'brother',
+      'Reverse relationship should be brother',
     );
   });
 
@@ -228,11 +239,9 @@ module('Unit | Service | genea - Relationship Calculations', function (hooks) {
       'Should find relationship between child and aunt',
     );
 
+    // p2 is female and is c1's parent's sibling, so should be "aunt"
     const relationshipName = relationships[0].name;
-    assert.ok(
-      relationshipName.includes('aunt'),
-      `Should identify aunt relationship: got "${relationshipName}"`,
-    );
+    assert.strictEqual(relationshipName, 'aunt', 'Should be aunt relationship');
   });
 
   test('calculates second cousin relationships', function (assert) {

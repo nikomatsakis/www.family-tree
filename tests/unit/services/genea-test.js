@@ -117,9 +117,10 @@ module('Unit | Service | genea', function (hooks) {
 
       // Check the relationship name
       const relationshipName = relationship.name;
-      assert.ok(
-        relationshipName.includes('sister'),
-        `Brother to sister should be "sister", got "${relationshipName}"`,
+      assert.strictEqual(
+        relationshipName,
+        'sister',
+        'Brother to sister should be "sister"',
       );
     });
 
