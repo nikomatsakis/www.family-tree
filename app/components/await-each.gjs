@@ -1,6 +1,8 @@
 import { load } from 'ember-async-data';
+// eslint-disable-next-line ember/no-classic-components
 import Component from '@ember/component';
 
+// eslint-disable-next-line ember/require-tagless-components
 export default class extends Component {
   // This code intentionally uses a classic component
   // because glimmer components don't support positional

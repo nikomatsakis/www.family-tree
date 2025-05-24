@@ -1,13 +1,10 @@
-import { action } from '@ember/object';
 import { service } from '@ember/service';
 import IndexLink from './index-link';
 import MaintainerLink from './maintainer-link';
 import { LinkTo } from '@ember/routing';
 import PersonLink from './person-link';
 import PersonOutline from './person-outline';
-import { on } from '@ember/modifier';
 import { hash } from '@ember/helper';
-import { relationshipName } from '../services/genea';
 import Component from '@glimmer/component';
 
 export default class Person extends Component {
@@ -60,15 +57,19 @@ export default class Person extends Component {
         No relation!
       {{/if}}
 
-      {{#each this.commonAncestralPartnerships as |p|}}
+      {{#each this.relationships as |r|}}
         {{@model.name}}
         is
         {{this.referencePerson.name}}'s
-        {{relationshipName @model this.referencePerson p}}
-        (<a href='/family-tree-explainer.png' target='_blank'>explain</a>):
+        {{this.relationshipName r}}
+        (<a
+          href='/family-tree-explainer.png'
+          target='_blank'
+          rel='noopener noreferrer'
+        >explain</a>):
         <ul>
           <PersonOutline
-            @person={{p.firstParent}}
+            @person={{r.commonAncestor}}
             @pagePerson={{@model}}
             @referencePerson={{this.referencePerson}}
             @includeSet={{this.ancestors}}
@@ -88,6 +89,8 @@ export default class Person extends Component {
     </IndexLink><br />
   </template>
 
+  relationshipName = (r) => r.name;
+
   get showSiblings() {
     return (
       this.referencePerson === null || this.referencePerson === this.args.model
@@ -101,25 +104,20 @@ export default class Person extends Component {
   }
 
   get notRelated() {
-    return this.commonAncestralPartnerships.length === 0;
+    return this.relationships.length === 0;
   }
 
-  get commonAncestralPartnerships() {
+  get relationships() {
     if (this.referencePerson)
-      return this.args.model.commonAncestralPartnershipsWith(
-        this.referencePerson,
-      );
+      return this.args.model.relationshipsTo(this.referencePerson);
     else return [];
   }
 
   get ancestors() {
     if (this.referencePerson) {
-      let result = this.args.model
-        .allAncestors()
-        .union(this.referencePerson.allAncestors());
-      result.add(this.args.model);
-      result.add(this.referencePerson);
-      return result;
+      const modelAncestors = this.args.model.allAncestors();
+      const refPersonAncestors = this.referencePerson.allAncestors();
+      return new Set([...modelAncestors, ...refPersonAncestors]);
     } else {
       return null;
     }
