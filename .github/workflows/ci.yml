@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  rust:
+    name: Rust Tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
+    - name: Check
+      run: cargo run -- check genea.doc
+
+  javascript:
+    name: JavaScript Tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    - name: Install dependencies
+      run: npm ci
+    - name: Lint
+      run: npm run lint
+    - name: Run headless tests
+      run: npm run test:node
+    - name: Build Ember app
+      run: npm run build
+
+  ember:
+    name: Ember Tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    - name: Install dependencies
+      run: npm ci
+    - name: Generate test data
+      run: cargo run -- build genea.doc
+    - name: Run Ember tests
+      run: npm run test:ember

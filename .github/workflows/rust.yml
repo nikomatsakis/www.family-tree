@@ -10,15 +10,11 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  # This workflow is now integrated into .github/workflows/ci.yml
+  # Keeping this file for backwards compatibility but the actual tests
+  # are run in the unified CI workflow
+  placeholder:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
-    - name: Check
-      run: cargo run -- check genea.doc
+    - name: Tests moved to CI workflow
+      run: echo "Rust tests have been moved to .github/workflows/ci.yml"
