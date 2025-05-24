@@ -7,6 +7,8 @@ How to use:
 3. Run `npm install`
 4. Run `cargo run -- serve`
 
+Or, with `just`, you can run `just serve`.
+
 ## Technologies in use
 
 * Rust to parse the `genea.doc` file and generate JSON data in `public/api/v1`
