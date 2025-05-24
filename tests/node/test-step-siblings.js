@@ -10,24 +10,24 @@ const examples = [
   {
     name: 'Full siblings (share both parents)',
     sharedParents: 2,
-    expected: 'sister'
+    expected: 'sister',
   },
   {
-    name: 'Half-siblings (share one parent)', 
+    name: 'Half-siblings (share one parent)',
     sharedParents: 1,
-    expected: 'brother'
+    expected: 'brother',
   },
   {
     name: 'Step-siblings (share no parents)',
     sharedParents: 0,
-    expected: 'step-sister'
-  }
+    expected: 'step-sister',
+  },
 ];
 
 console.log('Before fix: All would be named "brother" or "sister"');
 console.log('After fix: Step-siblings are correctly prefixed with "step-"\n');
 
-examples.forEach(example => {
+examples.forEach((example) => {
   console.log(`${example.name}:`);
   console.log(`  Shared parents: ${example.sharedParents}`);
   console.log(`  Relationship name: "${example.expected}"`);
@@ -39,4 +39,6 @@ console.log('If they share 0 parents, they are step-siblings.');
 console.log('\nThis properly handles complex families where:');
 console.log('- Parents divorce and remarry');
 console.log('- Children from different marriages become step-siblings');
-console.log('- People can be related in multiple ways (e.g., cousins AND step-siblings)');
+console.log(
+  '- People can be related in multiple ways (e.g., cousins AND step-siblings)',
+);
