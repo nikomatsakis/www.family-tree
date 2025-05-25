@@ -205,10 +205,70 @@ export class Person {
     );
 
     // Create the final path by going from `this` to `A` and then down to `person`
-    return thisPaths.map((thisPath) => {
+    const allRelationships = thisPaths.map((thisPath) => {
       let thatPath = thatPersonAncestors.get(thisPath.endPerson);
       return new Relationship(thisPath, thatPath);
     });
+
+    // Deduplicate relationships using the static helper
+    return Person.deduplicateRelationships(allRelationships);
+  }
+
+  /// Static helper to deduplicate relationships - can be used by tests
+  static deduplicateRelationships(relationships) {
+    // Group relationships by their signature
+    const groups = new Map();
+    for (const rel of relationships) {
+      const sig = rel.signature;
+      if (!groups.has(sig)) {
+        groups.set(sig, []);
+      }
+      groups.get(sig).push(rel);
+    }
+
+    // Select the best path from each group
+    return Array.from(groups.values()).map((group) =>
+      Person.selectBestPath(group),
+    );
+  }
+
+  /// Static helper to select the best path from a group
+  static selectBestPath(relationships) {
+    if (relationships.length === 1) {
+      return relationships[0];
+    }
+
+    // Sort by quality criteria and return the best one
+    return relationships.sort((a, b) => {
+      // 1. Prefer shorter total path length
+      const aLength = a.thisPath.links.length + a.thatPath.links.length;
+      const bLength = b.thisPath.links.length + b.thatPath.links.length;
+      if (aLength !== bLength) {
+        return aLength - bLength;
+      }
+
+      // 2. For equal lengths, prefer paths through biological parents
+      // (those without partner links)
+      const aPartnerLinks = Person.countPartnerLinks(a);
+      const bPartnerLinks = Person.countPartnerLinks(b);
+      if (aPartnerLinks !== bPartnerLinks) {
+        return aPartnerLinks - bPartnerLinks;
+      }
+
+      // 3. Otherwise, maintain stable ordering by common ancestor ID
+      return a.commonAncestor.id.localeCompare(b.commonAncestor.id);
+    })[0];
+  }
+
+  /// Static helper to count partner links
+  static countPartnerLinks(relationship) {
+    const thisPartnerLinks = relationship.thisPath.links.filter(
+      (l) => l.relation === 'partner',
+    ).length;
+    const thatPartnerLinks = relationship.thatPath.links.filter(
+      (l) => l.relation === 'partner',
+    ).length;
+    return thisPartnerLinks + thatPartnerLinks;
   }
 
   /// Returns a set containing this person, their partners, and their collective ancestors.
@@ -421,6 +481,34 @@ export class Relationship {
 
   get commonAncestor() {
     return this.#thisPath.endPerson;
+  }
+
+  get thisPath() {
+    return this.#thisPath;
+  }
+
+  get thatPath() {
+    return this.#thatPath;
+  }
+
+  get signature() {
+    // Create a unique signature for semantically identical relationships
+    const thisGen = this.#thisPath.generations;
+    const thatGen = this.#thatPath.generations;
+
+    // For direct relationships (parent/child, partners), just use generation counts
+    if (thisGen === 0 || thatGen === 0) {
+      return `${thisGen}-${thatGen}`;
+    }
+
+    // For siblings, use generation counts only (all sibling paths are equivalent)
+    if (thisGen === 1 && thatGen === 1) {
+      return `${thisGen}-${thatGen}`;
+    }
+
+    // For cousins and other relations, include the common ancestor to distinguish paths
+    // This preserves important distinctions like "cousin via maternal vs paternal line"
+    return `${thisGen}-${thatGen}-${this.commonAncestor.id}`;
   }
 
   get name() {
