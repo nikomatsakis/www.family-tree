@@ -22,8 +22,7 @@
     "lint:js:fix": "eslint . --fix",
     "start": "ember serve",
     "start:build": "cargo run -- serve genea.doc",
-    "test": "concurrently \"npm:lint\" \"npm:test:*\" --names \"lint,test:\"",
-    "test:node": "node tests/node/test-relationships.js",
+    "test": "concurrently \"npm:lint\" \"npm:test:ember\" --names \"lint,test:\"",
     "test:ember": "ember test"
   },
   "devDependencies": {
