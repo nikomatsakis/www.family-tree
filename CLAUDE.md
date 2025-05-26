@@ -64,25 +64,26 @@ Custom genealogy format where each line represents a person:
 
 ## Testing Infrastructure
 
-### Headless Testing (Preferred)
-The project includes a Node.js-based test suite for testing complex relationship calculations without requiring a browser:
-- **Location**: `tests/node/test-relationships.js`
-- **Run with**: `npm run test:node`
-- **Features**:
-  - Tests relationship calculations in isolation
-  - Includes 26+ edge case scenarios
-  - Runs faster than browser-based tests
-  - Easier to debug complex family relationships
+### Unified Testing System (Preferred)
+The project uses Ember's QUnit-based test infrastructure for all tests to maintain consistency and avoid code duplication:
+- **Location**: `tests/unit/` and `tests/integration/`
+- **Run with**: `npm test` (all tests) or `npm run test:ember`
+- **Benefits**:
+  - Single source of truth - tests use actual production code
+  - No duplicated class implementations
+  - Consistent testing patterns across the codebase
+  - Full integration with Ember's testing helpers
 
 ### Test Helpers
 - **Mock Data Factory**: `tests/helpers/mock-genea-data.js` - Creates test families for unit tests
-- **Test Examples**: Step-siblings, half-siblings, double cousins, complex multi-path relationships
+- **Service Tests**: `tests/unit/services/genea-test.js` and `genea-relationships-test.js` - Test core genealogy logic
+- **Component Tests**: Integration tests for UI components in `tests/integration/components/`
 
-### Browser Testing
-When browser testing is necessary:
+### Test Organization
+- Unit tests for services, models, routes, and controllers
+- Integration tests for components
+- All tests run in the browser environment with full access to Ember's features
 - `testem.js` configures the test runner
-- Ember tests require Chrome/Firefox installed
-- Use `npm run test:ember` for browser-based component tests
 
 ## Important Notes
 
@@ -90,4 +91,4 @@ When browser testing is necessary:
 - JSON generation happens at build/serve time, not runtime
 - Ember uses tracked properties and async data patterns
 - All styling in `app/styles/app.css`
-- **Testing Preference**: Use headless Node.js tests when possible for faster feedback and easier debugging
+- **Testing Preference**: Use Ember's unified test system to avoid code duplication and ensure tests reflect production behavior
