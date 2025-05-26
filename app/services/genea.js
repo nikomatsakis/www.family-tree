@@ -191,6 +191,11 @@ export class Person {
 
   /// Returns an array of `Relationship` objects between `this` and `thatPerson`.
   relationshipsTo(thatPerson) {
+    // Handle self-relationship case
+    if (this === thatPerson) {
+      return [];
+    }
+    
     // Find all ancestors of `person`
     let thatPersonPaths = thatPerson.#paths();
 
@@ -211,7 +216,22 @@ export class Person {
     });
 
     // Deduplicate relationships using the static helper
-    return Person.deduplicateRelationships(allRelationships);
+    const deduplicated = Person.deduplicateRelationships(allRelationships);
+    
+    // Filter to keep only the most direct relationships
+    if (deduplicated.length <= 1) {
+      return deduplicated;
+    }
+    
+    // Find the minimum generation distance
+    const minGenerations = Math.min(...deduplicated.map(rel => 
+      rel.thisPath.generations + rel.thatPath.generations
+    ));
+    
+    // Keep only relationships with the minimum generation distance
+    return deduplicated.filter(rel => 
+      rel.thisPath.generations + rel.thatPath.generations === minGenerations
+    );
   }
 
   /// Static helper to deduplicate relationships - can be used by tests
@@ -556,6 +576,17 @@ export class Relationship {
       } else {
         return `${ordinal(thatGenerations - 1)} cousin ${via(this.#thisPath)}`;
       }
+    }
+
+    // For direct aunt/uncle or niece/nephew relationships, don't include "via" information
+    if (thisGenerations == 2 && thatGenerations == 1) {
+      // From child's perspective, that person is the aunt/uncle
+      return piblingName(thatPerson);
+    }
+    
+    if (thisGenerations == 1 && thatGenerations == 2) {
+      // From aunt/uncle's perspective, that person is the niece/nephew
+      return niblingName(thatPerson);
     }
 
     let sides = `via ${via(this.#thisPath)} and ${via(this.#thatPath)}`;

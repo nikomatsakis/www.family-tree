@@ -67,7 +67,7 @@ class Partnerships {
   #list;
 
   constructor(person, includeSet) {
-    let parentIn = person.parentIn;
+    let parentIn = person?.parentIn || [];
 
     if (includeSet) {
       parentIn = parentIn.filter((p) => p.parentSet.isSubsetOf(includeSet));
