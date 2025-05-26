@@ -1325,8 +1325,15 @@ console.log('\nTest 13: Person with multiple partnerships to same person');
     `  Found ${relationships.length} relationships for multiple partnerships`,
   );
   assert(
-    relationships.length >= 2,
-    'Should find multiple relationship paths through different partnerships',
+    relationships.length === 1,
+    'Should deduplicate multiple partnerships to same person',
+  );
+
+  // They are partners regardless of how many times they married
+  assertEqual(
+    relationships[0].name,
+    'wife',
+    'Should identify as wife/partner',
   );
 }
 
@@ -2026,6 +2033,98 @@ console.log('\nTest 17: Complex multi-path relationships');
 
   const names = relationships.map((r) => r.name);
   console.log(`  Complex relationship types: ${names.join(', ')}`);
+}
+
+console.log('\nTest 27: Duplicate relationships through identical paths');
+{
+  // Create a simple family where we might get duplicate relationships
+  // This tests if the UI is showing the same relationship multiple times
+
+  const grandpa = new Person(
+    mockService,
+    'grandpa',
+    { name: 'Grandpa', gender: 'male' },
+    {
+      childIn: { data: null },
+      parentIn: { data: [{ type: 'partnership', id: 'gp' }] },
+    },
+  );
+  const grandma = new Person(
+    mockService,
+    'grandma',
+    { name: 'Grandma', gender: 'female' },
+    {
+      childIn: { data: null },
+      parentIn: { data: [{ type: 'partnership', id: 'gp' }] },
+    },
+  );
+
+  const child1 = new Person(
+    mockService,
+    'child1',
+    { name: 'Child 1', gender: 'male' },
+    {
+      childIn: { data: { type: 'partnership', id: 'gp' } },
+      parentIn: { data: [] },
+    },
+  );
+  const child2 = new Person(
+    mockService,
+    'child2',
+    { name: 'Child 2', gender: 'female' },
+    {
+      childIn: { data: { type: 'partnership', id: 'gp' } },
+      parentIn: { data: [] },
+    },
+  );
+
+  const gpPartnership = new Partnership(
+    mockService,
+    'gp',
+    {},
+    {
+      parents: {
+        data: [
+          { type: 'person', id: 'grandpa' },
+          { type: 'person', id: 'grandma' },
+        ],
+      },
+      children: {
+        data: [
+          { type: 'person', id: 'child1' },
+          { type: 'person', id: 'child2' },
+        ],
+      },
+    },
+  );
+
+  mockService._people = { grandpa, grandma, child1, child2 };
+  mockService._partnerships = { gp: gpPartnership };
+
+  const relationships = child1.relationshipsTo(child2);
+  console.log(`  Found ${relationships.length} relationships between siblings`);
+
+  // Check for exact duplicates
+  const relationshipStrings = relationships.map((r) => {
+    // Just use the relationship name for now
+    return r.name;
+  });
+
+  const uniqueRelationships = new Set(relationshipStrings);
+
+  console.log(`  Relationship strings: ${relationshipStrings.join(', ')}`);
+  console.log(`  Unique relationships: ${uniqueRelationships.size}`);
+
+  assert(
+    relationships.length === uniqueRelationships.size,
+    `Should not have duplicate relationships (found ${relationships.length}, unique: ${uniqueRelationships.size})`,
+  );
+
+  // Also check that all relationships are "sister" or "brother"
+  const allSiblings = relationships.every(
+    (r) => r.name === 'sister' || r.name === 'brother',
+  );
+  assert(allSiblings, 'All relationships should be sibling relationships');
 }
 
 // Summary
