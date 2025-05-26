@@ -7,20 +7,26 @@ module('Integration | Component | maintainer-link', function (hooks) {
   setupRenderingTest(hooks);
 
   test('it renders', async function (assert) {
-    // Set any properties with this.set('myProperty', 'value');
-    // Handle any actions with this.set('myAction', function(val) { ... });
+    // Mock the genea service
+    const mockGenea = {
+      roots() {
+        return {
+          maintainerLink: 'https://example.com/edit?id=$ID&name=$NAME'
+        };
+      }
+    };
+    this.owner.register('service:genea', mockGenea, { instantiate: false });
 
-    await render(hbs`<MaintainerLink />`);
+    // Set required person argument
+    this.set('person', {
+      id: 'test-id',
+      name: 'Test Person'
+    });
 
-    assert.dom().hasText('');
+    await render(hbs`<MaintainerLink @person={{this.person}} />`);
 
-    // Template block usage:
-    await render(hbs`
-      <MaintainerLink>
-        template block text
-      </MaintainerLink>
-    `);
-
-    assert.dom().hasText('template block text');
+    assert.dom('a').hasText('See a mistake? Suggest an edit!');
+    assert.dom('a').hasAttribute('href', 'https://example.com/edit?id=test-id&name=Test%20Person');
+    assert.dom('a').hasAttribute('target', '_blank');
   });
 });

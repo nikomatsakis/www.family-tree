@@ -53,7 +53,7 @@ class MockGeneaService extends Service {
 
   _partnership(r) {
     if (!r || !r.id) return null;
-    return this.partnerships[r.id];
+    return this.partnerships[r.id] || null;
   }
 }
 

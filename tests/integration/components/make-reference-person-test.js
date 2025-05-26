@@ -7,20 +7,15 @@ module('Integration | Component | make-reference-person', function (hooks) {
   setupRenderingTest(hooks);
 
   test('it renders', async function (assert) {
-    // Set any properties with this.set('myProperty', 'value');
-    // Handle any actions with this.set('myAction', function(val) { ... });
+    // Set required person argument
+    this.set('person', {
+      id: 'test-id',
+      name: 'John Smith'
+    });
 
-    await render(hbs`<MakeReferencePerson />`);
+    await render(hbs`<MakeReferencePerson @person={{this.person}} />`);
 
-    assert.dom().hasText('');
-
-    // Template block usage:
-    await render(hbs`
-      <MakeReferencePerson>
-        template block text
-      </MakeReferencePerson>
-    `);
-
-    assert.dom().hasText('template block text');
+    assert.dom().hasText('(make John Smith the reference person)');
+    assert.dom('a').exists('Should render a link');
   });
 });

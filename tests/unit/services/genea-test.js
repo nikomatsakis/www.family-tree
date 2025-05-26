@@ -56,19 +56,22 @@ module('Unit | Service | genea', function (hooks) {
         return partnership;
       };
 
-      // Helper to set a person as child of a partnership
-      this.setChildIn = (person, partnershipId) => {
-        person.relationships.childIn = {
-          data: { type: 'partnership', id: partnershipId },
-        };
-      };
-
-      // Helper to add a person as parent in a partnership
-      this.addParentIn = (person, partnershipId) => {
-        person.relationships.parentIn.data.push({
-          type: 'partnership',
-          id: partnershipId,
-        });
+      // Helper to recreate a person with updated relationships
+      this.updatePersonRelationships = (id, updatedRelationships) => {
+        const person = this.mockService._people[id];
+        const newPerson = new Person(
+          this.mockService,
+          id,
+          { 
+            name: person.name, 
+            gender: person.gender, 
+            comments: person.comments || '', 
+            isSpouse: person.isSpouse || false 
+          },
+          updatedRelationships
+        );
+        this.mockService._people[id] = newPerson;
+        return newPerson;
       };
     });
 
@@ -84,25 +87,28 @@ module('Unit | Service | genea', function (hooks) {
       // Create parent partnership
       this.createPartnership('parents', ['dad', 'mom'], ['brother', 'sister']);
 
-      // Set up relationships
-      this.addParentIn(dad, 'parents');
-      this.addParentIn(mom, 'parents');
-      this.setChildIn(brother, 'parents');
-      this.setChildIn(sister, 'parents');
+      // Update relationships for parents
+      this.updatePersonRelationships('dad', {
+        childIn: { data: null },
+        parentIn: { data: [{ type: 'partnership', id: 'parents' }] }
+      });
+      this.updatePersonRelationships('mom', {
+        childIn: { data: null },
+        parentIn: { data: [{ type: 'partnership', id: 'parents' }] }
+      });
 
-      // We need to fix the Person constructor to accept relationships properly
-      // For now, manually set the internal fields
-      brother['#relationships'] = brother.relationships = {
+      // Update relationships for children
+      const brotherUpdated = this.updatePersonRelationships('brother', {
         childIn: { data: { type: 'partnership', id: 'parents' } },
-        parentIn: { data: [] },
-      };
-      sister['#relationships'] = sister.relationships = {
+        parentIn: { data: [] }
+      });
+      const sisterUpdated = this.updatePersonRelationships('sister', {
         childIn: { data: { type: 'partnership', id: 'parents' } },
-        parentIn: { data: [] },
-      };
+        parentIn: { data: [] }
+      });
 
       // Calculate relationships
-      const relationships = brother.relationshipsTo(sister);
+      const relationships = brotherUpdated.relationshipsTo(sisterUpdated);
 
       // Basic assertions
       assert.ok(relationships, 'Should return relationships array');

@@ -7,20 +7,36 @@ module('Integration | Component | person-outline', function (hooks) {
   setupRenderingTest(hooks);
 
   test('it renders', async function (assert) {
-    // Set any properties with this.set('myProperty', 'value');
-    // Handle any actions with this.set('myAction', function(val) { ... });
+    // Set up mock person with required properties
+    this.set('person', {
+      id: 'test-id',
+      name: 'Test Person',
+      parentIn: [] // Empty array for no partnerships
+    });
 
-    await render(hbs`<PersonOutline />`);
+    await render(hbs`<PersonOutline @person={{this.person}} />`);
 
-    assert.dom().hasText('');
+    assert.dom('li').hasText('Test Person');
 
-    // Template block usage:
-    await render(hbs`
-      <PersonOutline>
-        template block text
-      </PersonOutline>
-    `);
+    // Test with partnerships
+    const partner = { id: 'partner-id', name: 'Partner Name' };
+    const child = { id: 'child-id', name: 'Child Name' };
+    
+    this.set('personWithFamily', {
+      id: 'parent-id',
+      name: 'Parent Name',
+      parentIn: [{
+        partnerTo(person) { return partner; },
+        children: [child],
+        parentSet: {
+          isSubsetOf() { return true; }
+        }
+      }]
+    });
 
-    assert.dom().hasText('template block text');
+    await render(hbs`<PersonOutline @person={{this.personWithFamily}} />`);
+    
+    assert.dom('li').includesText('Parent Name');
+    assert.dom('li').includesText('+');
   });
 });
