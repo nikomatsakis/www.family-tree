@@ -40,6 +40,56 @@ function invariant(condition, message) {
   }
 }
 
+// Deduplication helper that mirrors production behavior
+function deduplicateRelationships(relationships) {
+  // Group relationships by their signature
+  const groups = new Map();
+  for (const rel of relationships) {
+    const sig = rel.signature;
+    if (!groups.has(sig)) {
+      groups.set(sig, []);
+    }
+    groups.get(sig).push(rel);
+  }
+
+  // Select the best path from each group
+  return Array.from(groups.values()).map((group) => {
+    if (group.length === 1) {
+      return group[0];
+    }
+
+    // Sort by quality criteria and return the best one
+    return group.sort((a, b) => {
+      // 1. Prefer shorter total path length
+      const aLength = a.thisPath.links.length + a.thatPath.links.length;
+      const bLength = b.thisPath.links.length + b.thatPath.links.length;
+      if (aLength !== bLength) {
+        return aLength - bLength;
+      }
+
+      // 2. For equal lengths, prefer paths through biological parents
+      const aPartnerLinks = countPartnerLinks(a);
+      const bPartnerLinks = countPartnerLinks(b);
+      if (aPartnerLinks !== bPartnerLinks) {
+        return aPartnerLinks - bPartnerLinks;
+      }
+
+      // 3. Otherwise, maintain stable ordering by common ancestor ID
+      return a.commonAncestor.id.localeCompare(b.commonAncestor.id);
+    })[0];
+  });
+}
+
+function countPartnerLinks(relationship) {
+  const thisPartnerLinks = relationship.thisPath.links.filter(
+    (l) => l.relation === 'partner',
+  ).length;
+  const thatPartnerLinks = relationship.thatPath.links.filter(
+    (l) => l.relation === 'partner',
+  ).length;
+  return thisPartnerLinks + thatPartnerLinks;
+}
+
 // Load the classes - we'll need to extract them from the service file
 // Since they're ES6 classes with private fields, we'll create simplified versions
 class Person {
@@ -105,10 +155,13 @@ class Person {
       thatPersonAncestors.has(path.endPerson),
     );
 
-    return thisPaths.map((thisPath) => {
+    const allRelationships = thisPaths.map((thisPath) => {
       let thatPath = thatPersonAncestors.get(thisPath.endPerson);
       return new Relationship(thisPath, thatPath);
     });
+
+    // Apply deduplication similar to production code
+    return deduplicateRelationships(allRelationships);
   }
 
   #paths() {
@@ -221,6 +274,37 @@ class Relationship {
 
     this.#thisPath = thisPath;
     this.#thatPath = thatPath;
+  }
+
+  get commonAncestor() {
+    return this.#thisPath.endPerson;
+  }
+
+  get thisPath() {
+    return this.#thisPath;
+  }
+
+  get thatPath() {
+    return this.#thatPath;
+  }
+
+  get signature() {
+    // Create a unique signature for semantically identical relationships
+    const thisGen = this.#thisPath.generations;
+    const thatGen = this.#thatPath.generations;
+
+    // For direct relationships (parent/child, partners), just use generation counts
+    if (thisGen === 0 || thatGen === 0) {
+      return `${thisGen}-${thatGen}`;
+    }
+
+    // For siblings, use generation counts only (all sibling paths are equivalent)
+    if (thisGen === 1 && thatGen === 1) {
+      return `${thisGen}-${thatGen}`;
+    }
+
+    // For cousins and other relations, include the common ancestor to distinguish paths
+    return `${thisGen}-${thatGen}-${this.commonAncestor.id}`;
   }
 
   get name() {
