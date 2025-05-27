@@ -1,1 +1,82 @@
 /* Ember supports plain CSS out of the box. More info: https://cli.emberjs.com/release/advanced-use/stylesheets/ */
+
+/* Landing Page Styles */
+.landing-page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.landing-page h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.search-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 3rem;
+}
+
+.search-box {
+  width: 100%;
+  max-width: 500px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  border: 2px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.search-box:focus {
+  border-color: #007bff;
+}
+
+.root-ancestors {
+  margin-bottom: 2rem;
+}
+
+.root-ancestors h2 {
+  margin-bottom: 1rem;
+}
+
+.ancestor-list {
+  list-style: none;
+  padding: 0;
+}
+
+.ancestor-list li {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.all-link {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.all-link a {
+  color: #007bff;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.all-link a:hover {
+  text-decoration: underline;
+}
+
+/* Utility Classes */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
