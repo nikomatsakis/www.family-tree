@@ -62,13 +62,13 @@ module('Unit | Service | genea', function (hooks) {
         const newPerson = new Person(
           this.mockService,
           id,
-          { 
-            name: person.name, 
-            gender: person.gender, 
-            comments: person.comments || '', 
-            isSpouse: person.isSpouse || false 
+          {
+            name: person.name,
+            gender: person.gender,
+            comments: person.comments || '',
+            isSpouse: person.isSpouse || false,
           },
-          updatedRelationships
+          updatedRelationships,
         );
         this.mockService._people[id] = newPerson;
         return newPerson;
@@ -90,21 +90,21 @@ module('Unit | Service | genea', function (hooks) {
       // Update relationships for parents
       this.updatePersonRelationships('dad', {
         childIn: { data: null },
-        parentIn: { data: [{ type: 'partnership', id: 'parents' }] }
+        parentIn: { data: [{ type: 'partnership', id: 'parents' }] },
       });
       this.updatePersonRelationships('mom', {
         childIn: { data: null },
-        parentIn: { data: [{ type: 'partnership', id: 'parents' }] }
+        parentIn: { data: [{ type: 'partnership', id: 'parents' }] },
       });
 
       // Update relationships for children
       const brotherUpdated = this.updatePersonRelationships('brother', {
         childIn: { data: { type: 'partnership', id: 'parents' } },
-        parentIn: { data: [] }
+        parentIn: { data: [] },
       });
       const sisterUpdated = this.updatePersonRelationships('sister', {
         childIn: { data: { type: 'partnership', id: 'parents' } },
-        parentIn: { data: [] }
+        parentIn: { data: [] },
       });
 
       // Calculate relationships

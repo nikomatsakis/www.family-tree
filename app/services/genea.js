@@ -195,7 +195,7 @@ export class Person {
     if (this === thatPerson) {
       return [];
     }
-    
+
     // Find all ancestors of `person`
     let thatPersonPaths = thatPerson.#paths();
 
@@ -217,20 +217,23 @@ export class Person {
 
     // Deduplicate relationships using the static helper
     const deduplicated = Person.deduplicateRelationships(allRelationships);
-    
+
     // Filter to keep only the most direct relationships
     if (deduplicated.length <= 1) {
       return deduplicated;
     }
-    
+
     // Find the minimum generation distance
-    const minGenerations = Math.min(...deduplicated.map(rel => 
-      rel.thisPath.generations + rel.thatPath.generations
-    ));
-    
+    const minGenerations = Math.min(
+      ...deduplicated.map(
+        (rel) => rel.thisPath.generations + rel.thatPath.generations,
+      ),
+    );
+
     // Keep only relationships with the minimum generation distance
-    return deduplicated.filter(rel => 
-      rel.thisPath.generations + rel.thatPath.generations === minGenerations
+    return deduplicated.filter(
+      (rel) =>
+        rel.thisPath.generations + rel.thatPath.generations === minGenerations,
     );
   }
 
@@ -583,7 +586,7 @@ export class Relationship {
       // From child's perspective, that person is the aunt/uncle
       return piblingName(thatPerson);
     }
-    
+
     if (thisGenerations == 1 && thatGenerations == 2) {
       // From aunt/uncle's perspective, that person is the niece/nephew
       return niblingName(thatPerson);

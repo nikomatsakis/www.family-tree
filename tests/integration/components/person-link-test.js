@@ -10,7 +10,7 @@ module('Integration | Component | person-link', function (hooks) {
     // Set required person argument
     this.set('person', {
       id: 'test-id',
-      name: 'Test Person'
+      name: 'Test Person',
     });
 
     await render(hbs`<PersonLink @person={{this.person}} />`);
@@ -20,9 +20,13 @@ module('Integration | Component | person-link', function (hooks) {
 
     // Test with pagePerson to show bold text
     this.set('pagePerson', this.person);
-    await render(hbs`<PersonLink @person={{this.person}} @pagePerson={{this.pagePerson}} />`);
-    
+    await render(
+      hbs`<PersonLink @person={{this.person}} @pagePerson={{this.pagePerson}} />`,
+    );
+
     assert.dom('b').hasText('Test Person');
-    assert.dom('a').doesNotExist('Should not render a link when person is pagePerson');
+    assert
+      .dom('a')
+      .doesNotExist('Should not render a link when person is pagePerson');
   });
 });

@@ -10,7 +10,7 @@ module('Integration | Component | make-reference-person', function (hooks) {
     // Set required person argument
     this.set('person', {
       id: 'test-id',
-      name: 'John Smith'
+      name: 'John Smith',
     });
 
     await render(hbs`<MakeReferencePerson @person={{this.person}} />`);
