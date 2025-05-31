@@ -99,7 +99,8 @@ export default class Landing extends Component {
     const searchLower = this.searchTerm.toLowerCase();
     const allPeople = this.genea.allPeople();
 
-    this.searchResults = allPeople
-      .filter((person) => person.name.toLowerCase().includes(searchLower));
+    this.searchResults = allPeople.filter((person) =>
+      person.name.toLowerCase().includes(searchLower),
+    );
   }
 }

@@ -92,3 +92,59 @@ The project uses Ember's QUnit-based test infrastructure for all tests to mainta
 - Ember uses tracked properties and async data patterns
 - All styling in `app/styles/app.css`
 - **Testing Preference**: Use Ember's unified test system to avoid code duplication and ensure tests reflect production behavior
+
+## GitHub Issue-Based Todo Management
+
+This project uses GitHub issues for todo and task management, integrated directly with Claude Code through the MCP GitHub server.
+
+### Issue Labels
+- `todo`: General tasks to be done
+- `bug`: Issues that need fixing
+- `feature`: New functionality to add
+- `refactor`: Code improvements without changing functionality
+- `documentation`: Documentation updates
+- `priority:high`, `priority:medium`, `priority:low`: Priority levels
+- `status:in-progress`: Currently being worked on
+- `status:blocked`: Waiting on dependencies
+
+### Workflow with Claude Code
+
+#### Creating Todos
+Ask Claude Code to create issues for tasks:
+- "Create an issue for adding search functionality to the landing page"
+- "Create a bug issue for the broken navigation on mobile"
+- "Create a refactor issue to improve genea parser performance"
+
+#### Managing Todos
+Use natural language commands:
+- "Show me all open issues" - List current todos
+- "Show open issues with label 'bug'" - Filter by type
+- "Add comment to issue #5 about progress" - Update status
+- "Close issue #5" - Mark as complete
+
+#### Best Practices
+1. **Clear Titles**: Use descriptive, action-oriented titles
+2. **Detailed Descriptions**: Include acceptance criteria in issue body
+3. **Label Appropriately**: Always add relevant labels for organization
+4. **Update Progress**: Add comments when starting/blocking/completing work
+5. **Link to Code**: Reference issues in commit messages using `#123` format
+
+#### Example Commands
+```
+# Create a feature todo
+"Create issue titled 'Add family tree search' with labels 'feature' and 'priority:high', body should include acceptance criteria"
+
+# Check high priority todos
+"List open issues with label 'priority:high'"
+
+# Update progress
+"Add comment to issue #10 saying 'Implemented basic search, working on filters'"
+
+# Complete with reference
+"Close issue #10 with comment 'Implemented in PR #15'"
+```
+
+### Integration with Git Workflow
+- Reference issues in commit messages: `git commit -m "Add search component (fixes #10)"`
+- Issues automatically close when referenced commits are merged
+- Use PR descriptions to link related issues
