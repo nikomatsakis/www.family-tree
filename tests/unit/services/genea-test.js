@@ -10,6 +10,16 @@ module('Unit | Service | genea', function (hooks) {
     assert.ok(service);
   });
 
+  test('allPeople throws error when not populated', function (assert) {
+    let service = this.owner.lookup('service:genea');
+
+    assert.throws(
+      () => service.allPeople(),
+      /genea not populated/,
+      'Throws error when service is not populated',
+    );
+  });
+
   module('Relationship Calculations', function (hooks) {
     hooks.beforeEach(function () {
       // Create a mock service with just the methods Person/Partnership need
