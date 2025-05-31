@@ -88,6 +88,13 @@ export default class GeneaService extends Service {
     }
     return this.populatedPersonById(id);
   }
+
+  allPeople() {
+    if (!this.isPopulated()) {
+      throw new Error('genea not populated');
+    }
+    return Object.values(this.#people);
+  }
 }
 
 export class Roots {

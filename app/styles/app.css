@@ -16,6 +16,7 @@
   display: flex;
   justify-content: center;
   margin-bottom: 3rem;
+  position: relative;
 }
 
 .search-box {
@@ -66,6 +67,61 @@
 
 .all-link a:hover {
   text-decoration: underline;
+}
+
+/* Search Results */
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 500px;
+  margin-top: 5px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.search-results-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.search-result-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s ease;
+}
+
+.search-result-item:hover {
+  background-color: #f5f5f5;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.person-details {
+  margin-top: 4px;
+  font-size: 14px;
+  color: #666;
+}
+
+.person-comments {
+  font-style: italic;
+  margin-bottom: 2px;
+}
+
+.person-parents,
+.person-children {
+  font-size: 13px;
+  color: #888;
 }
 
 /* Utility Classes */
