@@ -3,7 +3,7 @@ import { LinkTo } from '@ember/routing';
 
 export default class extends Component {
   <template>
-    <LinkTo @route='index' @query={{this.query}}>
+    <LinkTo @route='index' @query={{this.query}} class={{@class}}>
       {{yield}}
     </LinkTo>
   </template>

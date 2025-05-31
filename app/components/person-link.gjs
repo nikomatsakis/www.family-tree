@@ -13,11 +13,12 @@ export default class PersonLinkComponent extends Component {
         @route='person'
         @model={{@person}}
         @query={{hash referencePersonId=@referencePerson.id}}
+        class='person-link'
       >
         {{@person.name}}
       </LinkTo>
     {{else}}
-      <LinkTo @route='person' @model={{@person}}>
+      <LinkTo @route='person' @model={{@person}} class='person-link'>
         {{@person.name}}
       </LinkTo>
     {{/if}}

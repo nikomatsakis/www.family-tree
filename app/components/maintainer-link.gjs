@@ -10,6 +10,7 @@ export default class MaintainerLink extends Component {
         target='_blank'
         href={{this.maintainerLink}}
         rel='noopener noreferrer'
+        class={{@class}}
       >See a mistake? Suggest an edit!</a>
     {{/if}}
   </template>
