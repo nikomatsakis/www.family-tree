@@ -11,82 +11,106 @@ export default class Person extends Component {
   @service genea;
 
   <template>
-    <h1>{{@model.name}}</h1>
+    <div class='person-detail'>
+      <div class='person-header'>
+        <h1 class='person-name'>{{@model.name}}</h1>
+        {{#if @model.comments}}
+          <p class='person-comments'>
+            {{@model.comments}}
+          </p>
+        {{/if}}
+      </div>
 
-    <p>
-      {{@model.comments}}
-    </p>
+      {{#if this.showSiblings}}
+        <div class='family-section'>
+          <h2>Parents, partners, and children</h2>
+          <div class='relationship-info'>
+            <IndexLink @referencePerson={{@model}} class='nav-link'>
+              See how
+              {{@model.name}}
+              is related to other people
+            </IndexLink>
+          </div>
 
-    <hr />
-    {{#if this.showSiblings}}
-      <h2>Parents, partners, and children</h2>
-      <IndexLink @referencePerson={{@model}}>See how
-        {{@model.name}}
-        is related to other people.</IndexLink>
+          {{#if @model.childIn}}
+            <Child
+              @model={{@model}}
+              @referencePerson={{this.referencePerson}}
+            />
+          {{else}}
+            <ul class='family-tree-list'>
+              <PersonOutline
+                @person={{@model}}
+                @pagePerson={{@model}}
+                @referencePerson={{this.referencePerson}}
+              />
+            </ul>
+          {{/if}}
+        </div>
+      {{else if this.referencePerson}}
+        <div class='family-section'>
+          <h2>How is
+            <PersonLink @person={{this.referencePerson}} />
+            related to
+            {{@model.name}}?
+          </h2>
 
-      {{#if @model.childIn}}
-        <Child @model={{@model}} @referencePerson={{this.referencePerson}} />
-      {{else}}
-        <ul>
-          <PersonOutline
-            @person={{@model}}
-            @pagePerson={{@model}}
-            @referencePerson={{this.referencePerson}}
-          />
-        </ul>
+          <div class='relationship-actions'>
+            <LinkTo @query={{hash referencePersonId=null}} class='nav-link'>
+              Stop comparing relationships
+            </LinkTo>
+            <LinkTo
+              @model={{this.referencePerson}}
+              @query={{hash referencePersonId=@model.id}}
+              class='nav-link'
+            >
+              Switch comparison
+            </LinkTo>
+          </div>
+
+          {{#if this.notRelated}}
+            <div class='no-relation'>
+              No relation found!
+            </div>
+          {{/if}}
+
+          {{#each this.relationships as |r|}}
+            <div class='relationship-info'>
+              {{@model.name}}
+              is
+              {{this.referencePerson.name}}'s
+              <strong>{{this.relationshipName r}}</strong>
+              <a
+                href='/family-tree-explainer.png'
+                target='_blank'
+                rel='noopener noreferrer'
+                class='explain-link'
+              >(explain)</a>
+            </div>
+            <ul class='family-tree-list'>
+              <PersonOutline
+                @person={{r.commonAncestor}}
+                @pagePerson={{@model}}
+                @referencePerson={{this.referencePerson}}
+                @includeSet={{this.ancestors}}
+              />
+            </ul>
+          {{/each}}
+        </div>
       {{/if}}
-    {{else if this.referencePerson}}
-      <h2>How is
-        <PersonLink @person={{this.referencePerson}} />
-        related to
-        {{@model.name}}?
-      </h2>
 
-      <LinkTo @query={{hash referencePersonId=null}}>(stop comparing
-        relationships)</LinkTo>
-      |
-      <LinkTo
-        @model={{this.referencePerson}}
-        @query={{hash referencePersonId=@model.id}}
-      >(switch)</LinkTo>
+      <hr class='section-divider' />
 
-      <br />
-      <br />
-
-      {{#if this.notRelated}}
-        No relation!
-      {{/if}}
-
-      {{#each this.relationships as |r|}}
-        {{@model.name}}
-        is
-        {{this.referencePerson.name}}'s
-        {{this.relationshipName r}}
-        (<a
-          href='/family-tree-explainer.png'
-          target='_blank'
-          rel='noopener noreferrer'
-        >explain</a>):
-        <ul>
-          <PersonOutline
-            @person={{r.commonAncestor}}
-            @pagePerson={{@model}}
-            @referencePerson={{this.referencePerson}}
-            @includeSet={{this.ancestors}}
-          />
-        </ul>
-      {{/each}}
-    {{/if}}
-
-    <hr />
-    <MaintainerLink @person={{@model}} />
-
-    <br />
-
-    <IndexLink @referencePerson={{this.referencePerson}}>
-      Return to the root listing
-      {{#if this.referencePerson}}for {{this.referencePerson.name}}{{/if}}
-    </IndexLink><br />
+      <div class='navigation-section'>
+        <div class='nav-links'>
+          <MaintainerLink @person={{@model}} class='edit-link' />
+          <IndexLink @referencePerson={{this.referencePerson}} class='nav-link'>
+            Return to the root listing
+            {{#if this.referencePerson}}for {{this.referencePerson.name}}{{/if}}
+          </IndexLink>
+        </div>
+      </div>
+    </div>
   </template>
 
   relationshipName = (r) => r.name;
@@ -128,26 +152,28 @@ export default class Person extends Component {
 }
 
 const Child = <template>
-  <ul>
-    <PersonLink
-      @person={{@model.childIn.firstParent}}
-      @pagePerson={{@model}}
-      @referencePerson={{@referencePerson}}
-    />
-    {{#each @model.childIn.nextParents as |parent|}}
-      +
+  <ul class='family-tree-list'>
+    <li>
       <PersonLink
-        @person={{parent}}
+        @person={{@model.childIn.firstParent}}
         @pagePerson={{@model}}
         @referencePerson={{@referencePerson}}
       />
-    {{/each}}
-    <ul>
-      <PersonOutline
-        @person={{@model}}
-        @pagePerson={{@model}}
-        @referencePerson={{@referencePerson}}
-      />
-    </ul>
+      {{#each @model.childIn.nextParents as |parent|}}
+        <span class='partnership-separator'>+</span>
+        <PersonLink
+          @person={{parent}}
+          @pagePerson={{@model}}
+          @referencePerson={{@referencePerson}}
+        />
+      {{/each}}
+      <ul>
+        <PersonOutline
+          @person={{@model}}
+          @pagePerson={{@model}}
+          @referencePerson={{@referencePerson}}
+        />
+      </ul>
+    </li>
   </ul>
 </template>;

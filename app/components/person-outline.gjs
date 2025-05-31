@@ -28,7 +28,7 @@ export default class PersonOutlineComponent extends Component {
             <li>
               <Link @person={{@person}} />
               {{#if partnership.partner}}
-                +
+                <span class='partnership-separator'>+</span>
                 <Link @person={{partnership.partner}} />
               {{/if}}
 
@@ -40,7 +40,7 @@ export default class PersonOutlineComponent extends Component {
             <li>
               ...
               {{#if partnership.partner}}
-                +
+                <span class='partnership-separator'>+</span>
                 <Link @person={{partnership.partner}} />
               {{/if}}
 
