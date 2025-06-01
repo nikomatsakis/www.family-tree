@@ -12,17 +12,17 @@
   },
   "scripts": {
     "build": "ember build --environment=production",
-    "lint": "concurrently \"npm:lint:*(!fix)\" --names \"lint:\"",
+    "lint": "concurrently \"pnpm:lint:*(!fix)\" --names \"lint:\"",
     "lint:css": "stylelint \"**/*.css\"",
-    "lint:css:fix": "concurrently \"npm:lint:css -- --fix\"",
-    "lint:fix": "concurrently \"npm:lint:*:fix\" --names \"fix:\"",
+    "lint:css:fix": "concurrently \"pnpm:lint:css -- --fix\"",
+    "lint:fix": "concurrently \"pnpm:lint:*:fix\" --names \"fix:\"",
     "lint:hbs": "ember-template-lint .",
     "lint:hbs:fix": "ember-template-lint . --fix",
     "lint:js": "eslint . --cache",
     "lint:js:fix": "eslint . --fix",
     "start": "ember serve",
     "start:build": "cargo run -- serve genea.doc",
-    "test": "concurrently \"npm:lint\" \"npm:test:ember\" --names \"lint,test:\"",
+    "test": "concurrently \"pnpm:lint\" \"pnpm:test:ember\" --names \"lint,test:\"",
     "test:ember": "ember test"
   },
   "devDependencies": {
@@ -88,6 +88,7 @@
   },
   "dependencies": {
     "ember-async-data": "^1.0.3",
+    "mermaid": "^11.6.0",
     "rsvp": "^4.8.5",
     "tiny-invariant": "^1.3.3"
   }

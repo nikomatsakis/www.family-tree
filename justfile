@@ -1,8 +1,12 @@
-serve:
-    npm install && cargo run -- serve ./genea.doc
+serve: pnpm
+    cargo run -- serve ./genea.doc
 
-build:
-    npm install && cargo run -- build ./genea.doc
+build: pnpm
+    cargo run -- build ./genea.doc
 
-check:
-    npm install && cargo run -- check ./genea.doc
+check: pnpm
+    cargo run -- check ./genea.doc
+
+pnpm:
+    pnpm install
+    npx update-browserslist-db@latest
