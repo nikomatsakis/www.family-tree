@@ -148,3 +148,37 @@ Use natural language commands:
 - Reference issues in commit messages: `git commit -m "Add search component (fixes #10)"`
 - Issues automatically close when referenced commits are merged
 - Use PR descriptions to link related issues
+
+## Debugging Guidelines
+
+### When Debugging Issues
+To help Claude Code debug more effectively, provide:
+
+1. **Browser Console Output**
+   - Copy any JavaScript errors or warnings
+   - Include the full stack trace
+   - Note any failed network requests
+
+2. **Visual Context**
+   - Screenshots of the issue
+   - What you expected vs what you see
+   - Steps to reproduce
+
+3. **Ember Inspector Info** (if available)
+   - Component tree screenshot
+   - Current route information
+   - Loaded data/services
+
+### Debug Mode
+Enable debug logging by running in the browser console:
+```javascript
+window.DEBUG = true;
+```
+
+### Common Debugging Commands
+- `npm run lint` - Check for syntax/style issues
+- `npm test` - Run tests to catch regressions
+- Browser DevTools:
+  - Check Network tab for failed API calls
+  - Check Console for JavaScript errors
+  - Use Ember Inspector to inspect component state
