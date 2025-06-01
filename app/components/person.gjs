@@ -4,11 +4,17 @@ import MaintainerLink from './maintainer-link';
 import { LinkTo } from '@ember/routing';
 import PersonLink from './person-link';
 import PersonOutline from './person-outline';
+import FamilyTreeVisual from './family-tree-visual';
 import { hash } from '@ember/helper';
 import Component from '@glimmer/component';
+import { tracked } from '@glimmer/tracking';
+import { action } from '@ember/object';
+import { on } from '@ember/modifier';
 
 export default class Person extends Component {
   @service genea;
+  @service router;
+  @tracked showVisualTree = true;
 
   <template>
     <div class='person-detail'>
@@ -30,21 +36,41 @@ export default class Person extends Component {
               {{@model.name}}
               is related to other people
             </IndexLink>
+            <button
+              type='button'
+              class='nav-link'
+              {{on 'click' this.toggleTreeView}}
+            >
+              {{if this.showVisualTree 'Show List View' 'Show Tree View'}}
+            </button>
           </div>
 
-          {{#if @model.childIn}}
-            <Child
-              @model={{@model}}
-              @referencePerson={{this.referencePerson}}
-            />
-          {{else}}
-            <ul class='family-tree-list'>
-              <PersonOutline
+          {{#if this.showVisualTree}}
+            {{#if @model}}
+              <FamilyTreeVisual
                 @person={{@model}}
                 @pagePerson={{@model}}
                 @referencePerson={{this.referencePerson}}
+                @onPersonClick={{this.navigateToPerson}}
               />
-            </ul>
+            {{else}}
+              <div>Loading person data...</div>
+            {{/if}}
+          {{else}}
+            {{#if @model.childIn}}
+              <Child
+                @model={{@model}}
+                @referencePerson={{this.referencePerson}}
+              />
+            {{else}}
+              <ul class='family-tree-list'>
+                <PersonOutline
+                  @person={{@model}}
+                  @pagePerson={{@model}}
+                  @referencePerson={{this.referencePerson}}
+                />
+              </ul>
+            {{/if}}
           {{/if}}
         </div>
       {{else if this.referencePerson}}
@@ -149,6 +175,22 @@ export default class Person extends Component {
 
   generationsFrom = (person, partnership) =>
     person.generationsFromAncestralPartnership(partnership);
+
+  @action
+  toggleTreeView() {
+    this.showVisualTree = !this.showVisualTree;
+  }
+
+  @action
+  navigateToPerson(person) {
+    if (this.referencePerson) {
+      this.router.transitionTo('person', person, {
+        queryParams: { referencePersonId: this.referencePerson.id },
+      });
+    } else {
+      this.router.transitionTo('person', person);
+    }
+  }
 }
 
 const Child = <template>
