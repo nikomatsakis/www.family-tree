@@ -198,6 +198,10 @@
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .family-tree-list {
@@ -314,6 +318,171 @@
 
 .explain-link:hover {
   text-decoration: underline;
+}
+
+/* Family Tree Visualization */
+.family-tree-visual-container {
+  width: 100%;
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  margin: 2rem 0;
+  padding: 1rem;
+}
+
+.mermaid-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.loading {
+  text-align: center;
+  color: #6b7280;
+  font-size: 1.1rem;
+  padding: 2rem;
+}
+
+/* Override mermaid default styles for family tree */
+.mermaid-container svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Style mermaid nodes to look more like family tree */
+.mermaid-container .node rect {
+  rx: 8px !important;
+  ry: 8px !important;
+}
+
+.family-tree-svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.tree-node {
+  cursor: pointer;
+}
+
+.node-rect {
+  fill: white;
+  stroke: #cbd5e1;
+  stroke-width: 2;
+  transition: all 0.2s ease;
+}
+
+.node-rect:hover {
+  fill: #f3f4f6;
+  stroke: #94a3b8;
+  stroke-width: 3;
+}
+
+.node-rect.current-person {
+  fill: #dbeafe;
+  stroke: #3b82f6;
+  stroke-width: 3;
+}
+
+.node-rect.gender-male {
+  stroke: #3b82f6;
+}
+
+.node-rect.gender-female {
+  stroke: #ec4899;
+}
+
+.node-rect.partner {
+  fill: #fef3c7;
+  stroke: #f59e0b;
+}
+
+.node-content {
+  padding: 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  overflow: hidden;
+}
+
+.partner-content {
+  padding: 5px 10px;
+}
+
+.tree-person-link {
+  font-weight: 600;
+  color: #1f2937;
+  text-decoration: none;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-person-link:hover {
+  color: #2563eb;
+}
+
+.node-comments {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 4px;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-connection {
+  pointer-events: none;
+}
+
+.parent-connection {
+  stroke: #94a3b8;
+}
+
+.child-connection {
+  stroke: #94a3b8;
+}
+
+.partner-connection {
+  stroke: #e11d48;
+}
+
+/* Expansion Indicators */
+.expand-indicator {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.expand-indicator:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.partnership-expand {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  z-index: 10;
 }
 
 /* Utility Classes */
