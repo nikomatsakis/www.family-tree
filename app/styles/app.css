@@ -282,17 +282,16 @@
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
 }
 
+.edit-link {
+  background-color: #10b981;
+  color: white;
+}
+
 .nav-link:hover,
 .edit-link:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 10%);
   border-color: #9ca3af;
-}
-
-.edit-link {
-  background-color: #10b981;
-  color: white;
-  border-color: #10b981;
 }
 
 .edit-link:hover {
