@@ -87,12 +87,12 @@ module('Unit | Service | genea', function (hooks) {
 
     test('calculates sibling relationships correctly', function (assert) {
       // Create parents
-      const dad = this.createPerson('dad', 'John Smith', 'male');
-      const mom = this.createPerson('mom', 'Jane Smith', 'female');
+      this.createPerson('dad', 'John Smith', 'male');
+      this.createPerson('mom', 'Jane Smith', 'female');
 
       // Create children
-      const brother = this.createPerson('brother', 'Bob Smith', 'male');
-      const sister = this.createPerson('sister', 'Alice Smith', 'female');
+      this.createPerson('brother', 'Bob Smith', 'male');
+      this.createPerson('sister', 'Alice Smith', 'female');
 
       // Create parent partnership
       this.createPartnership('parents', ['dad', 'mom'], ['brother', 'sister']);

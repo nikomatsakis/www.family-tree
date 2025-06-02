@@ -222,7 +222,7 @@ module('Unit | Service | genea - Relationship Calculations', function (hooks) {
         0,
         'Should handle self-relationship gracefully',
       );
-    } catch (e) {
+    } catch {
       assert.ok(false, 'Should not throw error for self-relationship');
     }
   });

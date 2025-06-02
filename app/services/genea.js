@@ -324,14 +324,12 @@ export class Person {
 
 export class Partnership {
   #genea;
-  #attributes;
   #relationships;
   id;
 
-  constructor(genea, id, attributes, relationships) {
+  constructor(genea, id, _attributes, relationships) {
     this.#genea = genea;
     this.id = id;
-    this.#attributes = attributes;
     this.#relationships = relationships;
   }
 

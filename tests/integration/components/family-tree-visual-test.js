@@ -1,6 +1,6 @@
 import { module, test } from 'qunit';
 import { setupRenderingTest } from 'family-tree/tests/helpers';
-import { render, click } from '@ember/test-helpers';
+import { render } from '@ember/test-helpers';
 import { hbs } from 'ember-cli-htmlbars';
 import { createMockFamily } from 'family-tree/tests/helpers/mock-genea-data';
 
@@ -9,8 +9,7 @@ module('Integration | Component | family-tree-visual', function (hooks) {
 
   hooks.beforeEach(function () {
     // Create mock person data
-    const mockFamily = createMockFamily();
-    const mockPeople = Object.values(mockFamily.people);
+    createMockFamily();
 
     // Create simplified person objects with the expected structure
     this.person = {

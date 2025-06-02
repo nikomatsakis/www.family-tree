@@ -27,7 +27,7 @@ module('Integration | Component | person-outline', function (hooks) {
       name: 'Parent Name',
       parentIn: [
         {
-          partnerTo(person) {
+          partnerTo() {
             return partner;
           },
           children: [child],
