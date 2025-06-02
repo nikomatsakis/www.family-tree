@@ -275,9 +275,10 @@ export default class FamilyTreeVisual extends Component {
         }
       }
 
-      // Add children if expanded
-      if (isExpanded(partnership.id)) {
-        for (const child of partnership.children) {
+      // Process children
+      for (const child of partnership.children) {
+        if (isExpanded(partnership.id)) {
+          // If expanded, fully build the child
           const childIdx = buildPerson(child);
           partnerships[idx].children.push(childIdx);
 
@@ -289,10 +290,35 @@ export default class FamilyTreeVisual extends Component {
           if (debug) {
             console.log(`  - Has child ${child.name} at index ${childIdx}`);
           }
+        } else {
+          // If not expanded, check if child already exists in graph
+          if (personToIndex.has(child.id)) {
+            const childIdx = personToIndex.get(child.id);
+            partnerships[idx].children.push(childIdx);
+
+            // Ensure child knows about this parent partnership
+            if (!persons[childIdx].parentIn.includes(idx)) {
+              persons[childIdx].parentIn.push(idx);
+            }
+
+            if (debug) {
+              console.log(
+                `  - Connected to existing child ${child.name} at index ${childIdx}`,
+              );
+            }
+          }
         }
-      } else if (debug && partnership.children.length > 0) {
+      }
+
+      if (
+        debug &&
+        !isExpanded(partnership.id) &&
+        partnership.children.length > 0
+      ) {
+        const connectedCount = partnerships[idx].children.length;
+        const totalCount = partnership.children.length;
         console.log(
-          `  - Has ${partnership.children.length} children (not expanded)`,
+          `  - Has ${totalCount} children total (${connectedCount} connected, partnership not expanded)`,
         );
       }
 
@@ -338,14 +364,32 @@ export default class FamilyTreeVisual extends Component {
       const name = person.name.replace(/"/g, '&quot;');
       const nodeId = `P${idx}`;
       mermaidCode += `    ${nodeId}["${name}"]\n`;
+      // Add click event to navigate to person
+      mermaidCode += `    click ${nodeId} call navigateToPerson("${person.id}")\n`;
     });
 
     // Add partnership nodes (diamonds with no text) and connections
     partnerships.forEach((partnershipNode, idx) => {
       const partnershipId = `R${idx}`;
+      const hasChildren = partnershipNode.partnership.children.length > 0;
+      const isExpanded = partnershipNode.expanded;
 
-      // Create partnership node as diamond with no text
-      mermaidCode += `    ${partnershipId}{ }\n`;
+      // Create partnership node as diamond
+      // Show different styles for partnerships with/without children
+      if (hasChildren && !isExpanded) {
+        // Has children but not expanded - show with "..."
+        mermaidCode += `    ${partnershipId}{...}\n`;
+        // Add click event for expandable partnerships
+        mermaidCode += `    click ${partnershipId} call togglePartnership("${partnershipNode.partnership.id}")\n`;
+      } else if (hasChildren && isExpanded) {
+        // Has children and expanded - show with "+"
+        mermaidCode += `    ${partnershipId}{+}\n`;
+        // Add click event to collapse
+        mermaidCode += `    click ${partnershipId} call togglePartnership("${partnershipNode.partnership.id}")\n`;
+      } else {
+        // No children - empty diamond
+        mermaidCode += `    ${partnershipId}{ }\n`;
+      }
 
       // Connect parents to partnership with thick lines
       partnershipNode.parents.forEach((parentIdx) => {
@@ -364,13 +408,26 @@ export default class FamilyTreeVisual extends Component {
       '    classDef person fill:#e1f5fe,stroke:#01579b,stroke-width:2px\n';
     mermaidCode +=
       '    classDef partnership fill:#f8bbd9,stroke:#880e4f,stroke-width:2px\n';
+    mermaidCode +=
+      '    classDef partnershipCollapsed fill:#ffccbc,stroke:#bf360c,stroke-width:2px\n';
+    mermaidCode +=
+      '    classDef partnershipExpanded fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px\n';
 
     // Apply classes
     persons.forEach((_, idx) => {
       mermaidCode += `    class P${idx} person\n`;
     });
-    partnerships.forEach((_, idx) => {
-      mermaidCode += `    class R${idx} partnership\n`;
+    partnerships.forEach((partnershipNode, idx) => {
+      const hasChildren = partnershipNode.partnership.children.length > 0;
+      const isExpanded = partnershipNode.expanded;
+
+      if (hasChildren && !isExpanded) {
+        mermaidCode += `    class R${idx} partnershipCollapsed\n`;
+      } else if (hasChildren && isExpanded) {
+        mermaidCode += `    class R${idx} partnershipExpanded\n`;
+      } else {
+        mermaidCode += `    class R${idx} partnership\n`;
+      }
     });
 
     return mermaidCode;
@@ -386,6 +443,19 @@ export default class FamilyTreeVisual extends Component {
   renderMermaid = modifier((element) => {
     // Clear any existing content
     element.innerHTML = '';
+
+    // Set up mermaid with click callbacks
+    window.togglePartnership = (partnershipId) => {
+      this.togglePartnershipExpansion(partnershipId);
+    };
+
+    window.navigateToPerson = (personId) => {
+      this.router.transitionTo('person', personId, {
+        queryParams: {
+          referencePersonId: this.args.referencePerson?.id,
+        },
+      });
+    };
 
     // Render the mermaid diagram
     if (this.treeData?.mermaidCode) {
