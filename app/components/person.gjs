@@ -10,11 +10,13 @@ import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { on } from '@ember/modifier';
+import { getRendererDisplayNames } from '../utils/family-tree-renderers';
 
 export default class Person extends Component {
   @service genea;
   @service router;
   @tracked showVisualTree = true;
+  @tracked rendererType = 'mermaid';
 
   <template>
     <div class='person-detail'>
@@ -43,6 +45,30 @@ export default class Person extends Component {
             >
               {{if this.showVisualTree 'Show List View' 'Show Tree View'}}
             </button>
+
+            {{#if this.showVisualTree}}
+              <div class='renderer-controls'>
+                <label for='renderer-select'>Tree Style:</label>
+                <select
+                  id='renderer-select'
+                  {{on 'change' this.changeRenderer}}
+                  class='renderer-select'
+                >
+                  <option
+                    value='mermaid'
+                    selected={{this.isSelectedRenderer 'mermaid'}}
+                  >
+                    {{this.getRendererDisplayName 'mermaid'}}
+                  </option>
+                  <option
+                    value='html-list'
+                    selected={{this.isSelectedRenderer 'html-list'}}
+                  >
+                    {{this.getRendererDisplayName 'html-list'}}
+                  </option>
+                </select>
+              </div>
+            {{/if}}
           </div>
 
           {{#if this.showVisualTree}}
@@ -52,6 +78,7 @@ export default class Person extends Component {
                 @pagePerson={{@model}}
                 @referencePerson={{this.referencePerson}}
                 @onPersonClick={{this.navigateToPerson}}
+                @rendererType={{this.rendererType}}
               />
             {{else}}
               <div>Loading person data...</div>
@@ -191,6 +218,20 @@ export default class Person extends Component {
       this.router.transitionTo('person', person);
     }
   }
+
+  @action
+  changeRenderer(event) {
+    this.rendererType = event.target.value;
+  }
+
+  getRendererDisplayName = (type) => {
+    const displayNames = getRendererDisplayNames();
+    return displayNames[type] || type;
+  };
+
+  isSelectedRenderer = (type) => {
+    return this.rendererType === type;
+  };
 }
 
 const Child = <template>
