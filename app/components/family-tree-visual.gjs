@@ -1,35 +1,117 @@
 import Component from '@glimmer/component';
-import { tracked } from '@glimmer/tracking';
+import { tracked, cached } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { service } from '@ember/service';
 import { modifier } from 'ember-modifier';
-import mermaid from 'mermaid';
+import { createRenderer } from '../utils/family-tree-renderers';
 
+/**
+ * FamilyTreeVisual Component - Renders family trees using different visualization strategies
+ *
+ * ## Ember's Rendering Flow in this Component:
+ *
+ * 1. **Template References Trigger Getters**
+ *    - When the template references {{this.computedTreeData}}, Ember calls the getter
+ *    - Ember tracks that the template depends on this getter
+ *    - If any @tracked properties the getter uses change, Ember re-renders
+ *
+ * 2. **The Modifier Does DOM Manipulation**
+ *    - {{this.renderTree}} is a modifier that runs AFTER Ember creates the DOM element
+ *    - It calls the renderer's renderToElement() method to manipulate the DOM
+ *    - Modifiers re-run whenever the component re-renders
+ *
+ * 3. **Reactivity Chain**
+ *    - User changes dropdown → updates @tracked selectedRendererType
+ *    - currentRenderer getter sees the change → returns new renderer
+ *    - computedTreeData getter sees renderer changed → computes new tree data
+ *    - Template re-renders because computedTreeData changed
+ *    - renderTree modifier runs again with new data
+ *
+ * This design leverages Ember's reactivity system to automatically update
+ * the visualization when the renderer type changes, without manual checks
+ * or side effects in getters.
+ */
 export default class FamilyTreeVisual extends Component {
   @service router;
-  @tracked treeData = null;
+
+  // Tracked properties that trigger re-renders when changed
   @tracked expandedPartnerships = new Set();
   @tracked expandedPersons = new Set();
-
-  nodeWidth = 200;
-  nodeHeight = 80;
-  horizontalSpacing = 450;
-  verticalSpacing = 150;
+  @tracked selectedRendererType = null;
 
   constructor() {
     super(...arguments);
     this.initializeExpansionState();
-    this.buildTreeData();
+  }
 
-    // Initialize mermaid
-    mermaid.initialize({
-      startOnLoad: false,
-      flowchart: {
-        nodeSpacing: 50,
-        rankSpacing: 100,
-        curve: 'basis',
-      },
+  /**
+   * Getter that returns the current renderer type.
+   * Uses selectedRendererType if set, otherwise falls back to args.rendererType.
+   * This allows the component to work both with internal state changes
+   * and external prop changes from the parent.
+   */
+  get activeRendererType() {
+    return this.selectedRendererType || this.args.rendererType || 'mermaid';
+  }
+
+  /**
+   * Cached getter that creates a renderer instance.
+   *
+   * @cached ensures this only creates a new renderer when activeRendererType changes.
+   * Without @cached, it would create a new renderer on every access, even if nothing changed.
+   *
+   * This getter is automatically called by computedTreeData when it needs the renderer.
+   */
+  @cached
+  get currentRenderer() {
+    const type = this.activeRendererType;
+
+    return createRenderer(type, {
+      expandedPartnerships: this.expandedPartnerships,
+      expandedPersons: this.expandedPersons,
+      debug: this.args.debug || false,
     });
+  }
+
+  /**
+   * Cached getter that builds the complete tree data structure.
+   *
+   * This is called by the template when it renders {{#if this.computedTreeData}}.
+   * It automatically re-runs when any of its dependencies change:
+   * - this.args.person (from parent)
+   * - this.currentRenderer (when renderer type changes)
+   * - this.expandedPartnerships/expandedPersons (when user expands/collapses nodes)
+   *
+   * @cached prevents creating new objects on every template re-render,
+   * which would cause unnecessary modifier re-runs.
+   */
+  @cached
+  get computedTreeData() {
+    const person = this.args.person;
+    const pagePerson = this.args.pagePerson;
+    const referencePerson = this.args.referencePerson;
+    const renderer = this.currentRenderer;
+
+    if (!renderer || !person) {
+      return null;
+    }
+
+    // Build the graph structure using the current renderer
+    const graph = renderer.buildVisibleGraph(person);
+
+    // Convert graph to renderer-specific format (Mermaid code or HTML)
+    const renderData = renderer.render(graph, {
+      startPersonIdx: 0, // The starting person is always at index 0
+    });
+
+    // Return complete data structure for rendering
+    return {
+      ...renderData,
+      pagePerson,
+      referencePerson,
+      currentPersonIdx: 0,
+      rendererType: renderer.getType(),
+    };
   }
 
   initializeExpansionState() {
@@ -94,8 +176,8 @@ export default class FamilyTreeVisual extends Component {
     } else {
       this.expandedPartnerships.add(partnershipId);
     }
-    this.expandedPartnerships = new Set(this.expandedPartnerships); // Trigger tracked update
-    this.buildTreeData(); // Rebuild tree with new state
+    // Create new Set to trigger tracked update and recompute cached getters
+    this.expandedPartnerships = new Set(this.expandedPartnerships);
     this.updateURL();
   }
 
@@ -106,9 +188,19 @@ export default class FamilyTreeVisual extends Component {
     } else {
       this.expandedPersons.add(personId);
     }
-    this.expandedPersons = new Set(this.expandedPersons); // Trigger tracked update
-    this.buildTreeData(); // Rebuild tree with new state
+    // Create new Set to trigger tracked update and recompute cached getters
+    this.expandedPersons = new Set(this.expandedPersons);
     this.updateURL();
+  }
+
+  /**
+   * Action called when the renderer type dropdown changes.
+   * Updates the tracked property which triggers the reactive chain.
+   */
+  @action
+  onRendererTypeChange(newType) {
+    this.selectedRendererType = newType;
+    // No need to manually update anything - the cached getters will recompute!
   }
 
   @action
@@ -127,312 +219,6 @@ export default class FamilyTreeVisual extends Component {
     });
   }
 
-  isPartnershipExpanded = (partnershipId) => {
-    return this.expandedPartnerships.has(partnershipId);
-  };
-
-  isPersonExpanded = (personId) => {
-    return this.expandedPersons.has(personId);
-  };
-
-  // TODO: These will be calculated after layout
-  get svgWidth() {
-    return 1200;
-  }
-
-  get svgHeight() {
-    return 800;
-  }
-
-  buildTreeData() {
-    const person = this.args.person;
-    const pagePerson = this.args.pagePerson;
-    const referencePerson = this.args.referencePerson;
-
-    // Build the graph using our new index-based structure
-    const graph = this.buildVisibleGraph(person, {
-      isExpanded: (partnershipId) =>
-        this.expandedPartnerships.has(partnershipId),
-      debug: true, // Set to true to see detailed logging of graph construction
-    });
-
-    // Generate mermaid syntax
-    const mermaidCode = this.generateMermaidCode(graph);
-
-    // Store graph data for rendering
-    this.treeData = {
-      graph,
-      mermaidCode,
-      pagePerson,
-      referencePerson,
-      currentPersonIdx: 0, // The starting person is always at index 0
-    };
-  }
-
-  /**
-   * Builds an index-based graph representation of the visible family tree.
-   *
-   * This algorithm creates two arrays:
-   * - persons: Array of person nodes with indices pointing to their relationships
-   * - partnerships: Array of partnership nodes with indices pointing to parents/children
-   *
-   * The algorithm handles cycles by immediately adding placeholders to the maps
-   * before recursively processing relationships. This ensures each person/partnership
-   * is processed exactly once.
-   *
-   * @param {Person} startPerson - The person to start building from
-   * @param {Object} options - Options including expansion state and debug flag
-   * @returns {Object} Graph with persons and partnerships arrays
-   */
-  buildVisibleGraph(startPerson, options = {}) {
-    const { isExpanded, debug = false } = options;
-    const persons = [];
-    const partnerships = [];
-    const personToIndex = new Map(); // person.id -> index
-    const partnershipToIndex = new Map(); // partnership.id -> index
-
-    function buildPerson(person) {
-      // Return existing index if already processed
-      if (personToIndex.has(person.id)) {
-        const existingIdx = personToIndex.get(person.id);
-        if (debug) {
-          console.log(
-            `Person already exists: ${person.name} at index ${existingIdx}`,
-          );
-        }
-        return existingIdx;
-      }
-
-      // Add placeholder immediately to handle cycles
-      const idx = persons.length;
-      personToIndex.set(person.id, idx);
-      persons.push({
-        person,
-        parentIn: [], // Partnership(s) where this person is a child
-        partnerships: [], // Partnerships where this person is a parent
-      });
-
-      if (debug) {
-        console.log(`Added person: ${person.name} at index ${idx}`);
-      }
-
-      // Process partnership where this person is a child
-      if (person.childIn) {
-        const parentPartnershipIdx = buildPartnership(person.childIn);
-        persons[idx].parentIn = [parentPartnershipIdx];
-        if (debug) {
-          console.log(`  - Child in partnership ${parentPartnershipIdx}`);
-        }
-      }
-
-      // Process partnerships where this person is a parent
-      for (const partnership of person.parentIn) {
-        const partnershipIdx = buildPartnership(partnership);
-        persons[idx].partnerships.push(partnershipIdx);
-        if (debug) {
-          console.log(`  - Parent in partnership ${partnershipIdx}`);
-        }
-      }
-
-      return idx;
-    }
-
-    function buildPartnership(partnership) {
-      // Return existing index if already processed
-      if (partnershipToIndex.has(partnership.id)) {
-        const existingIdx = partnershipToIndex.get(partnership.id);
-        if (debug) {
-          console.log(
-            `Partnership already exists: ${partnership.id} at index ${existingIdx}`,
-          );
-        }
-        return existingIdx;
-      }
-
-      // Add placeholder immediately to handle cycles
-      const idx = partnerships.length;
-      partnershipToIndex.set(partnership.id, idx);
-      partnerships.push({
-        partnership,
-        parents: [],
-        children: [],
-        expanded: isExpanded(partnership.id),
-      });
-
-      if (debug) {
-        const partnerNames = partnership.parents.map((p) => p.name).join(' & ');
-        console.log(
-          `Added partnership: ${partnerNames} (${partnership.id}) at index ${idx}`,
-        );
-      }
-
-      // Add all parents
-      for (const parent of partnership.parents) {
-        const parentIdx = buildPerson(parent);
-        partnerships[idx].parents.push(parentIdx);
-        if (debug) {
-          console.log(`  - Has parent ${parent.name} at index ${parentIdx}`);
-        }
-      }
-
-      // Process children
-      for (const child of partnership.children) {
-        if (isExpanded(partnership.id)) {
-          // If expanded, fully build the child
-          const childIdx = buildPerson(child);
-          partnerships[idx].children.push(childIdx);
-
-          // Update the child's parentIn if needed
-          if (persons[childIdx].parentIn.length === 0) {
-            persons[childIdx].parentIn = [idx];
-          }
-
-          if (debug) {
-            console.log(`  - Has child ${child.name} at index ${childIdx}`);
-          }
-        } else {
-          // If not expanded, check if child already exists in graph
-          if (personToIndex.has(child.id)) {
-            const childIdx = personToIndex.get(child.id);
-            partnerships[idx].children.push(childIdx);
-
-            // Ensure child knows about this parent partnership
-            if (!persons[childIdx].parentIn.includes(idx)) {
-              persons[childIdx].parentIn.push(idx);
-            }
-
-            if (debug) {
-              console.log(
-                `  - Connected to existing child ${child.name} at index ${childIdx}`,
-              );
-            }
-          }
-        }
-      }
-
-      if (
-        debug &&
-        !isExpanded(partnership.id) &&
-        partnership.children.length > 0
-      ) {
-        const connectedCount = partnerships[idx].children.length;
-        const totalCount = partnership.children.length;
-        console.log(
-          `  - Has ${totalCount} children total (${connectedCount} connected, partnership not expanded)`,
-        );
-      }
-
-      return idx;
-    }
-
-    // Start building from the initial person
-    buildPerson(startPerson);
-
-    if (debug) {
-      console.log('\nFinal graph structure:');
-      console.log(`Persons: ${persons.length}`);
-      console.log(`Partnerships: ${partnerships.length}`);
-
-      // Find and log root nodes
-      const roots = persons
-        .map((p, idx) => ({ ...p, idx }))
-        .filter((p) => p.parentIn.length === 0);
-      console.log(
-        `Root nodes: ${roots
-          .map((r) => `${r.person.name} (${r.idx})`)
-          .join(', ')}`,
-      );
-    }
-
-    return { persons, partnerships };
-  }
-
-  /**
-   * Converts our graph structure to mermaid flowchart syntax.
-   * Creates a family tree using mermaid's flowchart format.
-   *
-   * @param {Object} graph - The graph with persons and partnerships arrays
-   * @returns {string} Mermaid flowchart code
-   */
-  generateMermaidCode(graph) {
-    const { persons, partnerships } = graph;
-    let mermaidCode = 'flowchart TD\n';
-
-    // Add person nodes
-    persons.forEach((personNode, idx) => {
-      const person = personNode.person;
-      const name = person.name.replace(/"/g, '&quot;');
-      const nodeId = `P${idx}`;
-      mermaidCode += `    ${nodeId}["${name}"]\n`;
-      // Add click event to navigate to person
-      mermaidCode += `    click ${nodeId} call navigateToPerson("${person.id}")\n`;
-    });
-
-    // Add partnership nodes (diamonds with no text) and connections
-    partnerships.forEach((partnershipNode, idx) => {
-      const partnershipId = `R${idx}`;
-      const hasChildren = partnershipNode.partnership.children.length > 0;
-      const isExpanded = partnershipNode.expanded;
-
-      // Create partnership node as diamond
-      // Show different styles for partnerships with/without children
-      if (hasChildren && !isExpanded) {
-        // Has children but not expanded - show with "..."
-        mermaidCode += `    ${partnershipId}{...}\n`;
-        // Add click event for expandable partnerships
-        mermaidCode += `    click ${partnershipId} call togglePartnership("${partnershipNode.partnership.id}")\n`;
-      } else if (hasChildren && isExpanded) {
-        // Has children and expanded - show with "+"
-        mermaidCode += `    ${partnershipId}{+}\n`;
-        // Add click event to collapse
-        mermaidCode += `    click ${partnershipId} call togglePartnership("${partnershipNode.partnership.id}")\n`;
-      } else {
-        // No children - empty diamond
-        mermaidCode += `    ${partnershipId}{ }\n`;
-      }
-
-      // Connect parents to partnership with thick lines
-      partnershipNode.parents.forEach((parentIdx) => {
-        mermaidCode += `    P${parentIdx} ==> ${partnershipId}\n`;
-      });
-
-      // Connect partnership to children with normal lines
-      partnershipNode.children.forEach((childIdx) => {
-        mermaidCode += `    ${partnershipId} --> P${childIdx}\n`;
-      });
-    });
-
-    // Add styling
-    mermaidCode += '\n';
-    mermaidCode +=
-      '    classDef person fill:#e1f5fe,stroke:#01579b,stroke-width:2px\n';
-    mermaidCode +=
-      '    classDef partnership fill:#f8bbd9,stroke:#880e4f,stroke-width:2px\n';
-    mermaidCode +=
-      '    classDef partnershipCollapsed fill:#ffccbc,stroke:#bf360c,stroke-width:2px\n';
-    mermaidCode +=
-      '    classDef partnershipExpanded fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px\n';
-
-    // Apply classes
-    persons.forEach((_, idx) => {
-      mermaidCode += `    class P${idx} person\n`;
-    });
-    partnerships.forEach((partnershipNode, idx) => {
-      const hasChildren = partnershipNode.partnership.children.length > 0;
-      const isExpanded = partnershipNode.expanded;
-
-      if (hasChildren && !isExpanded) {
-        mermaidCode += `    class R${idx} partnershipCollapsed\n`;
-      } else if (hasChildren && isExpanded) {
-        mermaidCode += `    class R${idx} partnershipExpanded\n`;
-      } else {
-        mermaidCode += `    class R${idx} partnership\n`;
-      }
-    });
-
-    return mermaidCode;
-  }
-
   @action
   handleNodeClick(person) {
     if (this.args.onPersonClick) {
@@ -440,46 +226,63 @@ export default class FamilyTreeVisual extends Component {
     }
   }
 
-  renderMermaid = modifier((element) => {
-    // Clear any existing content
-    element.innerHTML = '';
+  /**
+   * Modifier that handles the actual DOM manipulation.
+   * Runs after Ember creates the DOM element and re-runs on re-renders.
+   * Uses the computedTreeData getter to get the current tree data.
+   */
+  renderTree = modifier((element) => {
+    const treeData = this.computedTreeData;
+    const renderer = this.currentRenderer;
 
-    // Set up mermaid with click callbacks
-    window.togglePartnership = (partnershipId) => {
-      this.togglePartnershipExpansion(partnershipId);
-    };
+    if (!treeData || !renderer) {
+      element.innerHTML = '<div class="loading">Building family tree...</div>';
+      return;
+    }
 
-    window.navigateToPerson = (personId) => {
-      this.router.transitionTo('person', personId, {
-        queryParams: {
-          referencePersonId: this.args.referencePerson?.id,
-        },
-      });
-    };
-
-    // Render the mermaid diagram
-    if (this.treeData?.mermaidCode) {
-      mermaid
-        .render('mermaid-family-tree', this.treeData.mermaidCode)
-        .then(({ svg }) => {
-          element.innerHTML = svg;
-        })
-        .catch((error) => {
-          console.error('Error rendering mermaid diagram:', error);
-          element.innerHTML = '<p>Error rendering family tree diagram</p>';
+    const callbacks = {
+      togglePartnership: (partnershipId) => {
+        this.togglePartnershipExpansion(partnershipId);
+      },
+      navigateToPerson: (personId) => {
+        this.router.transitionTo('person', personId, {
+          queryParams: {
+            referencePersonId: this.args.referencePerson?.id,
+          },
         });
+      },
+    };
+
+    try {
+      if (renderer.renderToElement) {
+        renderer.renderToElement(element, treeData, callbacks);
+      } else {
+        // Fallback for renderers that don't implement renderToElement
+        console.warn('Renderer does not implement renderToElement method');
+        element.innerHTML = '<div class="error">Renderer error</div>';
+      }
+    } catch (error) {
+      console.error('Error rendering family tree:', error);
+      element.innerHTML =
+        '<div class="error">Error rendering family tree</div>';
     }
   });
 
+  get rendererType() {
+    return this.currentRenderer?.getType() || 'unknown';
+  }
+
   <template>
     <div class='family-tree-visual-container'>
-      {{#if this.treeData}}
-        <div class='mermaid-container' {{this.renderMermaid}}>
-          {{this.treeData.mermaidCode}}
-        </div>
-      {{else}}
-        <div class='loading'>Building family tree...</div>
-      {{/if}}
+      <div class='renderer-info' data-renderer-type={{this.rendererType}}>
+        {{#if this.computedTreeData}}
+          <div class='tree-container' {{this.renderTree}}>
+            {{! Content will be rendered by the modifier }}
+          </div>
+        {{else}}
+          <div class='loading'>Building family tree...</div>
+        {{/if}}
+      </div>
     </div>
   </template>
 }
