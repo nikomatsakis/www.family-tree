@@ -31,7 +31,7 @@ module('Integration | Component | family-tree-visual', function (hooks) {
     />`);
 
     assert.dom('.family-tree-visual-container').exists();
-    assert.dom('.mermaid-container').exists();
+    assert.dom('.tree-container').exists();
   });
 
   test('it generates mermaid code with person data', async function (assert) {
@@ -40,20 +40,20 @@ module('Integration | Component | family-tree-visual', function (hooks) {
       @pagePerson={{this.person}}
     />`);
 
-    // Check that the component exists and contains mermaid code
-    assert.dom('.mermaid-container').exists();
-    // The mermaid diagram should contain the person's name
-    assert.dom('.mermaid-container').containsText('Test Person');
+    // Check that the component exists and contains rendered content
+    assert.dom('.tree-container').exists();
+    // The tree container should contain the person's name (either in mermaid or debug view)
+    assert.dom('.tree-container').containsText('Test Person');
   });
 
-  test('it displays person name in mermaid diagram', async function (assert) {
+  test('it displays person name in rendered tree', async function (assert) {
     await render(hbs`<FamilyTreeVisual 
       @person={{this.person}}
       @pagePerson={{this.person}}
     />`);
 
-    // The person name should appear in the mermaid flowchart syntax
-    assert.dom('.mermaid-container').containsText('Test Person');
+    // The person name should appear in the rendered tree
+    assert.dom('.tree-container').containsText('Test Person');
   });
 
   test('it builds graph structure correctly', async function (assert) {
@@ -67,16 +67,26 @@ module('Integration | Component | family-tree-visual', function (hooks) {
     assert.dom('.loading').doesNotExist();
   });
 
-  test('it handles click events - placeholder for mermaid integration', async function (assert) {
-    // Note: Click handling for mermaid nodes requires additional setup
-    // This is a placeholder test for future mermaid click integration
+  test('it supports different renderer types', async function (assert) {
+    // Test with mermaid renderer (default)
     await render(hbs`<FamilyTreeVisual 
       @person={{this.person}}
       @pagePerson={{this.person}}
+      @rendererType="mermaid"
     />`);
 
-    assert.dom('.mermaid-container').exists();
-    // TODO: Implement mermaid node click handling
-    assert.ok(true, 'Component renders successfully');
+    assert.dom('.tree-container').exists();
+    assert.dom('[data-renderer-type="mermaid"]').exists();
+
+    // Test with debug renderer
+    await render(hbs`<FamilyTreeVisual 
+      @person={{this.person}}
+      @pagePerson={{this.person}}
+      @rendererType="html-list"
+    />`);
+
+    assert.dom('.tree-container').exists();
+    assert.dom('[data-renderer-type="html-list"]').exists();
+    assert.dom('.family-tree-debug').exists();
   });
 });
