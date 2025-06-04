@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Important
+
+Always create and propose plans before making edits or taking action. Confirm that the user agrees with the plan before beginning implementation.
+
 ## Project Overview
 
 This is a family tree application that:
