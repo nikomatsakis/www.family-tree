@@ -3,19 +3,20 @@ import IndexLink from './index-link';
 import MaintainerLink from './maintainer-link';
 import { LinkTo } from '@ember/routing';
 import PersonLink from './person-link';
-import PersonOutline from './person-outline';
 import FamilyTreeVisual from './family-tree-visual';
 import { hash } from '@ember/helper';
 import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { on } from '@ember/modifier';
-import { getRendererDisplayNames } from '../utils/family-tree-renderers';
+import {
+  getAvailableRenderers,
+  getRendererDisplayNames,
+} from '../utils/family-tree-renderers';
 
 export default class Person extends Component {
   @service genea;
   @service router;
-  @tracked showVisualTree = true;
   @tracked rendererType = 'mermaid';
 
   <template>
@@ -38,66 +39,36 @@ export default class Person extends Component {
               {{@model.name}}
               is related to other people
             </IndexLink>
-            <button
-              type='button'
-              class='nav-link'
-              {{on 'click' this.toggleTreeView}}
-            >
-              {{if this.showVisualTree 'Show List View' 'Show Tree View'}}
-            </button>
 
-            {{#if this.showVisualTree}}
-              <div class='renderer-controls'>
-                <label for='renderer-select'>Tree Style:</label>
-                <select
-                  id='renderer-select'
-                  {{on 'change' this.changeRenderer}}
-                  class='renderer-select'
-                >
+            <div class='renderer-controls'>
+              <label for='renderer-select'>View:</label>
+              <select
+                id='renderer-select'
+                {{on 'change' this.changeRenderer}}
+                class='renderer-select'
+              >
+                {{#each this.availableRenderers as |rendererType|}}
                   <option
-                    value='mermaid'
-                    selected={{this.isSelectedRenderer 'mermaid'}}
+                    value={{rendererType}}
+                    selected={{this.isSelectedRenderer rendererType}}
                   >
-                    {{this.getRendererDisplayName 'mermaid'}}
+                    {{this.getRendererDisplayName rendererType}}
                   </option>
-                  <option
-                    value='html-list'
-                    selected={{this.isSelectedRenderer 'html-list'}}
-                  >
-                    {{this.getRendererDisplayName 'html-list'}}
-                  </option>
-                </select>
-              </div>
-            {{/if}}
+                {{/each}}
+              </select>
+            </div>
           </div>
 
-          {{#if this.showVisualTree}}
-            {{#if @model}}
-              <FamilyTreeVisual
-                @person={{@model}}
-                @pagePerson={{@model}}
-                @referencePerson={{this.referencePerson}}
-                @onPersonClick={{this.navigateToPerson}}
-                @rendererType={{this.rendererType}}
-              />
-            {{else}}
-              <div>Loading person data...</div>
-            {{/if}}
+          {{#if @model}}
+            <FamilyTreeVisual
+              @person={{@model}}
+              @pagePerson={{@model}}
+              @referencePerson={{this.referencePerson}}
+              @onPersonClick={{this.navigateToPerson}}
+              @rendererType={{this.rendererType}}
+            />
           {{else}}
-            {{#if @model.childIn}}
-              <Child
-                @model={{@model}}
-                @referencePerson={{this.referencePerson}}
-              />
-            {{else}}
-              <ul class='family-tree-list'>
-                <PersonOutline
-                  @person={{@model}}
-                  @pagePerson={{@model}}
-                  @referencePerson={{this.referencePerson}}
-                />
-              </ul>
-            {{/if}}
+            <div>Loading person data...</div>
           {{/if}}
         </div>
       {{else if this.referencePerson}}
@@ -140,14 +111,13 @@ export default class Person extends Component {
                 class='explain-link'
               >(explain)</a>
             </div>
-            <ul class='family-tree-list'>
-              <PersonOutline
-                @person={{r.commonAncestor}}
-                @pagePerson={{@model}}
-                @referencePerson={{this.referencePerson}}
-                @includeSet={{this.ancestors}}
-              />
-            </ul>
+            <FamilyTreeVisual
+              @person={{r.commonAncestor}}
+              @pagePerson={{@model}}
+              @referencePerson={{this.referencePerson}}
+              @onPersonClick={{this.navigateToPerson}}
+              @rendererType='list'
+            />
           {{/each}}
         </div>
       {{/if}}
@@ -203,9 +173,8 @@ export default class Person extends Component {
   generationsFrom = (person, partnership) =>
     person.generationsFromAncestralPartnership(partnership);
 
-  @action
-  toggleTreeView() {
-    this.showVisualTree = !this.showVisualTree;
+  get availableRenderers() {
+    return getAvailableRenderers();
   }
 
   @action
@@ -233,30 +202,3 @@ export default class Person extends Component {
     return this.rendererType === type;
   };
 }
-
-const Child = <template>
-  <ul class='family-tree-list'>
-    <li>
-      <PersonLink
-        @person={{@model.childIn.firstParent}}
-        @pagePerson={{@model}}
-        @referencePerson={{@referencePerson}}
-      />
-      {{#each @model.childIn.nextParents as |parent|}}
-        <span class='partnership-separator'>+</span>
-        <PersonLink
-          @person={{parent}}
-          @pagePerson={{@model}}
-          @referencePerson={{@referencePerson}}
-        />
-      {{/each}}
-      <ul>
-        <PersonOutline
-          @person={{@model}}
-          @pagePerson={{@model}}
-          @referencePerson={{@referencePerson}}
-        />
-      </ul>
-    </li>
-  </ul>
-</template>;
