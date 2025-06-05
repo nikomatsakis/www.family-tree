@@ -34,7 +34,7 @@ module('Integration | Component | family-tree-visual', function (hooks) {
     assert.dom('.tree-container').exists();
   });
 
-  test('it generates mermaid code with person data', async function (assert) {
+  test('it generates tree data with person data', async function (assert) {
     await render(hbs`<FamilyTreeVisual 
       @person={{this.person}}
       @pagePerson={{this.person}}
@@ -42,7 +42,7 @@ module('Integration | Component | family-tree-visual', function (hooks) {
 
     // Check that the component exists and contains rendered content
     assert.dom('.tree-container').exists();
-    // The tree container should contain the person's name (either in mermaid or debug view)
+    // The tree container should contain the person's name (either in d3-tree or debug view)
     assert.dom('.tree-container').containsText('Test Person');
   });
 
@@ -68,25 +68,25 @@ module('Integration | Component | family-tree-visual', function (hooks) {
   });
 
   test('it supports different renderer types', async function (assert) {
-    // Test with mermaid renderer (default)
+    // Test with d3-tree renderer (default)
     await render(hbs`<FamilyTreeVisual 
       @person={{this.person}}
       @pagePerson={{this.person}}
-      @rendererType="mermaid"
+      @rendererType="d3-tree"
     />`);
 
     assert.dom('.tree-container').exists();
-    assert.dom('[data-renderer-type="mermaid"]').exists();
+    assert.dom('[data-renderer-type="d3-tree"]').exists();
 
     // Test with debug renderer
     await render(hbs`<FamilyTreeVisual 
       @person={{this.person}}
       @pagePerson={{this.person}}
-      @rendererType="html-list"
+      @rendererType="debug"
     />`);
 
     assert.dom('.tree-container').exists();
-    assert.dom('[data-renderer-type="html-list"]').exists();
-    assert.dom('.family-tree-debug').exists();
+    assert.dom('[data-renderer-type="debug"]').exists();
+    assert.dom('.debug-renderer').exists();
   });
 });

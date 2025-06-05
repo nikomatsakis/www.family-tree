@@ -16,7 +16,7 @@ module(
 
       // Create test context with tracked renderer type
       class TestContext {
-        @tracked rendererType = 'mermaid';
+        @tracked rendererType = 'd3-tree';
 
         person = {
           id: 'p1',
@@ -34,32 +34,32 @@ module(
     });
 
     test('it reacts to renderer type changes from parent component', async function (assert) {
-      // Render with initial mermaid renderer
+      // Render with initial d3-tree renderer
       await render(hbs`<FamilyTreeVisual 
       @person={{this.context.person}}
       @pagePerson={{this.context.person}}
       @rendererType={{this.context.rendererType}}
     />`);
 
-      // Verify initial render with mermaid
+      // Verify initial render with d3-tree
       assert
-        .dom('[data-renderer-type="mermaid"]')
-        .exists('Initial render uses mermaid');
+        .dom('[data-renderer-type="d3-tree"]')
+        .exists('Initial render uses d3-tree');
       assert.dom('.tree-container').exists('Tree container exists');
 
       // Get initial content
       const initialContent =
         this.element.querySelector('.tree-container').innerHTML;
 
-      // Change renderer type to html-list
-      this.context.rendererType = 'html-list';
+      // Change renderer type to debug
+      this.context.rendererType = 'debug';
       await settled();
 
-      // Verify it changed to html-list renderer
+      // Verify it changed to debug renderer
       assert
-        .dom('[data-renderer-type="html-list"]')
-        .exists('Changed to html-list renderer');
-      assert.dom('.family-tree-debug').exists('Debug view is rendered');
+        .dom('[data-renderer-type="debug"]')
+        .exists('Changed to debug renderer');
+      assert.dom('.debug-renderer').exists('Debug view is rendered');
 
       // Verify content changed
       const newContent =
@@ -70,17 +70,15 @@ module(
         'Content changed when renderer changed',
       );
 
-      // Change back to mermaid
-      this.context.rendererType = 'mermaid';
+      // Change back to d3-tree
+      this.context.rendererType = 'd3-tree';
       await settled();
 
       // Verify it changed back
       assert
-        .dom('[data-renderer-type="mermaid"]')
-        .exists('Changed back to mermaid');
-      assert
-        .dom('.family-tree-debug')
-        .doesNotExist('Debug view is not rendered');
+        .dom('[data-renderer-type="d3-tree"]')
+        .exists('Changed back to d3-tree');
+      assert.dom('.debug-renderer').doesNotExist('Debug view is not rendered');
     });
 
     test('cached getters properly update when renderer type changes', async function (assert) {
@@ -93,23 +91,23 @@ module(
       @rendererType={{this.context.rendererType}}
     />`);
 
-      // Verify initial mermaid render
+      // Verify initial d3-tree render
       assert
-        .dom('[data-renderer-type="mermaid"]')
-        .exists('Initial mermaid render');
+        .dom('[data-renderer-type="d3-tree"]')
+        .exists('Initial d3-tree render');
 
       // Get the tree container element to check if it's updated
       const treeContainer = this.element.querySelector('.tree-container');
       const initialHTML = treeContainer.innerHTML;
 
       // Change renderer type
-      this.context.rendererType = 'html-list';
+      this.context.rendererType = 'debug';
       await settled();
 
       // Verify the renderer type changed
       assert
-        .dom('[data-renderer-type="html-list"]')
-        .exists('Renderer type changed to html-list');
+        .dom('[data-renderer-type="debug"]')
+        .exists('Renderer type changed to debug');
 
       // Verify the tree container was updated with new content
       const updatedHTML = treeContainer.innerHTML;
@@ -119,20 +117,20 @@ module(
         'Tree container content was updated',
       );
 
-      // Verify specific html-list content exists
+      // Verify specific debug content exists
       assert
-        .dom('.family-tree-debug')
+        .dom('.debug-renderer')
         .exists('Debug view exists after renderer change');
 
       // Change back to verify it updates again
-      this.context.rendererType = 'mermaid';
+      this.context.rendererType = 'd3-tree';
       await settled();
 
       assert
-        .dom('[data-renderer-type="mermaid"]')
-        .exists('Renderer type changed back to mermaid');
+        .dom('[data-renderer-type="d3-tree"]')
+        .exists('Renderer type changed back to d3-tree');
       assert
-        .dom('.family-tree-debug')
+        .dom('.debug-renderer')
         .doesNotExist('Debug view removed after changing back');
 
       // The content should have changed again

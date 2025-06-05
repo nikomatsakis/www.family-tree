@@ -17,7 +17,7 @@ import {
 export default class Person extends Component {
   @service genea;
   @service router;
-  @tracked rendererType = 'mermaid';
+  @tracked rendererType = 'd3-tree';
 
   <template>
     <div class='person-detail'>

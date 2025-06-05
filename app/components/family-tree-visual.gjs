@@ -51,7 +51,7 @@ export default class FamilyTreeVisual extends Component {
    * and external prop changes from the parent.
    */
   get activeRendererType() {
-    return this.selectedRendererType || this.args.rendererType || 'mermaid';
+    return this.selectedRendererType || this.args.rendererType || 'd3-tree';
   }
 
   /**

@@ -6,6 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Always create and propose plans before making edits or taking action. Confirm that the user agrees with the plan before beginning implementation.
 
+## Ongoing Work Tracking
+
+Track ongoing development work and progress in the `.ongoing/` directory:
+
+- Create `.md` files for each major feature or investigation
+- Include status, progress summary, next steps, and debugging context
+- Update files as work progresses to maintain context across sessions
+- Use descriptive filenames like `feature-name.md` or `bug-investigation.md`
+
+This helps maintain continuity when resuming work and provides context for debugging and planning.
+
+## Architecture Documentation
+
+The `architecture/` directory contains living documentation for major design decisions:
+
+- **`visual_design.md`**: Comprehensive design specification for family tree visualization, including layout algorithms, visual elements, navigation patterns, and implementation strategies. This is a living document that should be updated as design decisions are made and implementation details are refined.
+
 ## Project Overview
 
 This is a family tree application that:

@@ -397,6 +397,68 @@
   stroke: #f59e0b;
 }
 
+/* dTree Styles */
+.dtree-container {
+  width: 100%;
+  height: 600px;
+  overflow: auto;
+}
+
+.dtree-container .node {
+  cursor: pointer;
+}
+
+.dtree-container .node rect {
+  fill: white;
+  stroke: #cbd5e1;
+  stroke-width: 2;
+}
+
+.dtree-container .node.current-person rect {
+  fill: #dbeafe;
+  stroke: #3b82f6;
+  stroke-width: 3;
+}
+
+.dtree-container .node.person-male rect {
+  stroke: #3b82f6;
+}
+
+.dtree-container .node.person-female rect {
+  stroke: #ec4899;
+}
+
+.dtree-container .node.reference-node rect {
+  fill: #f3f4f6;
+  stroke: #6b7280;
+  stroke-dasharray: 5, 5;
+}
+
+.dtree-container .node.unknown-spouse rect {
+  fill: #fef2f2;
+  stroke: #ef4444;
+  stroke-dasharray: 3, 3;
+  opacity: 0.7;
+}
+
+.dtree-container .linage {
+  fill: none;
+  stroke: #cbd5e1;
+  stroke-width: 2;
+}
+
+.dtree-container .marriage {
+  fill: none;
+  stroke: #fbbf24;
+  stroke-width: 2;
+}
+
+.dtree-container .node-text {
+  font-family: inherit;
+  font-size: 14px;
+  fill: #111827;
+}
+
 .node-content {
   padding: 10px;
   text-align: center;

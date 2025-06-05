@@ -1,21 +1,21 @@
-import MermaidRenderer from './mermaid-renderer';
-import HtmlListRenderer from './html-list-renderer';
-import ListRenderer from './list-renderer';
+import D3TreeRenderer from './d3-tree-renderer';
+import DebugRenderer from './debug-renderer';
 
 /**
  * Factory function to create renderer instances
- * @param {string} type - The renderer type ('mermaid', 'list', or 'html-list')
+ * @param {string} type - The renderer type ('d3-tree' or 'debug')
  * @param {Object} options - Options to pass to the renderer constructor
  * @returns {BaseRenderer} Renderer instance
  */
 export function createRenderer(type, options = {}) {
   switch (type) {
-    case 'mermaid':
-      return new MermaidRenderer(options);
-    case 'list':
-      return new ListRenderer(options);
-    case 'html-list':
-      return new HtmlListRenderer(options);
+    case 'd3-tree':
+      return new D3TreeRenderer(options);
+    case 'debug':
+      return new DebugRenderer(options);
+    // Keep dtree as alias for backward compatibility
+    case 'dtree':
+      return new D3TreeRenderer(options);
     default:
       throw new Error(`Unknown renderer type: ${type}`);
   }
@@ -26,7 +26,7 @@ export function createRenderer(type, options = {}) {
  * @returns {Array<string>} Array of available renderer type names
  */
 export function getAvailableRenderers() {
-  return ['mermaid', 'list', 'html-list'];
+  return ['d3-tree', 'debug'];
 }
 
 /**
@@ -35,10 +35,9 @@ export function getAvailableRenderers() {
  */
 export function getRendererDisplayNames() {
   return {
-    mermaid: 'Mermaid',
-    list: 'List',
-    'html-list': 'Debug',
+    'd3-tree': 'D3 Tree',
+    debug: 'Debug',
   };
 }
 
-export { MermaidRenderer, HtmlListRenderer, ListRenderer };
+export { D3TreeRenderer, DebugRenderer };
