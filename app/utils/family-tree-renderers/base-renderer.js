@@ -1,6 +1,27 @@
 /**
  * Base class for family tree renderers.
  * Provides common functionality for building and rendering family tree visualizations.
+ * 
+ * DESIGN PRINCIPLE: Data Structure Ownership
+ * ========================================
+ * The BaseRenderer is responsible for owning and managing all core data structures
+ * used in family tree visualization:
+ * 
+ * - Primary lineage paths (which ancestral line to follow upward)
+ * - Expansion state (which partnerships/branches are visible)
+ * - Layout coordinates and positioning data
+ * - Visual styling and interaction state
+ * 
+ * These data structures should be built and maintained here so they are visible
+ * to the DebugRenderer for inspection and debugging. Concrete renderers like
+ * D3TreeRenderer should focus on INTERPRETING these data structures for their
+ * specific rendering technology, not on building or managing the data itself.
+ * 
+ * This separation allows us to:
+ * - Debug complex layout algorithms by examining the complete state
+ * - Share data structures between different renderer implementations  
+ * - Maintain consistency in how family tree logic is handled
+ * - Test layout algorithms independently of rendering technology
  */
 export default class BaseRenderer {
   constructor(options = {}) {

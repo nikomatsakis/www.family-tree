@@ -187,4 +187,22 @@ The BaseRenderer's `buildVisibleGraph` method needs to understand:
 - **Expanded partnerships**: Controls which non-primary branches are shown
 - **Visible but not expanded**: Spouses of primary ancestors whose lineages aren't shown
 
+### Data Structure Ownership Pattern
+To enable effective debugging and maintain consistency:
+
+**BaseRenderer Responsibilities:**
+- Own and manage all core data structures (primary lineage, expansion state, layout data)
+- Build and maintain family tree graph representations
+- Handle primary lineage path calculations and updates
+- Manage expansion state and visibility logic
+- Expose complete state for debugging via DebugRenderer
+
+**Concrete Renderer Responsibilities (D3TreeRenderer, etc.):**
+- Interpret BaseRenderer data structures for specific rendering technology
+- Handle rendering-specific layout calculations (SVG positioning, zoom/pan)
+- Manage visual styling and interaction handlers
+- Delegate state changes back to BaseRenderer methods
+
+This separation allows debugging complex algorithms while keeping rendering technology concerns separate.
+
 This design provides a clear, navigable, and visually appealing way to explore complex family relationships while maintaining simplicity and avoiding visual clutter.

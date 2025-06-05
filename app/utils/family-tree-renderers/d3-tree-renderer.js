@@ -7,6 +7,25 @@ import * as d3 from 'd3';
  * This renderer creates hierarchical tree visualizations using D3's native
  * tree layout algorithms. It converts our graph data into D3 hierarchy format
  * and renders interactive SVG trees with zoom/pan capabilities.
+ * 
+ * DESIGN PRINCIPLE: Data Structure Interpretation
+ * ==============================================
+ * This renderer should focus on INTERPRETING data structures built by BaseRenderer,
+ * not on creating or managing the core family tree logic. The BaseRenderer owns:
+ * 
+ * - Primary lineage paths and expansion state
+ * - Layout coordinates and positioning algorithms  
+ * - Family tree traversal and graph building logic
+ * 
+ * This D3TreeRenderer's responsibilities:
+ * - Convert BaseRenderer data structures to D3-compatible formats
+ * - Handle SVG rendering and D3-specific layout calculations
+ * - Manage zoom/pan interactions and visual styling
+ * - Provide click handlers that delegate back to BaseRenderer for state changes
+ * 
+ * By keeping data structure ownership in BaseRenderer, we can debug complex
+ * layout algorithms using the DebugRenderer while letting this class focus
+ * purely on the D3.js visualization technology.
  */
 export default class D3TreeRenderer extends BaseRenderer {
   getType() {
