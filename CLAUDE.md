@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Important
 
-Always create and propose plans before making edits or taking action. Confirm that the user agrees with the plan before beginning implementation.
+Always create and propose plans before making edits or taking action. **Never make code edits without explicit approval of the plan first.** Discuss what you intend to change and get confirmation before using Edit, MultiEdit, or Write tools.
 
 ## Ongoing Work Tracking
 
