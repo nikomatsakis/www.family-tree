@@ -205,4 +205,63 @@ To enable effective debugging and maintain consistency:
 
 This separation allows debugging complex algorithms while keeping rendering technology concerns separate.
 
+## RenderTree Implementation
+
+### Data Structure Foundation
+The visual design is implemented through dedicated data structures in `app/utils/render-tree.js`:
+
+**Partnership Types Map Directly to Visual Elements:**
+- `RegularPartnership` → T-junction marriages with parents and children
+- `AlternateLineagePartnership` → "(show [person]'s family)" navigation buttons  
+- `UnexpandedAncestorPartnership` → "(show ancestors)" placeholders
+
+**Person Relationships Enable Visual Patterns:**
+- `parentIn` array → Multiple marriage repetition with continuity connectors
+- `childIn` reference → Parent-child relationship lines
+- Index-based references → Efficient rendering and debugging
+
+### Builder Algorithm
+The `RenderTreeBuilder` class in `app/utils/render-tree-builder.js` implements controlled tree construction:
+
+**Core Methods:**
+- `addPrimaryPerson(geneaPerson)` → Adds person + all marriages (invariant #1)
+- `addPartnerPerson(geneaPerson)` → Adds person + alternate lineage placeholder
+- `addPartnership(primaryPerson, geneaPartnership)` → Creates T-junction structure
+- `expandPartnership(geneaPartnership)` → Adds children to existing marriage
+
+**Default Algorithm:**
+```javascript
+// Creates minimal 3-generation view: parents → focus → children
+const renderTree = createDefaultRenderTree(geneaService, focusPerson);
+```
+
+This foundation enables any renderer (D3, Canvas, SVG) to focus on visual layout while the RenderTree handles the complex family relationship logic according to the design specification.
+
+### Layout Engine Algorithm
+
+The T-junction layout algorithm converts RenderTree data structures into concrete X/Y coordinates using a **Metrics interface** for text measurement. This enables both testing (with symbolic metrics) and real rendering (with actual text measurement).
+
+**Core Algorithm:**
+```
+1. Create person boxes with measured text dimensions
+2. Calculate T-junction position using constraint satisfaction:
+   J1.x = max(Parent1.w + S + LineMin, G + Child1.w/2)
+3. Position all elements relative to junction point
+4. Handle multiple children with left-justified placement
+5. Return positioned elements ready for rendering
+```
+
+**Key Design Principles:**
+- **Box-based coordinates**: Each person's layout is self-contained with local (0,0) origin
+- **Constraint-driven positioning**: Junction placement satisfies spacing and minimum line length requirements  
+- **Metrics abstraction**: Layout algorithm takes measurement interface, enabling text-based testing and pixel-based rendering
+- **Recursive composition**: Child layouts determine parent spacing, enabling bottom-up tree construction
+
+**Implementation Files:**
+- `app/utils/family-layout.js` - Core T-junction positioning algorithm (IMPLEMENTED)
+- `app/utils/layout-elements.js` - Duck-typed layout element classes (IMPLEMENTED)
+- `app/utils/text-metrics.js` - Measurement interface for testing (IMPLEMENTED)
+- Text renderer (planned) - ASCII diagram generation for testing
+- SVG renderer (planned) - D3-based visual rendering
+
 This design provides a clear, navigable, and visually appealing way to explore complex family relationships while maintaining simplicity and avoiding visual clutter.
