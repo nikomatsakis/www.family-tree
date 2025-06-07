@@ -3,18 +3,18 @@
  * =========================
  * These represent the family tree in a form optimized for rendering,
  * separate from the original genea data structures.
- * 
- * Uses integer indices to reference persons and partnerships for 
+ *
+ * Uses integer indices to reference persons and partnerships for
  * performance and easy serialization/debugging.
- * 
+ *
  * DESIGN PRINCIPLES:
  * - Index-based references enable efficient lookups and debugging
  * - Partnership types handle different visual elements (T-junctions, navigation, placeholders)
  * - Structure maps directly to visual design requirements from architecture/visual_design.md
- * 
+ *
  * KEY VISUAL MAPPINGS:
  * - RegularPartnership with parents + children = T-junction marriage display
- * - Multiple parentIn partnerships = repeated person with continuity connectors  
+ * - Multiple parentIn partnerships = repeated person with continuity connectors
  * - UnexpandedAncestorPartnership = "more ancestors above" placeholder
  * - AlternateLineagePartnership = "(show [person]'s family)" navigation buttons
  * - Primary lineage control prevents exponential ancestor explosion (2^n problem)
@@ -31,11 +31,11 @@ export class Partnership {
 
 /**
  * Regular partnership with parents and optionally children
- * 
+ *
  * VISUAL MAPPING: Creates T-junction display
  * Parent1 ──┬── Parent2
  *           |
- *       ┌───┴───┐  
+ *       ┌───┴───┐
  *    Child1   Child2
  */
 export class RegularPartnership extends Partnership {
@@ -53,7 +53,7 @@ export class RegularPartnership extends Partnership {
 
 /**
  * Placeholder for unexpanded ancestors at top of primary lineage
- * 
+ *
  * VISUAL MAPPING: Shows "(show ancestors)" at top of tree
  * Prevents exponential growth by limiting to one ancestral path
  */
@@ -67,7 +67,7 @@ export class UnexpandedAncestorPartnership extends Partnership {
 
 /**
  * Placeholder for alternate lineage (e.g., Amanda's family)
- * 
+ *
  * VISUAL MAPPING: Creates "(show Amanda's family)" navigation buttons
  * Enables switching family tree perspective at marriage points
  */
@@ -82,7 +82,7 @@ export class AlternateLineagePartnership extends Partnership {
 
 /**
  * Person in the render tree
- * 
+ *
  * VISUAL MAPPING: Multiple parentIn partnerships = repeated person display
  * Person ──┬── Spouse1     ← First occurrence (full styling)
  *    :     |
@@ -163,7 +163,7 @@ export class RenderTree {
    * Find person index by original ID
    */
   findPersonByOriginalId(originalId) {
-    return this.persons.findIndex(p => p.id === originalId);
+    return this.persons.findIndex((p) => p.id === originalId);
   }
 
   /**
@@ -184,10 +184,10 @@ export class RenderTree {
       stats: {
         personCount: this.persons.length,
         partnershipCount: this.partnerships.length,
-        expandedPartnerships: this.partnerships.filter(p => 
-          p.type === 'regular' && p.isExpanded
+        expandedPartnerships: this.partnerships.filter(
+          (p) => p.type === 'regular' && p.isExpanded,
         ).length,
-      }
+      },
     };
   }
 }
