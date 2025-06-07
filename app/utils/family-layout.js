@@ -94,12 +94,27 @@ export function layoutFamily(renderTree, personIndex, metrics) {
       // as a complete, self-contained unit with its own dimensions. These child
       // families are then positioned sequentially left-to-right with spacing,
       // ensuring no overlap between sibling subtrees.
-      //
-      // TODO: We want to render `partnership.children === null` differently, it indicates we should do an expansion
       const childFamilies = [];
-      for (const childIndex of partnership.children || []) {
-        const childFamily = layoutFamily(renderTree, childIndex, metrics); // RECURSIVE
-        childFamilies.push(childFamily);
+
+      if (partnership.isExpanded) {
+        // Layout actual children recursively
+        for (const childIndex of partnership.children) {
+          const childFamily = layoutFamily(renderTree, childIndex, metrics); // RECURSIVE
+          childFamilies.push(childFamily);
+        }
+      } else {
+        // Create expansion placeholder for unexpanded partnership
+        const expansionBox = metrics.measureBox('...');
+        const expansionPlaceholder = new Rectangle(
+          '...',
+          'expansion-placeholder',
+          expansionBox.width,
+          expansionBox.height,
+        );
+        const placeholderFamily = new Family();
+        placeholderFamily.addElement(expansionPlaceholder);
+        placeholderFamily.port = metrics.getPortPosition(expansionBox.width);
+        childFamilies.push(placeholderFamily);
       }
 
       // Calculate junction position using our algorithm
