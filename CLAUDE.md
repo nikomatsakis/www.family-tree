@@ -15,6 +15,24 @@ Track ongoing development work and progress in the `.ongoing/` directory:
 - Update files as work progresses to maintain context across sessions
 - Use descriptive filenames like `feature-name.md` or `bug-investigation.md`
 
+### Content Guidelines for `.ongoing/` Files
+
+**INCLUDE** (essential for resuming work):
+- High-level status and completion percentage
+- Priority-ordered next steps with specific file/line references
+- Key design decisions with pointers to detailed explanations in code
+- Integration points (which files/services connect to this work)
+- Known blockers or dependencies
+
+**EXCLUDE** (belongs elsewhere):
+- Detailed algorithms or mathematical foundations (put in code comments or architecture docs)
+- Complete implementation history or session-by-session changes (git handles this)
+- Code examples or debugging snippets (put in actual code files)
+- ASCII diagrams or visual mockups (put in architecture documentation)
+- Detailed bug-fixing narratives (git commit messages capture this)
+
+The goal is concise context for continuation, not comprehensive documentation.
+
 This helps maintain continuity when resuming work and provides context for debugging and planning.
 
 ## Architecture Documentation
