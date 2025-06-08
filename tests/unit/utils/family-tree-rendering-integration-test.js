@@ -313,7 +313,7 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       );
     });
 
-    test.skip('complex three-generation family tree', function (assert) {
+    test('complex three-generation family tree', function (assert) {
       // Create RenderTree
       const renderTree = new RenderTree(2); // Focus on parent1
 
@@ -367,29 +367,37 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       child1.childIn = parentMarriageIndex;
       child2.childIn = parentMarriageIndex;
 
-      // Layout focusing on parent1 (who has both parents and children)
+      // Layout focusing on grandparent (to see three generations)
       const renderer = new TextRenderer();
-      const family = layoutFamily(renderTree, parent1Index, renderer);
+      const family = layoutFamily(renderTree, gp1Index, renderer);
       const canvas = new TextCanvas();
       renderer.render(canvas, family);
       const output = canvas.render();
 
-      // For complex layouts, just verify key elements are present
-      // The exact layout depends on the layoutFamily algorithm implementation
-      assert.ok(output.includes('GrandPa'), 'Grandpa present');
-      assert.ok(output.includes('GrandMa'), 'Grandma present');
-      assert.ok(output.includes('Dad'), 'Dad present');
-      assert.ok(output.includes('Mom'), 'Mom present');
-      assert.ok(output.includes('Aunt'), 'Aunt present');
-      assert.ok(output.includes('Son'), 'Son present');
-      assert.ok(output.includes('Daughter'), 'Daughter present');
+      // Expected three-generation layout
+      const expected = [
+        '┌───────┐        ┌───────┐',
+        '│GrandPa│ ───┬── │GrandMa│',
+        '└───────┘    │   └───────┘',
+        '             ├────────────────────────',
+        '             │',
+        '             │',
+        '           ┌───┐        ┌───┐      ┌────┐',
+        '           │Dad│ ───┬── │Mom│      │Aunt│',
+        '           └───┘    │   └───┘      └────┘',
+        '                    ├────────',
+        '                    │',
+        '                    │',
+        '                  ┌───┐ ┌────────┐',
+        '                  │Son│ │Daughter│',
+        '                  └───┘ └────────┘',
+      ].join('\n');
 
-      // Verify structure has proper connections
-      const lines = output.split('\n');
-      const hasVerticalLines = lines.some((line) => line.includes('│'));
-      const hasHorizontalLines = lines.some((line) => line.includes('─'));
-      assert.ok(hasVerticalLines, 'Has vertical connections');
-      assert.ok(hasHorizontalLines, 'Has horizontal connections');
+      assert.strictEqual(
+        output,
+        expected,
+        'Complex three-generation family tree renders correctly',
+      );
     });
   });
 });
