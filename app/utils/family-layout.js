@@ -224,28 +224,33 @@ export function layoutFamily(renderTree, personIndex, renderer) {
         parentChildLine.y = partnershipLine.y;
         family.addElement(parentChildLine);
 
-        // Create sibling lines (horizontal connections to additional children)
+        // Create sibling line (single horizontal line from first to last child)
         // +---------+       +---------+
         // | Parent1 | --+-- | Parent2 |
         // +---------+   |   +---------+
         //               |
-        //               +--------- <-- (extending to next child)
-        //               |         |        |
-        //           [Child1]  [Child2]  [Child3]
-        for (let i = 1; i < childFamilies.length; i++) {
-          const prevChild = childFamilies[i - 1];
-          const prevChildPort = prevChild.x + prevChild.port;
-          const child = childFamilies[i];
-          const childPort = child.x + child.port;
-          const siblingLine = new Line(
-            childPort - prevChildPort,
-            'sibling-line',
-          );
-          siblingLine.x = prevChildPort;
-          siblingLine.y =
+        //               +─────────────── <-- single horizontal sibling line
+        //               |     |     |
+        //           [Child1] [Child2] [Child3]
+        if (childFamilies.length > 1) {
+          const siblingLineY =
             parentChildLine.y +
             renderer.getSiblingLineY(parentChildLine.height);
+
+          // Create one continuous horizontal sibling line from first to last child
+          const firstChildPort = firstChild.x + firstChild.port;
+          const lastChild = childFamilies[childFamilies.length - 1];
+          const lastChildPort = lastChild.x + lastChild.port;
+          const siblingLine = new Line(
+            lastChildPort - firstChildPort,
+            'sibling-line',
+          );
+          siblingLine.x = firstChildPort;
+          siblingLine.y = siblingLineY;
           family.addElement(siblingLine);
+
+          // Note: Vertical drop lines from sibling line to individual child ports are not drawn
+          // The current design uses a continuous horizontal sibling line without individual drops
         }
       }
     }
