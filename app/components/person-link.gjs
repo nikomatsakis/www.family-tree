@@ -1,8 +1,10 @@
 import Component from '@glimmer/component';
 import { LinkTo } from '@ember/routing';
-import { hash } from '@ember/helper';
+import { service } from '@ember/service';
 
 export default class PersonLinkComponent extends Component {
+  @service router;
+
   <template>
     {{#if this.isPagePerson}}
       <b>{{@person.name}}</b>
@@ -12,13 +14,18 @@ export default class PersonLinkComponent extends Component {
       <LinkTo
         @route='person'
         @model={{@person}}
-        @query={{hash referencePersonId=@referencePerson.id}}
+        @query={{this.queryParamsWithReference}}
         class='person-link'
       >
         {{@person.name}}
       </LinkTo>
     {{else}}
-      <LinkTo @route='person' @model={{@person}} class='person-link'>
+      <LinkTo
+        @route='person'
+        @model={{@person}}
+        @query={{this.queryParams}}
+        class='person-link'
+      >
         {{@person.name}}
       </LinkTo>
     {{/if}}
@@ -32,5 +39,23 @@ export default class PersonLinkComponent extends Component {
     return (
       this.args.pagePerson && this.args.person === this.args.referencePerson
     );
+  }
+
+  get currentRenderer() {
+    // Get renderer from current route's query params
+    return this.router.currentRoute?.queryParams?.renderer || 'd3-tree';
+  }
+
+  get queryParams() {
+    return {
+      renderer: this.currentRenderer,
+    };
+  }
+
+  get queryParamsWithReference() {
+    return {
+      referencePersonId: this.args.referencePerson.id,
+      renderer: this.currentRenderer,
+    };
   }
 }

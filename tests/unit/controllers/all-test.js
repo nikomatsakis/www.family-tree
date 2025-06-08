@@ -9,8 +9,8 @@ module('Unit | Controller | all', function (hooks) {
     assert.ok(controller);
   });
 
-  test('it has referencePersonId query param', function (assert) {
+  test('it has referencePersonId and renderer query params', function (assert) {
     let controller = this.owner.lookup('controller:all');
-    assert.deepEqual(controller.queryParams, ['referencePersonId']);
+    assert.deepEqual(controller.queryParams, ['referencePersonId', 'renderer']);
   });
 });
