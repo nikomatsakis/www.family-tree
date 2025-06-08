@@ -37,13 +37,22 @@ export class Partnership {
  *           |
  *       ┌───┴───┐
  *    Child1   Child2
+ *
+ * IMPORTANT: Partnership expansion states:
+ * - children: null = Partnership exists but hasn't been expanded yet (no children loaded)
+ * - children: [] = Partnership has been expanded but has no children (childless couple)
+ * - children: [1, 2, ...] = Partnership has been expanded and has children
+ *
+ * The distinction between null and [] is critical:
+ * - null means "we haven't looked at the children yet" (collapsed state)
+ * - [] means "we looked and there are no children" (expanded childless state)
  */
 export class RegularPartnership extends Partnership {
   constructor(id, parents, children = null) {
     super(id);
     this.type = 'regular';
     this.parents = parents; // number[] - indices into persons array
-    this.children = children; // number[] | null - indices, null if not expanded
+    this.children = children; // number[] | null - indices, null if not expanded, [] if expanded but childless
   }
 
   get isExpanded() {
