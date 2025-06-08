@@ -46,10 +46,10 @@ import { Family, Rectangle, Line } from './layout-elements.js';
  *
  * @param {RenderTree} renderTree - The render tree data structure
  * @param {number} personIndex - Index of person to layout
- * @param {TextMetrics} metrics - Text measurement interface
+ * @param {TextRenderer} renderer - Text renderer with measurement capabilities
  * @returns {Family} Complete family layout with positioned elements
  */
-export function layoutFamily(renderTree, personIndex, metrics) {
+export function layoutFamily(renderTree, personIndex, renderer) {
   const person = renderTree.getPerson(personIndex);
   const family = new Family();
 
@@ -58,7 +58,7 @@ export function layoutFamily(renderTree, personIndex, metrics) {
   // +----------+
   // | Parent1  | <--
   // +----------+
-  const personBox = metrics.measureBox(person.name);
+  const personBox = renderer.measureBox(person.name);
   const primaryRect = new Rectangle(
     person.name,
     'primary-person',
@@ -66,7 +66,7 @@ export function layoutFamily(renderTree, personIndex, metrics) {
     personBox.height,
   );
   family.addElement(primaryRect);
-  family.port = metrics.getPortPosition(personBox.width);
+  family.port = renderer.getPortPosition(personBox.width);
 
   // Step 2: Handle partnerships (stacked vertically for multiple partnerships)
   let leftParent = primaryRect;
@@ -86,7 +86,7 @@ export function layoutFamily(renderTree, personIndex, metrics) {
         (idx) => idx !== personIndex,
       );
       const partner = renderTree.getPerson(partnerIndex);
-      const partnerBox = metrics.measureBox(partner.name);
+      const partnerBox = renderer.measureBox(partner.name);
 
       // Layout children recursively FIRST
       //
@@ -99,12 +99,12 @@ export function layoutFamily(renderTree, personIndex, metrics) {
       if (partnership.isExpanded) {
         // Layout actual children recursively
         for (const childIndex of partnership.children) {
-          const childFamily = layoutFamily(renderTree, childIndex, metrics); // RECURSIVE
+          const childFamily = layoutFamily(renderTree, childIndex, renderer); // RECURSIVE
           childFamilies.push(childFamily);
         }
       } else {
         // Create expansion placeholder for unexpanded partnership
-        const expansionBox = metrics.measureBox('...');
+        const expansionBox = renderer.measureBox('...');
         const expansionPlaceholder = new Rectangle(
           '...',
           'expansion-placeholder',
@@ -113,27 +113,27 @@ export function layoutFamily(renderTree, personIndex, metrics) {
         );
         const placeholderFamily = new Family();
         placeholderFamily.addElement(expansionPlaceholder);
-        placeholderFamily.port = metrics.getPortPosition(expansionBox.width);
+        placeholderFamily.port = renderer.getPortPosition(expansionBox.width);
         childFamilies.push(placeholderFamily);
       }
 
       // Calculate junction position using our algorithm
-      const partnershipLineStart = leftParent.width + metrics.spacerWidth;
+      const partnershipLineStart = leftParent.width + renderer.spacerWidth;
       let partnershipLineJunction; // mid point of the partnership line
       if (childFamilies.length > 0) {
         // TODO: insert diagram to depict the two scenarios graphically
         const firstChild = childFamilies[0];
         partnershipLineJunction = Math.max(
-          partnershipLineStart + metrics.minimumLineLength,
+          partnershipLineStart + renderer.minimumLineLength,
           // Constraint: firstChild.port aligns with junction, so junction must be
           // at least continuityMinWidth + firstChild.port to ensure the child's
           // left edge doesn't overlap the continuity line reserved area
-          metrics.continuityMinWidth + firstChild.port,
+          renderer.continuityMinWidth + firstChild.port,
         );
       } else {
         // TODO: insert diagram to depict the scenario graphically
         partnershipLineJunction =
-          leftParent.width + metrics.spacerWidth + metrics.minimumLineLength;
+          leftParent.width + renderer.spacerWidth + renderer.minimumLineLength;
       }
 
       // Create and position partnership line
@@ -152,7 +152,7 @@ export function layoutFamily(renderTree, personIndex, metrics) {
       const partnershipLine = new Line(partnershipLineLength, 'marriage-line');
       partnershipLine.x = partnershipLineStart;
       partnershipLine.y =
-        leftParent.y + metrics.getPartnershipLineY(leftParent.height);
+        leftParent.y + renderer.getPartnershipLineY(leftParent.height);
       family.addElement(partnershipLine);
 
       // Position partner
@@ -167,7 +167,7 @@ export function layoutFamily(renderTree, personIndex, metrics) {
         partnerBox.height,
       );
       rightParent.x =
-        partnershipLineStart + partnershipLineLength + metrics.spacerWidth;
+        partnershipLineStart + partnershipLineLength + renderer.spacerWidth;
       rightParent.y = leftParent.y;
       family.addElement(rightParent);
 
@@ -184,7 +184,7 @@ export function layoutFamily(renderTree, personIndex, metrics) {
         //           +-------------------+
         const firstChild = childFamilies[0];
         firstChild.x = partnershipLineJunction - firstChild.port;
-        firstChild.y = leftParent.height + metrics.verticalSpacing;
+        firstChild.y = leftParent.height + renderer.verticalSpacing;
         family.addElement(firstChild);
 
         // Position remaining children left-justified with spacing
@@ -199,13 +199,13 @@ export function layoutFamily(renderTree, personIndex, metrics) {
         //           | Child1 and family |  | Child2... |  | Child3... |
         //           +-------------------+  +-----------+  +-----------+
         let currentChildX =
-          firstChild.x + firstChild.width + metrics.childSpacing;
+          firstChild.x + firstChild.width + renderer.childSpacing;
         for (let i = 1; i < childFamilies.length; i++) {
           const child = childFamilies[i];
           child.x = currentChildX;
-          child.y = leftParent.height + metrics.verticalSpacing;
+          child.y = leftParent.height + renderer.verticalSpacing;
           family.addElement(child);
-          currentChildX += child.width + metrics.childSpacing;
+          currentChildX += child.width + renderer.childSpacing;
         }
 
         // Create parent-child line (vertical drop)
@@ -242,7 +242,8 @@ export function layoutFamily(renderTree, personIndex, metrics) {
           );
           siblingLine.x = prevChildPort;
           siblingLine.y =
-            parentChildLine.y + metrics.getSiblingLineY(parentChildLine.height);
+            parentChildLine.y +
+            renderer.getSiblingLineY(parentChildLine.height);
           family.addElement(siblingLine);
         }
       }
@@ -251,7 +252,7 @@ export function layoutFamily(renderTree, personIndex, metrics) {
     // Add continuity line and shadow person if not the last partnership
     if (partnershipIndex < person.parentIn.length - 1) {
       // Calculate where the next partnership should start
-      const nextY = family.height + metrics.verticalSpacing;
+      const nextY = family.height + renderer.verticalSpacing;
 
       // Create continuity line from current leftParent to next position
       // +---------+       +---------+
@@ -262,7 +263,7 @@ export function layoutFamily(renderTree, personIndex, metrics) {
       //  ::
       const continuityLineLength = nextY - (leftParent.y + leftParent.height);
       const continuityLine = new Line(continuityLineLength, 'continuity-line');
-      continuityLine.x = metrics.continuityOffset;
+      continuityLine.x = renderer.continuityOffset;
       continuityLine.y = leftParent.y + leftParent.height;
       family.addElement(continuityLine);
 

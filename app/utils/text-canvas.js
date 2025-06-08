@@ -86,7 +86,6 @@ export class TextCanvas {
     this.rows = []; // Array of arrays: rows[y][x] = Text | Segments | undefined
   }
 
-
   /**
    * Ensure grid is large enough for position
    */
