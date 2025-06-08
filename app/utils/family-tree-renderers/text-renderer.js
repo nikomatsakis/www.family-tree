@@ -114,9 +114,8 @@ export default class TextRenderer extends BaseRenderer {
         const partnership = new RegularPartnership(
           graphPartnership.partnership.id,
           parentIndices,
-          childIndices,
+          childIndices, // Always use childIndices since we're only here if there are children to show
         );
-        partnership.isExpanded = graphPartnership.expanded;
 
         const renderIndex = renderTree.addPartnership(partnership);
         partnershipIndexMap.set(graphIndex, renderIndex);
