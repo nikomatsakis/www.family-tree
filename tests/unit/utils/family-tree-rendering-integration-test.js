@@ -228,7 +228,7 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       );
     });
 
-    test.skip('person with multiple marriages using continuity lines', function (assert) {
+    test('person with multiple marriages using continuity lines', function (assert) {
       // Create RenderTree
       const renderTree = new RenderTree(0);
 
@@ -274,9 +274,43 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       child1.childIn = marriage1Index;
       child2.childIn = marriage2Index;
 
-      // This test is skipped due to layout bugs with multiple marriages
-      // The layoutFamily function creates overlapping elements
-      assert.ok(true, 'Test skipped due to known layout issues');
+      // Layout and render
+      const renderer = new TextRenderer();
+      const family = layoutFamily(renderTree, personIndex, renderer);
+      const canvas = new TextCanvas();
+      renderer.render(canvas, family);
+      const output = canvas.render();
+
+      // Expected output with multiple marriages stacked vertically
+      const expected = [
+        '┌────┐        ┌────┐',
+        '│John│ ───┬── │Mary│',
+        '└────┘    │   └────┘',
+        ' ║        │',
+        ' ║        │',
+        ' ║        │',
+        ' ║     ┌─────┐',
+        ' ║     │Alice│',
+        ' ║     └─────┘',
+        ' ║',
+        ' ║',
+        ' ║',
+        '┌────┐        ┌─────┐',
+        '│John│ ───┬── │Susan│',
+        '└────┘    │   └─────┘',
+        '          │',
+        '          │',
+        '          │',
+        '        ┌───┐',
+        '        │Bob│',
+        '        └───┘',
+      ].join('\n');
+
+      assert.strictEqual(
+        output,
+        expected,
+        'Multiple marriages with continuity line renders correctly',
+      );
     });
 
     test.skip('complex three-generation family tree', function (assert) {

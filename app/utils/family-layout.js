@@ -184,7 +184,8 @@ export function layoutFamily(renderTree, personIndex, renderer) {
         //           +-------------------+
         const firstChild = childFamilies[0];
         firstChild.x = partnershipLineJunction - firstChild.port;
-        firstChild.y = leftParent.height + renderer.verticalSpacing;
+        firstChild.y =
+          leftParent.y + leftParent.height + renderer.verticalSpacing;
         family.addElement(firstChild);
 
         // Position remaining children left-justified with spacing
@@ -203,7 +204,7 @@ export function layoutFamily(renderTree, personIndex, renderer) {
         for (let i = 1; i < childFamilies.length; i++) {
           const child = childFamilies[i];
           child.x = currentChildX;
-          child.y = leftParent.height + renderer.verticalSpacing;
+          child.y = leftParent.y + leftParent.height + renderer.verticalSpacing;
           family.addElement(child);
           currentChildX += child.width + renderer.childSpacing;
         }
