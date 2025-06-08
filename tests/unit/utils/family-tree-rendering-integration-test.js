@@ -208,15 +208,15 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       renderer.render(canvas, family);
       const output = canvas.render();
 
-      // Expected output with T-junction
+      // Expected output with T-junction and drop lines connecting to child boxes
       const expected = [
         '┌───┐        ┌───┐',
         '│Dad│ ───┬── │Mom│',
         '└───┘    │   └───┘',
-        '         ├─────────────',
-        '         │',
-        '         │',
-        '      ┌─────┐ ┌───┐ ┌─────┐',
+        '         ├──────┬──────┐',
+        '         │      │      │',
+        '         │      │      │',
+        '      ┌──┴──┐ ┌─┴─┐ ┌──┴──┐',
         '      │Alice│ │Bob│ │Carol│',
         '      └─────┘ └───┘ └─────┘',
       ].join('\n');
@@ -281,27 +281,27 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       renderer.render(canvas, family);
       const output = canvas.render();
 
-      // Expected output with multiple marriages stacked vertically
+      // Expected output with multiple marriages and connected continuity line
       const expected = [
         '┌────┐        ┌────┐',
         '│John│ ───┬── │Mary│',
-        '└────┘    │   └────┘',
+        '└╥───┘    │   └────┘',
         ' ║        │',
         ' ║        │',
         ' ║        │',
-        ' ║     ┌─────┐',
+        ' ║     ┌──┴──┐',
         ' ║     │Alice│',
         ' ║     └─────┘',
         ' ║',
         ' ║',
         ' ║',
-        '┌────┐        ┌─────┐',
+        '┌╨───┐        ┌─────┐',
         '│John│ ───┬── │Susan│',
         '└────┘    │   └─────┘',
         '          │',
         '          │',
         '          │',
-        '        ┌───┐',
+        '        ┌─┴─┐',
         '        │Bob│',
         '        └───┘',
       ].join('\n');
@@ -374,21 +374,21 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       renderer.render(canvas, family);
       const output = canvas.render();
 
-      // Expected three-generation layout
+      // Expected three-generation layout with connected drop lines
       const expected = [
         '┌───────┐        ┌───────┐',
         '│GrandPa│ ───┬── │GrandMa│',
         '└───────┘    │   └───────┘',
-        '             ├────────────────────────',
-        '             │',
-        '             │',
-        '           ┌───┐        ┌───┐      ┌────┐',
+        '             ├────────────────────────┐',
+        '             │                        │',
+        '             │                        │',
+        '           ┌─┴─┐        ┌───┐      ┌──┴─┐',
         '           │Dad│ ───┬── │Mom│      │Aunt│',
         '           └───┘    │   └───┘      └────┘',
-        '                    ├────────',
-        '                    │',
-        '                    │',
-        '                  ┌───┐ ┌────────┐',
+        '                    ├────────┐',
+        '                    │        │',
+        '                    │        │',
+        '                  ┌─┴─┐ ┌────┴───┐',
         '                  │Son│ │Daughter│',
         '                  └───┘ └────────┘',
       ].join('\n');

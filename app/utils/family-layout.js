@@ -216,8 +216,12 @@ export function layoutFamily(renderTree, personIndex, renderer) {
         // +---------+   |   +---------+
         //               | <--
         //           [children positioned below]
+        const parentChildLineLength =
+          childFamilies.length > 1
+            ? firstChild.y - partnershipLine.y
+            : firstChild.y - partnershipLine.y + 1; // Extend by 1 for single child to connect to box
         const parentChildLine = new Line(
-          firstChild.y - partnershipLine.y,
+          parentChildLineLength,
           'parent-child-line',
         );
         parentChildLine.x = partnershipLineJunction;
@@ -242,15 +246,22 @@ export function layoutFamily(renderTree, personIndex, renderer) {
           const lastChild = childFamilies[childFamilies.length - 1];
           const lastChildPort = lastChild.x + lastChild.port;
           const siblingLine = new Line(
-            lastChildPort - firstChildPort,
+            lastChildPort - firstChildPort + 1,
             'sibling-line',
           );
           siblingLine.x = firstChildPort;
           siblingLine.y = siblingLineY;
           family.addElement(siblingLine);
 
-          // Note: Vertical drop lines from sibling line to individual child ports are not drawn
-          // The current design uses a continuous horizontal sibling line without individual drops
+          // Add vertical drop lines from sibling line to each child box (extended by 1)
+          for (const child of childFamilies) {
+            const childPort = child.x + child.port;
+            const dropLineLength = child.y - siblingLineY + 1;
+            const dropLine = new Line(dropLineLength, 'parent-child-line');
+            dropLine.x = childPort;
+            dropLine.y = siblingLineY;
+            family.addElement(dropLine);
+          }
         }
       }
     }
@@ -267,10 +278,11 @@ export function layoutFamily(renderTree, personIndex, renderer) {
       //  :: <--
       //  :: (extends down past children if any)
       //  ::
-      const continuityLineLength = nextY - (leftParent.y + leftParent.height);
+      const continuityLineLength =
+        nextY - (leftParent.y + leftParent.height) + 2;
       const continuityLine = new Line(continuityLineLength, 'continuity-line');
       continuityLine.x = renderer.continuityOffset;
-      continuityLine.y = leftParent.y + leftParent.height;
+      continuityLine.y = leftParent.y + leftParent.height - 1;
       family.addElement(continuityLine);
 
       // Create shadow person rectangle for next partnership
