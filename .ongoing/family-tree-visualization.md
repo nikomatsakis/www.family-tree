@@ -1,6 +1,6 @@
 # Family Tree Visualization Progress
 
-## Status: 95% Complete (Integration tests added, layout bugs found)
+## Status: 98% Complete (Multiple marriages layout fixed)
 
 ## Completed Work
 - ✅ RenderTree data structures (render-tree.js)
@@ -30,21 +30,31 @@ The visualization system is mostly functional with some layout bugs.
 - text-canvas.js → provides segment-based drawing API (app/utils/text-canvas.js:138-190)
 
 ## Known Issues / Next Steps
-1. **Multiple marriages layout bug** (tests/unit/utils/family-tree-rendering-integration-test.js:229)
-   - Creates overlapping Family elements at same Y position
-   - Generates parent-child lines with negative height
-   - Test currently skipped
+1. **Multiple marriages layout bug** ✅ FIXED
+   - ✅ Fixed lines 187 & 206 to use `leftParent.y + leftParent.height` instead of `leftParent.height`
+   - ✅ Children now positioned correctly relative to their parent's bottom edge
+   - ✅ Eliminates overlapping families and negative height lines
+   - ✅ Test now passes with proper vertical stacking
    
-2. **Complex multi-generation layout** (tests/unit/utils/family-tree-rendering-integration-test.js:285)
-   - Likely has similar issues to multiple marriages
-   - Test currently skipped
-
-3. **TextRenderer coordinate rounding**
+2. **Complex multi-generation layout** (tests/unit/utils/family-tree-rendering-integration-test.js:314)
+   - Still skipped - may work now that multiple marriages is fixed
+   - Next step: unskip and test
+   
+3. **TextRenderer coordinate rounding** ✅ FIXED
    - Fixed by using Math.floor() for all position calculations
    - Ensures integer coordinates for TextCanvas
+
+## Refactoring Tasks
+1. **Add computed properties to layout elements** (app/utils/layout-elements.js)
+   - Add `get right() { return this.x + this.width; }` to Rectangle, Line, Family
+   - Add `get bottom() { return this.y + this.height; }` to Rectangle, Line, Family
+   - This would prevent bugs like using `leftParent.height` instead of `leftParent.y + leftParent.height`
+   - Makes layout calculations more readable and less error-prone
 
 ## Testing Status
 - ✅ Simple marriage rendering works correctly
 - ✅ Parent with children T-junction layout works
-- ❌ Multiple marriages - layout bug causes overlapping elements
-- ❌ Complex three-generation - not tested due to expected issues
+- ✅ Multiple marriages with continuity lines - FIXED and working
+- ❌ Complex three-generation - still skipped, needs testing
+
+**Test Results**: 6/7 tests passing (1 skipped)
