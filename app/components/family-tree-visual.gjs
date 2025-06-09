@@ -51,7 +51,7 @@ export default class FamilyTreeVisual extends Component {
    * and external prop changes from the parent.
    */
   get activeRendererType() {
-    return this.selectedRendererType || this.args.rendererType || 'text';
+    return this.selectedRendererType || this.args.rendererType || 'd3-tree';
   }
 
   /**
@@ -100,7 +100,7 @@ export default class FamilyTreeVisual extends Component {
     const graph = renderer.buildVisibleGraph(person);
 
     // Convert graph to renderer-specific format (Mermaid code or HTML)
-    const renderData = renderer.render(graph, {
+    const renderData = renderer.prepareRenderData(graph, {
       startPersonIdx: 0, // The starting person is always at index 0
     });
 

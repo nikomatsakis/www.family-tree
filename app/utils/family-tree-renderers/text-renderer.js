@@ -21,12 +21,12 @@ export default class TextRenderer extends BaseRenderer {
   }
 
   /**
-   * Renders the family tree as ASCII art
+   * Prepares the family tree layout data for ASCII art rendering
    * @param {RenderTree} renderTree - The RenderTree data from buildVisibleGraph
-   * @param {Object} options - Rendering options
-   * @returns {Object} Text rendering data
+   * @param {Object} options - Layout options
+   * @returns {Object} Layout data for text rendering
    */
-  render(renderTree, options = {}) {
+  prepareRenderData(renderTree, options = {}) {
     try {
       // Use root nodes to determine starting point for text rendering
       let startPersonIndex;
@@ -95,7 +95,7 @@ export default class TextRenderer extends BaseRenderer {
   /**
    * Renders the ASCII output to a DOM element
    * @param {HTMLElement} element - Container element
-   * @param {Object} renderData - Data from render()
+   * @param {Object} renderData - Data from prepareRenderData()
    */
   renderToElement(element, renderData) {
     // Clear previous content

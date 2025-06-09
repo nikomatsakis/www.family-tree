@@ -282,13 +282,15 @@ export default class BaseRenderer {
   }
 
   /**
-   * Render the family tree. Must be implemented by subclasses.
+   * Prepare render data for the family tree. Must be implemented by subclasses.
+   * This method does not perform actual rendering, but prepares the data structure
+   * needed for rendering (e.g., layout calculations, positioning, etc.).
    * @param {Object} graph - The graph data from buildVisibleGraph
-   * @param {Object} options - Rendering options
-   * @returns {Object} Rendered output (format depends on renderer)
+   * @param {Object} options - Layout options
+   * @returns {Object} Render data (format depends on renderer)
    */
-  render() {
-    throw new Error('render method must be implemented by subclass');
+  prepareRenderData() {
+    throw new Error('prepareRenderData method must be implemented by subclass');
   }
 
   /**

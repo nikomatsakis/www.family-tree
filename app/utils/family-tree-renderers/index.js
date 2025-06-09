@@ -1,9 +1,10 @@
 import DebugRenderer from './debug-renderer';
 import TextRenderer from './text-renderer';
+import D3TreeRenderer from './d3-tree-renderer';
 
 /**
  * Factory function to create renderer instances
- * @param {string} type - The renderer type ('debug' or 'text')
+ * @param {string} type - The renderer type ('debug', 'text', or 'd3-tree')
  * @param {Object} options - Options to pass to the renderer constructor
  * @returns {BaseRenderer} Renderer instance
  */
@@ -13,6 +14,8 @@ export function createRenderer(type, options = {}) {
       return new DebugRenderer(options);
     case 'text':
       return new TextRenderer(options);
+    case 'd3-tree':
+      return new D3TreeRenderer(options);
     default:
       throw new Error(`Unknown renderer type: ${type}`);
   }
@@ -23,7 +26,7 @@ export function createRenderer(type, options = {}) {
  * @returns {Array<string>} Array of available renderer type names
  */
 export function getAvailableRenderers() {
-  return ['text', 'debug'];
+  return ['d3-tree', 'text', 'debug'];
 }
 
 /**
@@ -32,9 +35,10 @@ export function getAvailableRenderers() {
  */
 export function getRendererDisplayNames() {
   return {
+    'd3-tree': 'D3 Tree',
     text: 'ASCII Text',
     debug: 'Debug',
   };
 }
 
-export { DebugRenderer, TextRenderer };
+export { DebugRenderer, TextRenderer, D3TreeRenderer };

@@ -39,7 +39,11 @@ module('Integration | Component | text-renderer', function (hooks) {
   test('text renderer implements required methods', function (assert) {
     const renderer = createRenderer('text');
 
-    assert.strictEqual(typeof renderer.render, 'function', 'Has render method');
+    assert.strictEqual(
+      typeof renderer.prepareRenderData,
+      'function',
+      'Has prepareRenderData method',
+    );
     assert.strictEqual(
       typeof renderer.getType,
       'function',
@@ -61,7 +65,7 @@ module('Integration | Component | text-renderer', function (hooks) {
     const renderer = createRenderer('text');
     const emptyGraph = { persons: [], partnerships: [] };
 
-    const result = renderer.render(emptyGraph);
+    const result = renderer.prepareRenderData(emptyGraph);
 
     assert.ok(result, 'Render returns a result');
     assert.strictEqual(result.type, 'text', 'Result has correct type');

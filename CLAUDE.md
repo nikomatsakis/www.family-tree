@@ -14,6 +14,7 @@ Track ongoing development work and progress in the `.ongoing/` directory:
 - Include status, progress summary, next steps, and debugging context
 - Update files as work progresses to maintain context across sessions
 - Use descriptive filenames like `feature-name.md` or `bug-investigation.md`
+- When ongoing files describe phased development, wait for active confirmation before beginning the next phase.
 
 ### Content Guidelines for `.ongoing/` Files
 

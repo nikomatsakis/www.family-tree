@@ -20,6 +20,9 @@ import { Family, Rectangle, Line } from './layout-elements.js';
 /**
  * Layout a single person and their immediate family using T-junction algorithm.
  *
+ * This function should be called with a root ancestor person and will recursively
+ * layout all descendants. The layout proceeds top-down from ancestors to children.
+ *
  * Example output for Parent1 with 2 partnerships:
  * ```
  *    port     partnership line

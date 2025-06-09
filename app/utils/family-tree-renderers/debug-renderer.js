@@ -13,12 +13,12 @@ export default class DebugRenderer extends BaseRenderer {
   }
 
   /**
-   * Renders the family tree data as JSON for debugging
+   * Prepares the family tree data as JSON for debugging
    * @param {RenderTree} renderTree - The RenderTree data from buildVisibleGraph
-   * @param {Object} options - Rendering options
+   * @param {Object} options - Layout options
    * @returns {Object} Debug data structure
    */
-  render(renderTree, options = {}) {
+  prepareRenderData(renderTree, options = {}) {
     return {
       type: 'debug',
       data: {
@@ -55,7 +55,7 @@ export default class DebugRenderer extends BaseRenderer {
   /**
    * Renders the debug data to a DOM element with copy functionality
    * @param {HTMLElement} element - Container element
-   * @param {Object} debugData - Data from render()
+   * @param {Object} debugData - Data from prepareRenderData()
    */
   renderToElement(element, debugData) {
     // Clear previous content
