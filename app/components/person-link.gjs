@@ -43,7 +43,7 @@ export default class PersonLinkComponent extends Component {
 
   get currentRenderer() {
     // Get renderer from current route's query params
-    return this.router.currentRoute?.queryParams?.renderer || 'd3-tree';
+    return this.router.currentRoute?.queryParams?.renderer || 'text';
   }
 
   get queryParams() {

@@ -13,7 +13,7 @@ export default class extends Component {
 
   get query() {
     const currentRenderer =
-      this.router.currentRoute?.queryParams?.renderer || 'd3-tree';
+      this.router.currentRoute?.queryParams?.renderer || 'text';
     return {
       referencePersonId: this.args.referencePerson?.id ?? null,
       renderer: currentRenderer,

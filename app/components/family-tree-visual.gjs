@@ -51,7 +51,7 @@ export default class FamilyTreeVisual extends Component {
    * and external prop changes from the parent.
    */
   get activeRendererType() {
-    return this.selectedRendererType || this.args.rendererType || 'd3-tree';
+    return this.selectedRendererType || this.args.rendererType || 'text';
   }
 
   /**
@@ -152,19 +152,30 @@ export default class FamilyTreeVisual extends Component {
     const expandedPartnerships = new Set();
     const expandedPersons = new Set();
 
-    // Default: Show parent partnership that produced current person
+    // 1. Expand focus person's own partnerships (to show their children)
+    this.args.person.parentIn.forEach((partnership) => {
+      expandedPartnerships.add(partnership.id);
+    });
+
+    // 2. Expand parent partnership that produced current person
     if (this.args.person.childIn) {
       expandedPartnerships.add(this.args.person.childIn.id);
     }
 
-    // Default: Show partnerships of current person's children
-    this.args.person.parentIn.forEach((partnership) => {
-      partnership.children.forEach((child) => {
-        child.parentIn.forEach((childPartnership) => {
-          expandedPartnerships.add(childPartnership.id);
-        });
-      });
-    });
+    // 3. Walk up ancestor chain and expand all direct lineage partnerships
+    let currentPerson = this.args.person;
+    while (currentPerson.childIn) {
+      // Move up to parent partnership
+      const parentPartnership = currentPerson.childIn;
+      expandedPartnerships.add(parentPartnership.id);
+
+      // Move up to first parent in that partnership (main lineage)
+      if (parentPartnership.parents.length > 0) {
+        currentPerson = parentPartnership.parents[0]; // Follow first parent as main lineage
+      } else {
+        break;
+      }
+    }
 
     return { expandedPartnerships, expandedPersons };
   }

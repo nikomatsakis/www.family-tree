@@ -3,7 +3,7 @@ import { tracked } from '@glimmer/tracking';
 
 export default class PersonController extends Controller {
   @tracked referencePersonId = null;
-  @tracked renderer = 'd3-tree';
+  @tracked renderer = 'text';
   @tracked model;
   queryParams = ['referencePersonId', 'renderer'];
 

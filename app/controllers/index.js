@@ -2,6 +2,6 @@ import Controller from '@ember/controller';
 import { tracked } from '@glimmer/tracking';
 
 export default class IndexController extends Controller {
-  @tracked renderer = 'd3-tree';
+  @tracked renderer = 'text';
   queryParams = ['renderer'];
 }

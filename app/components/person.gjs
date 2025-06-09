@@ -177,7 +177,7 @@ export default class Person extends Component {
   }
 
   get rendererType() {
-    return this.args.renderer || 'd3-tree';
+    return this.args.renderer || 'text';
   }
 
   @action
