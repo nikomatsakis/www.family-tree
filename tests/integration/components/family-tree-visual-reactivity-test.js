@@ -16,7 +16,7 @@ module(
 
       // Create test context with tracked renderer type
       class TestContext {
-        @tracked rendererType = 'd3-tree';
+        @tracked rendererType = 'text';
 
         person = {
           id: 'p1',
@@ -34,17 +34,17 @@ module(
     });
 
     test('it reacts to renderer type changes from parent component', async function (assert) {
-      // Render with initial d3-tree renderer
+      // Render with initial text renderer
       await render(hbs`<FamilyTreeVisual 
       @person={{this.context.person}}
       @pagePerson={{this.context.person}}
       @rendererType={{this.context.rendererType}}
     />`);
 
-      // Verify initial render with d3-tree
+      // Verify initial render with text
       assert
-        .dom('[data-renderer-type="d3-tree"]')
-        .exists('Initial render uses d3-tree');
+        .dom('[data-renderer-type="text"]')
+        .exists('Initial render uses text');
       assert.dom('.tree-container').exists('Tree container exists');
 
       // Get initial content
@@ -70,14 +70,12 @@ module(
         'Content changed when renderer changed',
       );
 
-      // Change back to d3-tree
-      this.context.rendererType = 'd3-tree';
+      // Change back to text
+      this.context.rendererType = 'text';
       await settled();
 
       // Verify it changed back
-      assert
-        .dom('[data-renderer-type="d3-tree"]')
-        .exists('Changed back to d3-tree');
+      assert.dom('[data-renderer-type="text"]').exists('Changed back to text');
       assert.dom('.debug-renderer').doesNotExist('Debug view is not rendered');
     });
 
@@ -91,10 +89,8 @@ module(
       @rendererType={{this.context.rendererType}}
     />`);
 
-      // Verify initial d3-tree render
-      assert
-        .dom('[data-renderer-type="d3-tree"]')
-        .exists('Initial d3-tree render');
+      // Verify initial text render
+      assert.dom('[data-renderer-type="text"]').exists('Initial text render');
 
       // Get the tree container element to check if it's updated
       const treeContainer = this.element.querySelector('.tree-container');
@@ -123,12 +119,12 @@ module(
         .exists('Debug view exists after renderer change');
 
       // Change back to verify it updates again
-      this.context.rendererType = 'd3-tree';
+      this.context.rendererType = 'text';
       await settled();
 
       assert
-        .dom('[data-renderer-type="d3-tree"]')
-        .exists('Renderer type changed back to d3-tree');
+        .dom('[data-renderer-type="text"]')
+        .exists('Renderer type changed back to text');
       assert
         .dom('.debug-renderer')
         .doesNotExist('Debug view removed after changing back');

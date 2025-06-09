@@ -42,7 +42,7 @@ module('Integration | Component | family-tree-visual', function (hooks) {
 
     // Check that the component exists and contains rendered content
     assert.dom('.tree-container').exists();
-    // The tree container should contain the person's name (either in d3-tree or debug view)
+    // The tree container should contain the person's name (either in text or debug view)
     assert.dom('.tree-container').containsText('Test Person');
   });
 
@@ -68,15 +68,15 @@ module('Integration | Component | family-tree-visual', function (hooks) {
   });
 
   test('it supports different renderer types', async function (assert) {
-    // Test with d3-tree renderer (default)
+    // Test with text renderer (default)
     await render(hbs`<FamilyTreeVisual 
       @person={{this.person}}
       @pagePerson={{this.person}}
-      @rendererType="d3-tree"
+      @rendererType="text"
     />`);
 
     assert.dom('.tree-container').exists();
-    assert.dom('[data-renderer-type="d3-tree"]').exists();
+    assert.dom('[data-renderer-type="text"]').exists();
 
     // Test with debug renderer
     await render(hbs`<FamilyTreeVisual 
