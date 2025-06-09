@@ -1,3 +1,9 @@
+import {
+  RenderTree,
+  RenderPerson,
+  RegularPartnership,
+} from '../render-tree.js';
+
 /**
  * Base class for family tree renderers.
  * Provides common functionality for building and rendering family tree visualizations.
@@ -31,22 +37,19 @@ export default class BaseRenderer {
   }
 
   /**
-   * Builds an index-based graph representation of the visible family tree.
+   * Builds a RenderTree representation of the visible family tree.
    *
-   * This algorithm creates two arrays:
-   * - persons: Array of person nodes with indices pointing to their relationships
-   * - partnerships: Array of partnership nodes with indices pointing to parents/children
-   *
+   * This algorithm creates a RenderTree with proper RenderPerson and RegularPartnership objects.
    * The algorithm handles cycles by immediately adding placeholders to the maps
    * before recursively processing relationships. This ensures each person/partnership
    * is processed exactly once.
    *
-   * @param {Person} startPerson - The person to start building from
-   * @returns {Object} Graph with persons and partnerships arrays
+   * @param {*} startPerson - The person to start building from (from genea service)
+   * @returns {RenderTree} RenderTree with proper RenderPerson and RegularPartnership objects
    */
   buildVisibleGraph(startPerson) {
-    const persons = [];
-    const partnerships = [];
+    // Find the start person index (will be 0 since we add them first)
+    const renderTree = new RenderTree(0);
     const personToIndex = new Map(); // person.id -> index
     const partnershipToIndex = new Map(); // partnership.id -> index
 
@@ -62,32 +65,35 @@ export default class BaseRenderer {
         return existingIdx;
       }
 
-      // Add placeholder immediately to handle cycles
-      const idx = persons.length;
+      // Create RenderPerson with correct semantics
+      const renderPerson = new RenderPerson(
+        person.id,
+        person.name,
+        null, // childIn - will be set below if person has parents
+        [], // parentIn - will be populated below with partnerships where this person is a parent
+      );
+
+      // Add to render tree and store index mapping
+      const idx = renderTree.addPerson(renderPerson);
       personToIndex.set(person.id, idx);
-      persons.push({
-        person,
-        parentIn: [], // Partnership(s) where this person is a child
-        partnerships: [], // Partnerships where this person is a parent
-      });
 
       if (this.debug) {
         console.log(`Added person: ${person.name} at index ${idx}`);
       }
 
-      // Process partnership where this person is a child
+      // Process partnership where this person is a child (their parents' partnership)
       if (person.childIn) {
         const parentPartnershipIdx = buildPartnership(person.childIn);
-        persons[idx].parentIn = [parentPartnershipIdx];
+        renderTree.getPerson(idx).childIn = parentPartnershipIdx;
         if (this.debug) {
           console.log(`  - Child in partnership ${parentPartnershipIdx}`);
         }
       }
 
-      // Process partnerships where this person is a parent
+      // Process partnerships where this person is a parent (partnerships with their spouses)
       for (const partnership of person.parentIn) {
         const partnershipIdx = buildPartnership(partnership);
-        persons[idx].partnerships.push(partnershipIdx);
+        renderTree.getPerson(idx).parentIn.push(partnershipIdx);
         if (this.debug) {
           console.log(`  - Parent in partnership ${partnershipIdx}`);
         }
@@ -108,15 +114,19 @@ export default class BaseRenderer {
         return existingIdx;
       }
 
-      // Add placeholder immediately to handle cycles
-      const idx = partnerships.length;
+      // Create RegularPartnership with proper expansion state
+      const isExpanded = this.isPartnershipExpanded(partnership.id);
+      const childrenArray = isExpanded ? [] : null; // null = not expanded, [] = expanded but no children yet
+
+      const regularPartnership = new RegularPartnership(
+        partnership.id,
+        [], // parents - will be populated below
+        childrenArray,
+      );
+
+      // Add to render tree and store index mapping
+      const idx = renderTree.addPartnership(regularPartnership);
       partnershipToIndex.set(partnership.id, idx);
-      partnerships.push({
-        partnership,
-        parents: [],
-        children: [],
-        expanded: this.isPartnershipExpanded(partnership.id),
-      });
 
       if (this.debug) {
         const partnerNames = partnership.parents.map((p) => p.name).join(' & ');
@@ -128,9 +138,26 @@ export default class BaseRenderer {
       // Add all parents
       for (const parent of partnership.parents) {
         const parentIdx = buildPerson(parent);
-        partnerships[idx].parents.push(parentIdx);
+        renderTree.getPartnership(idx).parents.push(parentIdx);
         if (this.debug) {
           console.log(`  - Has parent ${parent.name} at index ${parentIdx}`);
+        }
+      }
+
+      // If partnership has only one parent, add a placeholder for missing partner
+      if (partnership.parents.length === 1) {
+        const unknownPerson = new RenderPerson(
+          `unknown-partner-${partnership.id}`,
+          'Unknown',
+          null,
+          [idx], // This partnership
+        );
+        const unknownIdx = renderTree.addPerson(unknownPerson);
+        renderTree.getPartnership(idx).parents.push(unknownIdx);
+        if (this.debug) {
+          console.log(
+            `  - Added placeholder Unknown partner at index ${unknownIdx}`,
+          );
         }
       }
 
@@ -139,11 +166,11 @@ export default class BaseRenderer {
         if (this.isPartnershipExpanded(partnership.id)) {
           // If expanded, fully build the child
           const childIdx = buildPerson(child);
-          partnerships[idx].children.push(childIdx);
+          renderTree.getPartnership(idx).children.push(childIdx);
 
-          // Update the child's parentIn if needed
-          if (persons[childIdx].parentIn.length === 0) {
-            persons[childIdx].parentIn = [idx];
+          // Update the child's childIn to point to this partnership (their parents' partnership)
+          if (renderTree.getPerson(childIdx).childIn === null) {
+            renderTree.getPerson(childIdx).childIn = idx;
           }
 
           if (this.debug) {
@@ -153,11 +180,12 @@ export default class BaseRenderer {
           // If not expanded, check if child already exists in graph
           if (personToIndex.has(child.id)) {
             const childIdx = personToIndex.get(child.id);
-            partnerships[idx].children.push(childIdx);
+            // Note: for unexpanded partnerships, children array should be null, not populated
+            // This might need adjustment based on the visual design requirements
 
             // Ensure child knows about this parent partnership
-            if (!persons[childIdx].parentIn.includes(idx)) {
-              persons[childIdx].parentIn.push(idx);
+            if (renderTree.getPerson(childIdx).childIn === null) {
+              renderTree.getPerson(childIdx).childIn = idx;
             }
 
             if (this.debug) {
@@ -174,7 +202,8 @@ export default class BaseRenderer {
         !this.isPartnershipExpanded(partnership.id) &&
         partnership.children.length > 0
       ) {
-        const connectedCount = partnerships[idx].children.length;
+        const connectedCount =
+          renderTree.getPartnership(idx).children?.length || 0;
         const totalCount = partnership.children.length;
         console.log(
           `  - Has ${totalCount} children total (${connectedCount} connected, partnership not expanded)`,
@@ -188,14 +217,14 @@ export default class BaseRenderer {
     buildPerson(startPerson);
 
     if (this.debug) {
-      console.log('\nFinal graph structure:');
-      console.log(`Persons: ${persons.length}`);
-      console.log(`Partnerships: ${partnerships.length}`);
+      console.log('\nFinal RenderTree structure:');
+      console.log(`Persons: ${renderTree.persons.length}`);
+      console.log(`Partnerships: ${renderTree.partnerships.length}`);
 
       // Find and log root nodes
-      const roots = persons
-        .map((p, idx) => ({ ...p, idx }))
-        .filter((p) => p.parentIn.length === 0);
+      const roots = renderTree.persons
+        .map((p, idx) => ({ person: p, idx }))
+        .filter((p) => p.person.childIn === null);
       console.log(
         `Root nodes: ${roots
           .map((r) => `${r.person.name} (${r.idx})`)
@@ -203,7 +232,19 @@ export default class BaseRenderer {
       );
     }
 
-    return { persons, partnerships };
+    // Compute root nodes for the completed tree
+    renderTree.computeRootNodes();
+
+    if (this.debug) {
+      console.log(
+        'Computed root nodes:',
+        renderTree.rootNodes.map(
+          (idx) => `${renderTree.getPerson(idx).name} (${idx})`,
+        ),
+      );
+    }
+
+    return renderTree;
   }
 
   /**

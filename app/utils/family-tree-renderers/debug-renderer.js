@@ -14,43 +14,36 @@ export default class DebugRenderer extends BaseRenderer {
 
   /**
    * Renders the family tree data as JSON for debugging
-   * @param {Object} graph - The graph data from buildVisibleGraph
+   * @param {RenderTree} renderTree - The RenderTree data from buildVisibleGraph
    * @param {Object} options - Rendering options
    * @returns {Object} Debug data structure
    */
-  render(graph, options = {}) {
-    const { persons, partnerships } = graph;
-
+  render(renderTree, options = {}) {
     return {
       type: 'debug',
       data: {
-        graph: {
-          persons: persons.map((p, idx) => ({
+        renderTree: {
+          focusPersonIndex: renderTree.focusPersonIndex,
+          persons: renderTree.persons.map((p, idx) => ({
             index: idx,
-            person: {
-              id: p.person.id,
-              name: p.person.name,
-              gender: p.person.gender,
-              comments: p.person.comments,
-            },
+            id: p.id,
+            name: p.name,
+            childIn: p.childIn,
             parentIn: p.parentIn,
-            partnerships: p.partnerships,
           })),
-          partnerships: partnerships.map((p, idx) => ({
+          partnerships: renderTree.partnerships.map((p, idx) => ({
             index: idx,
-            partnership: {
-              id: p.partnership.id,
-              parentNames: p.partnership.parents.map((parent) => parent.name),
-            },
+            id: p.id,
+            type: p.type,
             parents: p.parents,
             children: p.children,
-            expanded: p.expanded,
+            isExpanded: p.isExpanded,
           })),
         },
         options: options,
         metadata: {
-          personCount: persons.length,
-          partnershipCount: partnerships.length,
+          personCount: renderTree.persons.length,
+          partnershipCount: renderTree.partnerships.length,
           expandedPartnerships: Array.from(this.expandedPartnerships),
           expandedPersons: Array.from(this.expandedPersons),
           timestamp: new Date().toISOString(),

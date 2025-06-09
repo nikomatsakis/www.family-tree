@@ -1,5 +1,4 @@
 import BaseRenderer from './base-renderer';
-import { RenderTree, RenderPerson, RegularPartnership } from '../render-tree';
 import { layoutFamily } from '../family-layout';
 import { TextRenderer as TextLayoutRenderer } from '../text-renderer';
 import { TextCanvas } from '../text-canvas';
@@ -12,30 +11,47 @@ import { TextCanvas } from '../text-canvas';
  * and visualizing the family structure in a simple, text-based format.
  */
 export default class TextRenderer extends BaseRenderer {
+  constructor(options) {
+    super(options);
+    this.debug = false;
+  }
+
   getType() {
     return 'text';
   }
 
   /**
    * Renders the family tree as ASCII art
-   * @param {Object} graph - The graph data from buildVisibleGraph
+   * @param {RenderTree} renderTree - The RenderTree data from buildVisibleGraph
    * @param {Object} options - Rendering options
    * @returns {Object} Text rendering data
    */
-  render(graph, options = {}) {
-    const { persons, partnerships } = graph;
-
+  render(renderTree, options = {}) {
     try {
-      // Convert the graph back to RenderTree format for the layout algorithm
-      const renderTree = this.convertGraphToRenderTree(
-        persons,
-        partnerships,
-        options,
-      );
+      // Use root nodes to determine starting point for text rendering
+      let startPersonIndex;
+      if (renderTree.rootNodes.length > 0) {
+        // Use the first root node for text rendering
+        startPersonIndex = renderTree.rootNodes[0];
+      } else {
+        // Fallback to focus person if no roots found
+        startPersonIndex =
+          options.startPersonIdx || renderTree.focusPersonIndex || 0;
+      }
 
       // Use the layout algorithm to position elements
       const textLayoutRenderer = new TextLayoutRenderer();
-      const startPersonIndex = options.startPersonIdx || 0;
+
+      // Add bounds checking to prevent infinite recursion
+      if (
+        startPersonIndex < 0 ||
+        startPersonIndex >= renderTree.persons.length
+      ) {
+        throw new Error(
+          `Invalid start person index: ${startPersonIndex}, valid range: 0-${renderTree.persons.length - 1}`,
+        );
+      }
+
       const family = layoutFamily(
         renderTree,
         startPersonIndex,
@@ -52,144 +68,28 @@ export default class TextRenderer extends BaseRenderer {
         data: {
           ascii: asciiOutput,
           metadata: {
-            personCount: persons.length,
-            partnershipCount: partnerships.length,
+            personCount: renderTree.persons.length,
+            partnershipCount: renderTree.partnerships.length,
             expandedPartnerships: Array.from(this.expandedPartnerships),
             expandedPersons: Array.from(this.expandedPersons),
             startPersonIndex: startPersonIndex,
-            renderTree: this.debug ? this.debugRenderTree(renderTree) : null,
+            renderTree: null,
           },
         },
       };
     } catch (error) {
-      console.error('Error in TextRenderer.render:', error);
       return {
         type: 'text',
         data: {
           ascii: `Error rendering family tree:\n${error.message}`,
           metadata: {
             error: error.message,
-            personCount: persons.length,
-            partnershipCount: partnerships.length,
+            personCount: renderTree.persons.length,
+            partnershipCount: renderTree.partnerships.length,
           },
         },
       };
     }
-  }
-
-  /**
-   * Convert graph format back to RenderTree format for layout algorithm
-   * @param {Array} persons - Graph persons array
-   * @param {Array} partnerships - Graph partnerships array
-   * @param {Object} options - Rendering options
-   * @returns {RenderTree} RenderTree instance
-   */
-  convertGraphToRenderTree(persons, partnerships, options) {
-    const startPersonIndex = options.startPersonIdx || 0;
-    const renderTree = new RenderTree(startPersonIndex);
-
-    // Create RenderPerson objects and add them to the tree
-    const personIndexMap = new Map(); // graph index -> render tree index
-    persons.forEach((graphPerson, graphIndex) => {
-      const renderPerson = new RenderPerson(
-        graphPerson.person.id,
-        graphPerson.person.name,
-      );
-      const renderIndex = renderTree.addPerson(renderPerson);
-      personIndexMap.set(graphIndex, renderIndex);
-    });
-
-    // Create RegularPartnership objects and add them to the tree
-    const partnershipIndexMap = new Map(); // graph index -> render tree index
-    partnerships.forEach((graphPartnership, graphIndex) => {
-      const parentIndices = graphPartnership.parents.map((graphIdx) =>
-        personIndexMap.get(graphIdx),
-      );
-      const childIndices = graphPartnership.children.map((graphIdx) =>
-        personIndexMap.get(graphIdx),
-      );
-
-      // Only create partnership if it's expanded or has connected children
-      if (graphPartnership.expanded || childIndices.length > 0) {
-        const partnership = new RegularPartnership(
-          graphPartnership.partnership.id,
-          parentIndices,
-          childIndices, // Always use childIndices since we're only here if there are children to show
-        );
-
-        const renderIndex = renderTree.addPartnership(partnership);
-        partnershipIndexMap.set(graphIndex, renderIndex);
-      }
-    });
-
-    // Update person relationships to point to render tree indices
-    persons.forEach((graphPerson, graphIndex) => {
-      const renderPersonIndex = personIndexMap.get(graphIndex);
-      const renderPerson = renderTree.getPerson(renderPersonIndex);
-
-      // Set parentIn relationships
-      renderPerson.parentIn = graphPerson.parentIn
-        .map((graphPartnershipIdx) =>
-          partnershipIndexMap.get(graphPartnershipIdx),
-        )
-        .filter((idx) => idx !== undefined);
-
-      // Set childIn relationship
-      if (graphPerson.parentIn.length > 0) {
-        const parentPartnershipIdx = partnershipIndexMap.get(
-          graphPerson.parentIn[0],
-        );
-        if (parentPartnershipIdx !== undefined) {
-          renderPerson.childIn = parentPartnershipIdx;
-        }
-      }
-    });
-
-    return renderTree;
-  }
-
-  /**
-   * Create debug information for RenderTree
-   * @param {RenderTree} renderTree - The render tree
-   * @returns {Object} Debug information
-   */
-  debugRenderTree(renderTree) {
-    const persons = [];
-    const partnerships = [];
-
-    for (let i = 0; i < renderTree.persons.length; i++) {
-      const person = renderTree.getPerson(i);
-      persons.push({
-        index: i,
-        id: person.id,
-        name: person.name,
-        childIn: person.childIn,
-        parentIn: [...person.parentIn],
-      });
-    }
-
-    for (let i = 0; i < renderTree.partnerships.length; i++) {
-      const partnership = renderTree.getPartnership(i);
-      partnerships.push({
-        index: i,
-        id: partnership.id,
-        type: partnership.constructor.name,
-        parents: [...partnership.parents],
-        children: partnership.children ? [...partnership.children] : null,
-        isExpanded: partnership.isExpanded,
-      });
-    }
-
-    return {
-      focusPersonIndex: renderTree.focusPersonIndex,
-      persons,
-      partnerships,
-      stats: {
-        personCount: persons.length,
-        partnershipCount: partnerships.length,
-        expandedPartnerships: partnerships.filter((p) => p.isExpanded).length,
-      },
-    };
   }
 
   /**
@@ -310,46 +210,6 @@ export default class TextRenderer extends BaseRenderer {
     container.appendChild(header);
     container.appendChild(asciiContainer);
 
-    // Add debug info if available
-    if (this.debug && metadata.renderTree) {
-      const debugSection = document.createElement('details');
-      debugSection.style.cssText = `
-        margin-top: 16px;
-        padding: 12px;
-        background: #fff3cd;
-        border: 1px solid #ffeaa7;
-        border-radius: 4px;
-        font-family: system-ui, -apple-system, sans-serif;
-        white-space: normal;
-      `;
-
-      const debugSummary = document.createElement('summary');
-      debugSummary.textContent = 'Debug Information';
-      debugSummary.style.cssText =
-        'cursor: pointer; font-weight: bold; margin-bottom: 8px;';
-
-      const debugContent = document.createElement('pre');
-      debugContent.style.cssText = `
-        margin: 8px 0 0 0;
-        padding: 12px;
-        background: #ffffff;
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        overflow: auto;
-        font-size: 12px;
-        white-space: pre;
-      `;
-      debugContent.textContent = JSON.stringify(metadata.renderTree, null, 2);
-
-      debugSection.appendChild(debugSummary);
-      debugSection.appendChild(debugContent);
-      container.appendChild(debugSection);
-    }
-
     element.appendChild(container);
-
-    if (this.debug) {
-      console.log('Text renderer displayed ASCII output:', renderData.data);
-    }
   }
 }

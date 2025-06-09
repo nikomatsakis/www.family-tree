@@ -105,8 +105,8 @@ export class RenderPerson {
   constructor(id, name, childIn = null, parentIn = []) {
     this.id = id; // string - original person ID for reference
     this.name = name;
-    this.childIn = childIn; // number | null - partnership index
-    this.parentIn = parentIn; // number[] - partnership indices
+    this.childIn = childIn; // number | null - index of partnership where THIS person is a child (i.e., their parents' partnership)
+    this.parentIn = parentIn; // number[] - indices of partnerships where THIS person is a parent/spouse (i.e., partnerships with their spouses)
   }
 }
 
@@ -118,6 +118,7 @@ export class RenderTree {
     this.persons = []; // RenderPerson[]
     this.partnerships = []; // Partnership[]
     this.focusPersonIndex = focusPersonIndex; // number - index of focus person
+    this.rootNodes = []; // number[] - indices of root persons (no parents, not partnered with someone who has parents)
   }
 
   /**
@@ -176,12 +177,43 @@ export class RenderTree {
   }
 
   /**
+   * Compute and update the root nodes for this tree
+   * Root nodes are persons with no parents who are not partnered with someone who has parents
+   */
+  computeRootNodes() {
+    // Find persons with no parents (childIn === null)
+    const rootCandidates = this.persons
+      .map((person, index) => ({ person, index }))
+      .filter(({ person }) => person.childIn === null);
+
+    // Filter out people who are partnered with someone who has parents
+    this.rootNodes = rootCandidates
+      .filter(({ person, index }) => {
+        // Check if this person is partnered with someone who has parents
+        for (const partnershipIndex of person.parentIn) {
+          const partnership = this.getPartnership(partnershipIndex);
+          const partners = partnership.parents.filter((p) => p !== index);
+          for (const partnerIndex of partners) {
+            const partner = this.getPerson(partnerIndex);
+            if (partner.childIn !== null) {
+              return false; // This person is partnered with someone who has parents
+            }
+          }
+        }
+        return true;
+      })
+      .map(({ index }) => index);
+  }
+
+  /**
    * Debug representation that's easily serializable
    */
   toDebugObject() {
     return {
       focusPersonIndex: this.focusPersonIndex,
       focusPersonName: this.getFocusPerson()?.name,
+      rootNodes: this.rootNodes,
+      rootNodeNames: this.rootNodes.map((idx) => this.getPerson(idx).name),
       persons: this.persons.map((person, index) => ({
         index,
         ...person,
@@ -196,6 +228,7 @@ export class RenderTree {
         expandedPartnerships: this.partnerships.filter(
           (p) => p.type === 'regular' && p.isExpanded,
         ).length,
+        rootNodeCount: this.rootNodes.length,
       },
     };
   }
