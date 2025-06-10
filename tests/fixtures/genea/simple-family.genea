@@ -1,0 +1,7 @@
+# Simple test family for D3TreeRenderer tests
+# Format: 10 henry numbers, gender, num_kids, num_spouses, spouse_index, name [\comment]
+
+ 1 0 0 0 0 0 0 0 0 0 M 2 1 0         Dad Test\The father  
+ 1 0 0 0 0 0 0 0 0 0 F 2 0 1         Mom Test\The mother
+ 1 1 0 0 0 0 0 0 0 0 M 0 0 0         Child One\First child
+ 1 2 0 0 0 0 0 0 0 0 F 0 0 0         Child Two\Second child

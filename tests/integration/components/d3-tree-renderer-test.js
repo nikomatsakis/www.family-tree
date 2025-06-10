@@ -4,6 +4,7 @@ import {
   createRenderer,
   getRendererDisplayNames,
 } from 'family-tree/utils/family-tree-renderers';
+import { loadGeneaFixture } from 'family-tree/tests/helpers/genea-fixtures';
 
 module('Integration | Component | d3-tree-renderer', function (hooks) {
   setupRenderingTest(hooks);
@@ -60,25 +61,33 @@ module('Integration | Component | d3-tree-renderer', function (hooks) {
 
   test('d3 tree renderer prepares data without errors for empty graph', function (assert) {
     const renderer = createRenderer('d3-tree');
-    const emptyGraph = { persons: [], partnerships: [] };
 
-    const result = renderer.prepareRenderData(emptyGraph);
+    // Create a minimal person with no relationships
+    const emptyPerson = {
+      id: 'test-person',
+      name: 'Test Person',
+      parentIn: [], // No partnerships where this person is a parent
+      childIn: null, // No partnership where this person is a child
+    };
+
+    // Use the proper pipeline: Person → buildVisibleGraph → RenderTree → prepareRenderData
+    const renderTree = renderer.buildVisibleGraph(emptyPerson);
+    const result = renderer.prepareRenderData(renderTree);
 
     assert.ok(result, 'PrepareRenderData returns a result');
     assert.strictEqual(result.type, 'd3-tree', 'Result has correct type');
     assert.ok(result.data, 'Result has data');
   });
 
-  test('d3 tree renderer visits all elements in nested family structure', function (assert) {
+  test('d3 tree renderer visits all elements in nested family structure', async function (assert) {
     const renderer = createRenderer('d3-tree');
 
-    // Create a simple mock graph that we know works with the renderer
-    const mockGraph = {
-      persons: [{ id: 'person1', name: 'Test Person', parentIn: [] }],
-      partnerships: [],
-    };
+    // Load real genea data from fixture
+    const { startPerson } = await loadGeneaFixture('simple-family');
 
-    const renderData = renderer.prepareRenderData(mockGraph);
+    // Use the proper pipeline: Person → buildVisibleGraph → RenderTree → prepareRenderData
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+    const renderData = renderer.prepareRenderData(renderTree);
 
     // Set up element tracking
     const elementLog = [];
@@ -100,26 +109,26 @@ module('Integration | Component | d3-tree-renderer', function (hooks) {
       `Expected at least 1 rectangle, got ${rectangleEntries.length}`,
     );
 
-    // Check that the person was rendered
+    // Check that persons were rendered
     const renderedNames = rectangleEntries
       .map((entry) => entry.split(':')[1].split(' at ')[0].trim())
       .join(', ');
 
     assert.ok(
-      renderedNames.includes('Test Person'),
-      `Test Person should be rendered. Found: ${renderedNames}`,
+      renderedNames.includes('Dad Test'),
+      `Dad Test should be rendered. Found: ${renderedNames}`,
     );
   });
 
-  test('d3 tree renderer calculates absolute positions correctly', function (assert) {
+  test('d3 tree renderer calculates absolute positions correctly', async function (assert) {
     const renderer = createRenderer('d3-tree');
 
-    // Create simple mock graph
-    const mockGraph = {
-      persons: [{ id: 'person1', name: 'Test Person', parentIn: [] }],
-      partnerships: [],
-    };
-    const renderData = renderer.prepareRenderData(mockGraph);
+    // Load real genea data from fixture
+    const { startPerson } = await loadGeneaFixture('simple-family');
+
+    // Use the proper pipeline: Person → buildVisibleGraph → RenderTree → prepareRenderData
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+    const renderData = renderer.prepareRenderData(renderTree);
 
     // Set up position tracking
     const positions = [];
@@ -168,15 +177,15 @@ module('Integration | Component | d3-tree-renderer', function (hooks) {
     });
   });
 
-  test('d3 tree renderer handles all layout element types', function (assert) {
+  test('d3 tree renderer handles all layout element types', async function (assert) {
     const renderer = createRenderer('d3-tree');
 
-    // Create simple mock graph
-    const mockGraph = {
-      persons: [{ id: 'person1', name: 'Test Person', parentIn: [] }],
-      partnerships: [],
-    };
-    const renderData = renderer.prepareRenderData(mockGraph);
+    // Load real genea data from fixture that will generate different element types
+    const { startPerson } = await loadGeneaFixture('simple-family');
+
+    // Use the proper pipeline: Person → buildVisibleGraph → RenderTree → prepareRenderData
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+    const renderData = renderer.prepareRenderData(renderTree);
 
     // Track element types
     const elementTypes = new Set();
@@ -185,10 +194,15 @@ module('Integration | Component | d3-tree-renderer', function (hooks) {
     };
 
     // Should not throw errors
-    assert.doesNotThrow(() => {
+    let didThrow = false;
+    try {
       const container = document.createElement('div');
       renderer.renderToElement(container, renderData);
-    }, 'Rendering should not throw errors');
+    } catch (error) {
+      didThrow = true;
+      assert.ok(false, `Rendering should not throw errors: ${error.message}`);
+    }
+    assert.false(didThrow, 'Rendering should not throw errors');
 
     // Verify we processed both rectangles and lines
     assert.ok(
@@ -198,14 +212,15 @@ module('Integration | Component | d3-tree-renderer', function (hooks) {
     assert.ok(elementTypes.has('Line'), 'Should process Line elements');
   });
 
-  test('d3 tree renderer creates valid SVG structure', function (assert) {
+  test('d3 tree renderer creates valid SVG structure', async function (assert) {
     const renderer = createRenderer('d3-tree');
 
-    const mockGraph = {
-      persons: [{ id: 'person1', name: 'Test Person', parentIn: [] }],
-      partnerships: [],
-    };
-    const renderData = renderer.prepareRenderData(mockGraph);
+    // Load real genea data from fixture
+    const { startPerson } = await loadGeneaFixture('simple-family');
+
+    // Use the proper pipeline: Person → buildVisibleGraph → RenderTree → prepareRenderData
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+    const renderData = renderer.prepareRenderData(renderTree);
 
     const container = document.createElement('div');
     renderer.renderToElement(container, renderData);

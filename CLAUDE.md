@@ -125,6 +125,60 @@ The project uses Ember's QUnit-based test infrastructure for all tests to mainta
 - All tests run in the browser environment with full access to Ember's features
 - `testem.js` configures the test runner
 
+### Integration Testing with Genea Fixtures (Preferred Approach)
+
+For integration tests that need family tree data, use **real genea files** instead of complex mock data:
+
+#### Creating Test Fixtures
+1. Create a `.genea` file in `tests/fixtures/genea/` with proper format:
+   ```
+   # Example: tests/fixtures/genea/simple-family.genea
+   # Format: 10 henry numbers, gender, num_kids, num_spouses, spouse_index, name [\comment]
+   
+    1 0 0 0 0 0 0 0 0 0 M 2 1 0         Dad Test\The father  
+    1 0 0 0 0 0 0 0 0 0 F 2 0 1         Mom Test\The mother
+    1 1 0 0 0 0 0 0 0 0 M 0 0 0         Child One\First child
+    1 2 0 0 0 0 0 0 0 0 F 0 0 0         Child Two\Second child
+   ```
+
+2. Generate JSON from the genea file:
+   ```bash
+   cargo run -- json tests/fixtures/genea/simple-family.genea tests/fixtures/json/simple-family
+   ```
+
+3. Copy to public directory for test access:
+   ```bash
+   cp -r tests/fixtures/json/simple-family public/tests/fixtures/json/
+   ```
+
+#### Using Fixtures in Tests
+```javascript
+import { loadGeneaFixture } from 'family-tree/tests/helpers/genea-fixtures';
+
+test('my integration test', async function (assert) {
+  // Load real genea data with Person/Partnership objects
+  const { startPerson, service, allPeople } = await loadGeneaFixture('simple-family');
+  
+  // Use with renderers (buildVisibleGraph expects a Person object)
+  const renderTree = renderer.buildVisibleGraph(startPerson);
+  
+  // Access other people if needed
+  const dad = service.populatedPersonById('1');
+});
+```
+
+#### Benefits of Genea Fixtures
+- **Real data structures**: Uses actual `Person` and `Partnership` classes from genea service
+- **Production code paths**: Tests the same code paths as production
+- **Simple test setup**: No complex mock data construction
+- **Easy scenarios**: Create test cases by writing genea files
+- **Maintainable**: Changes to data structures don't break tests
+
+#### When to Use Fixtures vs Mock Data
+- **Use fixtures for**: Integration tests, renderer tests, component tests that need realistic family data
+- **Use mock data for**: Unit tests that need precise control, edge cases, or minimal setup
+- **Current approach**: D3TreeRenderer uses fixtures, older tests still use mocks (can be migrated as needed)
+
 ## Important Notes
 
 - The genea.doc file must be sorted by henry number
