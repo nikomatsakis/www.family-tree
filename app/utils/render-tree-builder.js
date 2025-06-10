@@ -44,7 +44,7 @@ export class RenderTreeBuilder {
       return this.personMap.get(geneaPerson);
     }
 
-    const renderPerson = new RenderPerson(geneaPerson.id, geneaPerson.name);
+    const renderPerson = new RenderPerson(geneaPerson.id, geneaPerson.name, geneaPerson.gender, geneaPerson.comments);
     const renderIndex = this.renderTree.addPerson(renderPerson);
 
     this.personMap.set(geneaPerson, renderIndex);

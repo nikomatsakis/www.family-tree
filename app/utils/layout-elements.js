@@ -12,13 +12,14 @@
  * Rectangle element for people, buttons, and other boxes
  */
 export class Rectangle {
-  constructor(label, className, width, height) {
+  constructor(label, className, width, height, gender = null) {
     this.x = 0; // Position set by parent
     this.y = 0; // Position set by parent
     this.width = width; // Intrinsic size
     this.height = height; // Intrinsic size
     this.label = label; // Text content (e.g., person name, "...")
     this.class = className; // Semantic role for styling
+    this.gender = gender; // Gender for color coding (male, female, unknown, etc.)
   }
 }
 

@@ -101,7 +101,7 @@ export default class D3TreeRenderer extends BaseRenderer {
     const metadata = renderData.data.metadata;
 
     // Add padding around the family tree
-    const padding = 40;
+    const padding = 20;
     const svgWidth = family.width + 2 * padding;
     const svgHeight = family.height + 2 * padding;
 
@@ -183,20 +183,63 @@ export default class D3TreeRenderer extends BaseRenderer {
       .attr('class', `person-box ${rect.class}`)
       .attr('transform', `translate(${absoluteX}, ${absoluteY})`);
 
-    // Determine if this is the focus person
+    // Determine element types based on layout-assigned classes
     const isFocusPerson =
-      rect.class === 'person' && this.isRectangleForFocusPerson(rect);
+      rect.class === 'primary-person' && this.isRectangleForFocusPerson(rect);
+    const isExpansionPlaceholder = rect.class === 'expansion-placeholder';
+    const isRepeatedPerson = rect.class === 'repeated-person';
+
+    // Style based on element type and gender
+    let fillColor, strokeColor, strokeWidth, textColor, textContent;
+
+    // Debug gender data
+    if (this.debug) {
+      console.log(`Rectangle ${rect.label}: class=${rect.class}, gender=${rect.gender}`);
+    }
+
+    if (isExpansionPlaceholder) {
+      // Style as a "+" button - neutral warm gray to match overall scheme
+      fillColor = '#faf8f5';
+      strokeColor = '#8b7d6b';
+      strokeWidth = 2;
+      textColor = '#8b7d6b';
+      textContent = '+';
+    } else if (isRepeatedPerson) {
+      // Fade out repeated appearances - much lighter version of gender color
+      const genderColors = this.getGenderColors(rect.gender, true); // faded=true
+      fillColor = genderColors.fill;
+      strokeColor = '#cccccc';
+      strokeWidth = 1;
+      textColor = '#bbbbbb'; // Very light text to make fading obvious
+      textContent = rect.label;
+    } else if (isFocusPerson) {
+      // Focus person gets stronger accent version of their gender color
+      const genderColors = this.getGenderColors(rect.gender, false, true); // focus=true
+      fillColor = genderColors.fill;
+      strokeColor = genderColors.stroke;
+      strokeWidth = 2;
+      textColor = '#212529';
+      textContent = rect.label;
+    } else {
+      // Regular person gets subtle gender-based warm colors
+      const genderColors = this.getGenderColors(rect.gender);
+      fillColor = genderColors.fill;
+      strokeColor = genderColors.stroke;
+      strokeWidth = 1;
+      textColor = '#212529';
+      textContent = rect.label;
+    }
 
     // Add rectangle
     rectGroup
       .append('rect')
       .attr('width', rect.width)
       .attr('height', rect.height)
-      .attr('fill', isFocusPerson ? '#e3f2fd' : '#f8f9fa')
-      .attr('stroke', isFocusPerson ? '#1976d2' : '#dee2e6')
-      .attr('stroke-width', isFocusPerson ? 2 : 1)
-      .attr('rx', 4)
-      .attr('ry', 4);
+      .attr('fill', fillColor)
+      .attr('stroke', strokeColor)
+      .attr('stroke-width', strokeWidth)
+      .attr('rx', isExpansionPlaceholder ? 8 : 4)
+      .attr('ry', isExpansionPlaceholder ? 8 : 4);
 
     // Add text (centered in rectangle)
     rectGroup
@@ -206,9 +249,10 @@ export default class D3TreeRenderer extends BaseRenderer {
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .attr('font-family', 'system-ui, -apple-system, sans-serif')
-      .attr('font-size', '14px')
-      .attr('fill', '#212529')
-      .text(rect.label);
+      .attr('font-size', isExpansionPlaceholder ? '18px' : '14px')
+      .attr('font-weight', isExpansionPlaceholder ? 'bold' : 'normal')
+      .attr('fill', textColor)
+      .text(textContent);
   }
 
   /**
@@ -219,7 +263,7 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @param {number} offsetY - Y offset from parent families
    */
   renderLine(group, line, offsetX, offsetY) {
-    const isDouble = line.class === 'continuity-line';
+    const isContinuityLine = line.class === 'continuity-line';
 
     // Calculate absolute positions
     const x1 = offsetX + line.x;
@@ -230,15 +274,20 @@ export default class D3TreeRenderer extends BaseRenderer {
     // Track element for testing/debugging
     this.trackElement?.('Line', line.class, x1, y1, x2, y2);
 
-    group
+    const lineElement = group
       .append('line')
       .attr('x1', x1)
       .attr('y1', y1)
       .attr('x2', x2)
       .attr('y2', y2)
-      .attr('stroke', '#495057')
-      .attr('stroke-width', isDouble ? 3 : 1)
+      .attr('stroke', isContinuityLine ? '#999999' : '#495057')
+      .attr('stroke-width', isContinuityLine ? 2 : 1)
       .attr('class', line.class);
+
+    // Make continuation lines dashed
+    if (isContinuityLine) {
+      lineElement.attr('stroke-dasharray', '5,3');
+    }
   }
 
   /**
@@ -348,22 +397,22 @@ export default class D3TreeRenderer extends BaseRenderer {
 
   // Spacing getters (all in pixels)
   get spacerWidth() {
-    return 20;
+    return 12;
   } // Distance from person box to marriage line
   get continuityOffset() {
-    return 15;
+    return 10;
   } // X offset from person where continuity line is placed
   get continuityMinWidth() {
-    return 40;
+    return 30;
   } // Minimum X position where first child can start
   get minimumLineLength() {
-    return 60;
+    return 40;
   } // Minimum marriage line segment
   get verticalSpacing() {
-    return 80;
+    return 50;
   } // Distance between generations
   get childSpacing() {
-    return 20;
+    return 12;
   } // Horizontal spacing between siblings
 
   // Line positioning methods
@@ -403,5 +452,57 @@ export default class D3TreeRenderer extends BaseRenderer {
   }
   get personMargin() {
     return 4;
+  }
+
+  /**
+   * Get gender-based colors for warm professional color scheme
+   * @param {string} gender - Gender (male, female, unknown, etc.)
+   * @param {boolean} faded - Whether this is a faded/repeated appearance
+   * @param {boolean} focus - Whether this is the focus person (stronger accent)
+   * @returns {Object} {fill, stroke} colors
+   */
+  getGenderColors(gender, faded = false, focus = false) {
+    // Normalize gender string - handle null, "null", undefined, empty string
+    const normalizedGender = (gender && gender !== 'null' ? gender : 'unknown').toLowerCase();
+
+    if (faded) {
+      // Very light versions for repeated appearances
+      switch (normalizedGender) {
+        case 'male':
+        case 'm':
+          return { fill: '#f8f9fb', stroke: '#e0e6ec' }; // Very light cool
+        case 'female':
+        case 'f':
+          return { fill: '#fbf8f9', stroke: '#ece0e6' }; // Very light warm
+        default:
+          return { fill: '#f9f8f6', stroke: '#e6e3e0' }; // Very light neutral
+      }
+    }
+
+    if (focus) {
+      // Stronger accent colors for focus person
+      switch (normalizedGender) {
+        case 'male':
+        case 'm':
+          return { fill: '#e8f0f5', stroke: '#7a9bb8' }; // Cool slate accent
+        case 'female':
+        case 'f':
+          return { fill: '#f5e8f0', stroke: '#b87a9b' }; // Rose accent
+        default:
+          return { fill: '#f4e4bc', stroke: '#d4a574' }; // Warm gold accent
+      }
+    }
+
+    // Regular subtle gender colors
+    switch (normalizedGender) {
+      case 'male':
+      case 'm':
+        return { fill: '#f5f7fa', stroke: '#d1dae3' }; // Warm gray-blue tint
+      case 'female':
+      case 'f':
+        return { fill: '#faf5f7', stroke: '#e3d1da' }; // Warm gray-rose tint
+      default:
+        return { fill: '#faf8f5', stroke: '#e3e0dc' }; // Warm neutral beige
+    }
   }
 }

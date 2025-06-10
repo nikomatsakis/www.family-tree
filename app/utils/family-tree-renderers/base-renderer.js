@@ -69,6 +69,8 @@ export default class BaseRenderer {
       const renderPerson = new RenderPerson(
         person.id,
         person.name,
+        person.gender,
+        person.comments,
         null, // childIn - will be set below if person has parents
         [], // parentIn - will be populated below with partnerships where this person is a parent
       );
