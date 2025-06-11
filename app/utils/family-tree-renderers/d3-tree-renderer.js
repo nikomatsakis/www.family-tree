@@ -28,7 +28,8 @@ export default class D3TreeRenderer extends BaseRenderer {
    */
   prepareRenderData(renderTree, options = {}) {
     try {
-      // Use root nodes to determine starting point for rendering
+      // 🎯 PURPOSE: Start from root nodes (oldest generation) for proper visual hierarchy
+      // Layout algorithm renders top-down from ancestors to descendants
       let startPersonIndex;
       if (renderTree.rootNodes.length > 0) {
         // Use the first root node for rendering
@@ -172,6 +173,8 @@ export default class D3TreeRenderer extends BaseRenderer {
     // Calculate absolute position
     const absoluteX = offsetX + rect.x;
     const absoluteY = offsetY + rect.y;
+
+    console.log('Rendering rectangle:', rect.label, 'at', absoluteX, absoluteY, 'class:', rect.class, 'id:', rect.id);
 
     // Track element for testing/debugging
     this.trackElement?.(
