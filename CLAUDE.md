@@ -34,14 +34,6 @@ Track ongoing development work and progress in the `.ongoing/` directory:
 
 The goal is concise context for continuation, not comprehensive documentation.
 
-This helps maintain continuity when resuming work and provides context for debugging and planning.
-
-## Architecture Documentation
-
-The `architecture/` directory contains living documentation for major design decisions:
-
-- **`visual_design.md`**: Comprehensive design specification for family tree visualization, including layout algorithms, visual elements, navigation patterns, and implementation strategies. This is a living document that should be updated as design decisions are made and implementation details are refined.
-
 ## Project Overview
 
 This is a family tree application that:
@@ -49,135 +41,66 @@ This is a family tree application that:
 2. Generates JSON API data in `public/api/v1/`
 3. Serves the data through an Ember.js web application
 
-## Key Commands
-
-### Development Setup
-- `npm install` - Install JavaScript dependencies (requires Volta)
-- `cargo build` - Build the Rust parser
-
-### Running the Application
-- `cargo run -- serve` - Parse genea.doc and serve the web app
-- `npm start` - Run Ember development server only
-- `npm run start:build` - Parse genea.doc and serve (alternative)
-
-### Testing
-- `npm test` - Run all lints and tests
-- `npm run test:ember` - Run Ember tests only
-- `npm run test:node` - Run Node.js-based relationship tests (headless)
-- `cargo test` - Run Rust tests
-
-### Linting
-- `npm run lint` - Run all linters (JS, HBS, CSS)
-- `npm run lint:fix` - Auto-fix linting issues
-- `cargo clippy` - Run Rust linter
-
-### Building
-- `npm run build` - Build production Ember app
-- `cargo build --release` - Build optimized Rust binary
-
-## Architecture
-
-### Rust Parser (`src/`)
-- **genea.rs**: Core parser for the genea format, converts text to structured data
-- **parser.rs**: Parsing logic and error handling
-- **json_api.rs**: Converts parsed data to JSON API format
-- **main.rs**: CLI entry point, handles serve command
-
-### Genea Format
-Custom genealogy format where each line represents a person:
-- Henry numbers (hierarchical IDs like "1 2 3")
-- Gender (M/F/?)
-- Relationship counts and spouse indices
-- Names and optional comments
-
-### Ember Application (`app/`)
-- **components/**: Glimmer components (.gjs files) for UI
-- **services/genea.js**: Service to fetch and cache JSON data
-- **routes/**: Person and index routes for navigation
-- Component-first architecture using template imports
-
 ### Data Flow
 1. Rust parser reads `genea.doc`
 2. Generates JSON files in `public/api/v1/`
 3. Ember app fetches JSON via genea service
 4. Components render family tree visualization
 
-## Testing Infrastructure
+## Ember Development Philosophy
 
-### Unified Testing System (Preferred)
-The project uses Ember's QUnit-based test infrastructure for all tests to maintain consistency and avoid code duplication:
-- **Location**: `tests/unit/` and `tests/integration/`
-- **Run with**: `npm test` (all tests) or `npm run test:ember`
-- **Benefits**:
-  - Single source of truth - tests use actual production code
-  - No duplicated class implementations
-  - Consistent testing patterns across the codebase
-  - Full integration with Ember's testing helpers
+**Key Insight**: If you're manually managing updates, you're probably doing it wrong. Ember wants you to declare relationships between data, not manage state transitions.
 
-### Test Helpers
-- **Mock Data Factory**: `tests/helpers/mock-genea-data.js` - Creates test families for unit tests
-- **Service Tests**: `tests/unit/services/genea-test.js` and `genea-relationships-test.js` - Test core genealogy logic
-- **Component Tests**: Integration tests for UI components in `tests/integration/components/`
+**When something feels hard in Ember:**
+1. Look for existing patterns in the codebase first
+2. Ask "How can this be computed from tracked properties?"
+3. Trust Ember's reactivity instead of manual updates
 
-### Test Organization
-- Unit tests for services, models, routes, and controllers
-- Integration tests for components
-- All tests run in the browser environment with full access to Ember's features
-- `testem.js` configures the test runner
+## Key Commands
 
-### Integration Testing with Genea Fixtures (Preferred Approach)
+### Running the Application
+- `cargo run -- serve` - Parse genea.doc and serve the web app
+- `npm start` - Run Ember development server only
+
+### Testing
+- `npm test` - Run all lints and tests
+- `npm run test:ember` - Run Ember tests only
+- `cargo test` - Run Rust tests
+
+### Linting
+- `npm run lint` - Run all linters and fix issues
+- `cargo clippy` - Run Rust linter
+
+## Testing with Genea Fixtures
 
 For integration tests that need family tree data, use **real genea files** instead of complex mock data:
 
-#### Creating Test Fixtures
+### Creating Test Fixtures
 1. Create a `.genea` file in `tests/fixtures/genea/` with proper format:
    ```
-   # Example: tests/fixtures/genea/simple-family.genea
    # Format: 10 henry numbers, gender, num_kids, num_spouses, spouse_index, name [\comment]
-   
     1 0 0 0 0 0 0 0 0 0 M 2 1 0         Dad Test\The father  
     1 0 0 0 0 0 0 0 0 0 F 2 0 1         Mom Test\The mother
     1 1 0 0 0 0 0 0 0 0 M 0 0 0         Child One\First child
     1 2 0 0 0 0 0 0 0 0 F 0 0 0         Child Two\Second child
    ```
 
-2. Generate JSON from the genea file:
-   ```bash
-   cargo run -- json tests/fixtures/genea/simple-family.genea tests/fixtures/json/simple-family
-   ```
+2. Generate JSON: `cargo run -- json tests/fixtures/genea/simple-family.genea tests/fixtures/json/simple-family`
 
-3. Copy to public directory for test access:
-   ```bash
-   cp -r tests/fixtures/json/simple-family public/tests/fixtures/json/
-   ```
+3. Copy to public: `cp -r tests/fixtures/json/simple-family public/tests/fixtures/json/`
 
-#### Using Fixtures in Tests
+### Using Fixtures in Tests
 ```javascript
 import { loadGeneaFixture } from 'family-tree/tests/helpers/genea-fixtures';
 
 test('my integration test', async function (assert) {
-  // Load real genea data with Person/Partnership objects
-  const { startPerson, service, allPeople } = await loadGeneaFixture('simple-family');
-  
-  // Use with renderers (buildVisibleGraph expects a Person object)
+  const { startPerson, service } = await loadGeneaFixture('simple-family');
   const renderTree = renderer.buildVisibleGraph(startPerson);
-  
-  // Access other people if needed
-  const dad = service.populatedPersonById('1');
+  // ... test with real data
 });
 ```
 
-#### Benefits of Genea Fixtures
-- **Real data structures**: Uses actual `Person` and `Partnership` classes from genea service
-- **Production code paths**: Tests the same code paths as production
-- **Simple test setup**: No complex mock data construction
-- **Easy scenarios**: Create test cases by writing genea files
-- **Maintainable**: Changes to data structures don't break tests
-
-#### When to Use Fixtures vs Mock Data
-- **Use fixtures for**: Integration tests, renderer tests, component tests that need realistic family data
-- **Use mock data for**: Unit tests that need precise control, edge cases, or minimal setup
-- **Current approach**: D3TreeRenderer uses fixtures, older tests still use mocks (can be migrated as needed)
+**Benefits**: Real data structures, production code paths, simple setup, easy scenarios.
 
 ## Important Notes
 
@@ -185,94 +108,4 @@ test('my integration test', async function (assert) {
 - JSON generation happens at build/serve time, not runtime
 - Ember uses tracked properties and async data patterns
 - All styling in `app/styles/app.css`
-- **Testing Preference**: Use Ember's unified test system to avoid code duplication and ensure tests reflect production behavior
-
-## GitHub Issue-Based Todo Management
-
-This project uses GitHub issues for todo and task management, integrated directly with Claude Code through the MCP GitHub server.
-
-### Issue Labels
-- `todo`: General tasks to be done
-- `bug`: Issues that need fixing
-- `feature`: New functionality to add
-- `refactor`: Code improvements without changing functionality
-- `documentation`: Documentation updates
-- `priority:high`, `priority:medium`, `priority:low`: Priority levels
-- `status:in-progress`: Currently being worked on
-- `status:blocked`: Waiting on dependencies
-
-### Workflow with Claude Code
-
-#### Creating Todos
-Ask Claude Code to create issues for tasks:
-- "Create an issue for adding search functionality to the landing page"
-- "Create a bug issue for the broken navigation on mobile"
-- "Create a refactor issue to improve genea parser performance"
-
-#### Managing Todos
-Use natural language commands:
-- "Show me all open issues" - List current todos
-- "Show open issues with label 'bug'" - Filter by type
-- "Add comment to issue #5 about progress" - Update status
-- "Close issue #5" - Mark as complete
-
-#### Best Practices
-1. **Clear Titles**: Use descriptive, action-oriented titles
-2. **Detailed Descriptions**: Include acceptance criteria in issue body
-3. **Label Appropriately**: Always add relevant labels for organization
-4. **Update Progress**: Add comments when starting/blocking/completing work
-5. **Link to Code**: Reference issues in commit messages using `#123` format
-
-#### Example Commands
-```
-# Create a feature todo
-"Create issue titled 'Add family tree search' with labels 'feature' and 'priority:high', body should include acceptance criteria"
-
-# Check high priority todos
-"List open issues with label 'priority:high'"
-
-# Update progress
-"Add comment to issue #10 saying 'Implemented basic search, working on filters'"
-
-# Complete with reference
-"Close issue #10 with comment 'Implemented in PR #15'"
-```
-
-### Integration with Git Workflow
-- Reference issues in commit messages: `git commit -m "Add search component (fixes #10)"`
-- Issues automatically close when referenced commits are merged
-- Use PR descriptions to link related issues
-
-## Debugging Guidelines
-
-### When Debugging Issues
-To help Claude Code debug more effectively, provide:
-
-1. **Browser Console Output**
-   - Copy any JavaScript errors or warnings
-   - Include the full stack trace
-   - Note any failed network requests
-
-2. **Visual Context**
-   - Screenshots of the issue
-   - What you expected vs what you see
-   - Steps to reproduce
-
-3. **Ember Inspector Info** (if available)
-   - Component tree screenshot
-   - Current route information
-   - Loaded data/services
-
-### Debug Mode
-Enable debug logging by running in the browser console:
-```javascript
-window.DEBUG = true;
-```
-
-### Common Debugging Commands
-- `npm run lint` - Check for syntax/style issues
-- `npm test` - Run tests to catch regressions
-- Browser DevTools:
-  - Check Network tab for failed API calls
-  - Check Console for JavaScript errors
-  - Use Ember Inspector to inspect component state
+- Use Ember Inspector to debug component state
