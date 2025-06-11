@@ -102,6 +102,33 @@ test('my integration test', async function (assert) {
 
 **Benefits**: Real data structures, production code paths, simple setup, easy scenarios.
 
+## AI Memory Comments System
+
+This codebase uses structured emoji comments to provide persistent memory for both AI and human developers:
+
+- `❓ QUESTION:` - Open questions or unclear areas that need investigation
+- `💡 ANSWER:` - Answers to previous questions or explanations of confusing code  
+- `⚠️ IMPORTANT:` - Critical things not to change/break, warnings about side effects
+- `🎯 PURPOSE:` - Why this code exists, design decisions, architectural reasoning
+
+### Rules for AI
+1. **NEVER remove or contradict** existing emoji comments
+2. **ALWAYS preserve** these comments when editing code - copy them to new locations if code moves
+3. **When user says** "We've made this mistake before, can you add an AI note to remember it?":
+   - Analyze the context and type of issue
+   - Choose appropriate emoji comment type
+   - Add concise, specific comment addressing the root problem
+   - Place strategically (inline for specific lines, block for functions/sections)
+
+### Comment Placement Guidelines
+- **ALWAYS precede** the code being explained - never inline at end of lines
+- **Above functions/classes** for high-level context and design decisions
+- **Immediately before specific lines** for detailed explanations or warnings
+- **Before complex logic blocks** for questions and answers about confusing code
+- **Above fragile code** for important warnings about side effects
+
+These comments travel with the code and reduce repeated explanations across development sessions.
+
 ## Important Notes
 
 - The genea.doc file must be sorted by henry number
