@@ -93,6 +93,9 @@ export default class D3TreeRenderer extends BaseRenderer {
     // Clear previous content
     element.innerHTML = '';
 
+    // Store render data for access in other methods
+    this._currentRenderData = renderData;
+
     if (!renderData.data || !renderData.data.family) {
       element.innerHTML = '<div class="no-data">No family data available</div>';
       return;
@@ -234,7 +237,7 @@ export default class D3TreeRenderer extends BaseRenderer {
     }
 
     // Add rectangle
-    rectGroup
+    const rectElement = rectGroup
       .append('rect')
       .attr('width', rect.width)
       .attr('height', rect.height)
@@ -243,6 +246,41 @@ export default class D3TreeRenderer extends BaseRenderer {
       .attr('stroke-width', strokeWidth)
       .attr('rx', isExpansionPlaceholder ? 8 : 4)
       .attr('ry', isExpansionPlaceholder ? 8 : 4);
+
+    // Add special effects for focus person
+    if (isFocusPerson) {
+      // Add drop shadow filter
+      const defs = group.select(function() {
+        return this.closest('svg');
+      }).select('defs').size() > 0
+        ? group.select(function() { return this.closest('svg'); }).select('defs')
+        : group.select(function() { return this.closest('svg'); }).append('defs');
+      
+      const filterId = 'focus-person-shadow';
+      if (defs.select(`#${filterId}`).size() === 0) {
+        const filter = defs.append('filter')
+          .attr('id', filterId)
+          .attr('x', '-50%')
+          .attr('y', '-50%')
+          .attr('width', '200%')
+          .attr('height', '200%');
+        
+        filter.append('feDropShadow')
+          .attr('dx', 2)
+          .attr('dy', 2)
+          .attr('stdDeviation', 3)
+          .attr('flood-color', '#000000')
+          .attr('flood-opacity', 0.15);
+      }
+      
+      rectElement.style('filter', `url(#${filterId})`);
+      
+      // Increase stroke width even more
+      rectElement.attr('stroke-width', 3);
+      
+      // Add a subtle glow effect by using a brighter stroke
+      rectElement.attr('stroke', d3.color(strokeColor).brighter(0.5));
+    }
 
     // Add text (centered in rectangle)
     rectGroup
@@ -261,7 +299,7 @@ export default class D3TreeRenderer extends BaseRenderer {
     if (!isExpansionPlaceholder) {
       rectGroup
         .style('cursor', 'pointer')
-        .on('click', (event) => {
+        .on('click', () => {
           // Navigate to person detail page using Ember callback
           if (callbacks.navigateToPerson) {
             // Use Ember's idiomatic navigation callback
@@ -273,19 +311,33 @@ export default class D3TreeRenderer extends BaseRenderer {
         })
         .on('mouseenter', function() {
           // Add hover effect - slightly darken and thicken border
-          d3.select(this).select('rect')
+          const rect = d3.select(this).select('rect');
+          const currentStrokeWidth = isFocusPerson ? 3 : strokeWidth;
+          rect
             .transition()
             .duration(150)
-            .attr('stroke-width', strokeWidth + 1)
-            .style('filter', 'brightness(0.95)');
+            .attr('stroke-width', currentStrokeWidth + 1);
+          
+          // Only apply brightness filter if not focus person (which has shadow filter)
+          if (!isFocusPerson) {
+            rect.style('filter', 'brightness(0.95)');
+          }
         })
         .on('mouseleave', function() {
           // Remove hover effect
-          d3.select(this).select('rect')
+          const rect = d3.select(this).select('rect');
+          const currentStrokeWidth = isFocusPerson ? 3 : strokeWidth;
+          rect
             .transition()
             .duration(150)
-            .attr('stroke-width', strokeWidth)
-            .style('filter', 'brightness(1)');
+            .attr('stroke-width', currentStrokeWidth);
+          
+          // Restore filter state
+          if (isFocusPerson) {
+            rect.style('filter', `url(#focus-person-shadow)`);
+          } else {
+            rect.style('filter', 'brightness(1)');
+          }
         });
     }
   }
@@ -331,9 +383,17 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @returns {boolean} True if this is the focus person's rectangle
    */
   isRectangleForFocusPerson(rect) {
-    // This is a simplified check - we would need more context to be precise
-    // For now, we'll use a heuristic based on the rectangle's position and class
-    return rect.class === 'person' && rect.label && rect.label.length > 0;
+    // Get the focus person from the current render data
+    const renderData = this._currentRenderData;
+    if (!renderData || !renderData.data || !renderData.data.renderTree) {
+      return false;
+    }
+    
+    const renderTree = renderData.data.renderTree;
+    const focusPerson = renderTree.getFocusPerson();
+    
+    // Compare the rectangle's ID with the focus person's ID
+    return rect.id && focusPerson && rect.id === focusPerson.id;
   }
 
   /**
