@@ -85,6 +85,8 @@ export function layoutFamily(
     'primary-person',
     personBox.width,
     personBox.height,
+    person.gender,
+    person.id,
   );
   family.addElement(primaryRect);
   family.port = renderer.getPortPosition(personBox.width);
@@ -199,6 +201,8 @@ export function layoutFamily(
         'partner',
         partnerBox.width,
         partnerBox.height,
+        partner.gender,
+        partner.id,
       );
       rightParent.x =
         partnershipLineStart + partnershipLineLength + renderer.spacerWidth;
@@ -333,6 +337,8 @@ export function layoutFamily(
         'repeated-person',
         personBox.width,
         personBox.height,
+        person.gender,
+        person.id,
       );
       leftParent.x = 0;
       leftParent.y = nextY;

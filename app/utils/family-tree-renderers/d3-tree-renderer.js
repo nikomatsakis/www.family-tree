@@ -87,8 +87,9 @@ export default class D3TreeRenderer extends BaseRenderer {
    * Renders the SVG output to a DOM element using D3.js
    * @param {HTMLElement} element - Container element
    * @param {Object} renderData - Data from prepareRenderData()
+   * @param {Object} callbacks - Callback functions for user interactions
    */
-  renderToElement(element, renderData) {
+  renderToElement(element, renderData, callbacks = {}) {
     // Clear previous content
     element.innerHTML = '';
 
@@ -120,7 +121,7 @@ export default class D3TreeRenderer extends BaseRenderer {
       .attr('transform', `translate(${padding}, ${padding})`);
 
     // Recursively render the family and all child families
-    this.renderFamily(mainGroup, family);
+    this.renderFamily(mainGroup, family, 0, 0, callbacks);
 
     // Add title and metadata display
     this.addHeader(element, metadata);
@@ -132,8 +133,9 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @param {Family} family - Family layout object to render
    * @param {number} offsetX - Cumulative X offset from parent families
    * @param {number} offsetY - Cumulative Y offset from parent families
+   * @param {Object} callbacks - Callback functions for user interactions
    */
-  renderFamily(group, family, offsetX = 0, offsetY = 0) {
+  renderFamily(group, family, offsetX = 0, offsetY = 0, callbacks = {}) {
     // Calculate absolute position for this family
     const absoluteX = offsetX + family.x;
     const absoluteY = offsetY + family.y;
@@ -142,12 +144,12 @@ export default class D3TreeRenderer extends BaseRenderer {
     if (family.elements) {
       family.elements.forEach((element) => {
         if (element instanceof Rectangle) {
-          this.renderRectangle(group, element, absoluteX, absoluteY);
+          this.renderRectangle(group, element, absoluteX, absoluteY, callbacks);
         } else if (element instanceof Line) {
           this.renderLine(group, element, absoluteX, absoluteY);
         } else if (element instanceof Family) {
           // Recursively render child families with cumulative offset
-          this.renderFamily(group, element, absoluteX, absoluteY);
+          this.renderFamily(group, element, absoluteX, absoluteY, callbacks);
         } else {
           throw new Error(`Unknown element type: ${element.constructor.name}`);
         }
@@ -161,8 +163,9 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @param {Rectangle} rect - Rectangle element to render
    * @param {number} offsetX - X offset from parent families
    * @param {number} offsetY - Y offset from parent families
+   * @param {Object} callbacks - Callback functions for user interactions
    */
-  renderRectangle(group, rect, offsetX, offsetY) {
+  renderRectangle(group, rect, offsetX, offsetY, callbacks = {}) {
     // Calculate absolute position
     const absoluteX = offsetX + rect.x;
     const absoluteY = offsetY + rect.y;
@@ -253,6 +256,38 @@ export default class D3TreeRenderer extends BaseRenderer {
       .attr('font-weight', isExpansionPlaceholder ? 'bold' : 'normal')
       .attr('fill', textColor)
       .text(textContent);
+
+    // Add click navigation and hover effects for person boxes (not expansion placeholders)
+    if (!isExpansionPlaceholder) {
+      rectGroup
+        .style('cursor', 'pointer')
+        .on('click', (event) => {
+          // Navigate to person detail page using Ember callback
+          if (callbacks.navigateToPerson) {
+            // Use Ember's idiomatic navigation callback
+            callbacks.navigateToPerson(rect.id);
+          } else {
+            // Fallback to direct navigation if no callback provided
+            window.location.href = `/person/${encodeURIComponent(rect.id)}`;
+          }
+        })
+        .on('mouseenter', function() {
+          // Add hover effect - slightly darken and thicken border
+          d3.select(this).select('rect')
+            .transition()
+            .duration(150)
+            .attr('stroke-width', strokeWidth + 1)
+            .style('filter', 'brightness(0.95)');
+        })
+        .on('mouseleave', function() {
+          // Remove hover effect
+          d3.select(this).select('rect')
+            .transition()
+            .duration(150)
+            .attr('stroke-width', strokeWidth)
+            .style('filter', 'brightness(1)');
+        });
+    }
   }
 
   /**
