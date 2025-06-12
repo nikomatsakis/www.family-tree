@@ -343,6 +343,36 @@ export default class D3TreeRenderer extends BaseRenderer {
           }
         });
     }
+
+    // Add click handlers for expansion placeholders
+    if (isExpansionPlaceholder && rect.id) {
+      rectGroup
+        .style('cursor', 'pointer')
+        .on('click', () => {
+          // Toggle partnership expansion using Ember callback
+          if (callbacks.togglePartnershipExpansion) {
+            callbacks.togglePartnershipExpansion(rect.id);
+          }
+        })
+        .on('mouseenter', function() {
+          // Add hover effect for expansion placeholders
+          const rectElement = d3.select(this).select('rect');
+          rectElement
+            .transition()
+            .duration(150)
+            .attr('stroke-width', 2)
+            .style('filter', 'brightness(0.9)');
+        })
+        .on('mouseleave', function() {
+          // Remove hover effect
+          const rectElement = d3.select(this).select('rect');
+          rectElement
+            .transition()
+            .duration(150)
+            .attr('stroke-width', 1)
+            .style('filter', 'brightness(1)');
+        });
+    }
   }
 
   /**

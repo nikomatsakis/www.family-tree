@@ -20,7 +20,7 @@ export class Rectangle {
     this.label = label; // Text content (e.g., person name, "...")
     this.class = className; // Semantic role for styling
     this.gender = gender; // Gender for color coding (male, female, unknown, etc.)
-    this.id = id; // Person ID for navigation (null for non-person elements like placeholders)
+    this.id = id; // Person ID for navigation, or partnership ID for expansion placeholders
   }
 }
 

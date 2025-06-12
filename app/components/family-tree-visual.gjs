@@ -296,7 +296,7 @@ export default class FamilyTreeVisual extends Component {
     }
 
     const callbacks = {
-      togglePartnership: (partnershipId) => {
+      togglePartnershipExpansion: (partnershipId) => {
         this.togglePartnershipExpansion(partnershipId);
       },
       navigateToPerson: (personId) => {

@@ -144,6 +144,8 @@ export function layoutFamily(
         'expansion-placeholder',
         expansionBox.width,
         expansionBox.height,
+        null, // gender
+        partnership.id, // Store partnership ID for click handling
       );
       const placeholderFamily = new Family();
       placeholderFamily.addElement(expansionPlaceholder);
