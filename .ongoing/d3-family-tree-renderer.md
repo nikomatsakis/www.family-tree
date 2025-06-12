@@ -9,6 +9,10 @@ Create an interactive D3.js-based family tree renderer that provides rich visual
 ## 🎯 Current Focus
 **Status**: Ready for next enhancement - no active work in progress
 
+### Next Priority Items
+- **Add visual indicators for unexpanded ancestors**: Show indication that Sarek has parents who aren't currently shown
+- **Add expand/collapse controls for ancestor relationships**: Allow users to click to expand upward to see more generations
+
 ## ✅ What We've Accomplished
 - **Core D3 SVG rendering** with professional visual appearance
 - **Gender-based color scheme** that's inclusive and readable (warm gray-blue for male, gray-rose for female, neutral beige for unknown)
@@ -17,6 +21,7 @@ Create an interactive D3.js-based family tree renderer that provides rich visual
 - **Reactive state management** that updates tree when navigating
 - **Hover effects** with smooth transitions and visual feedback
 - **Comprehensive test coverage** using real genea fixture data
+- **Limited family tree scope** showing only immediate family relationships (focus person + parents + children)
 
 ## 🔄 Enhancement Ideas (No Particular Order)
 

@@ -216,20 +216,8 @@ export default class FamilyTreeVisual extends Component {
       expandedPartnerships.add(this.args.person.childIn.id);
     }
 
-    // 3. Walk up ancestor chain and expand all direct lineage partnerships
-    let currentPerson = this.args.person;
-    while (currentPerson.childIn) {
-      // Move up to parent partnership
-      const parentPartnership = currentPerson.childIn;
-      expandedPartnerships.add(parentPartnership.id);
-
-      // Move up to first parent in that partnership (main lineage)
-      if (parentPartnership.parents.length > 0) {
-        currentPerson = parentPartnership.parents[0]; // Follow first parent as main lineage
-      } else {
-        break;
-      }
-    }
+    // 3. Only show immediate family - stop at focus person's parents
+    // (Removed ancestor chain walking to limit tree size)
 
     return { expandedPartnerships, expandedPersons };
   }

@@ -84,7 +84,8 @@ export default class BaseRenderer {
       }
 
       // Process partnership where this person is a child (their parents' partnership)
-      if (person.childIn) {
+      // Only include parent partnership if it's explicitly expanded
+      if (person.childIn && this.isPartnershipExpanded(person.childIn.id)) {
         const parentPartnershipIdx = buildPartnership(person.childIn);
         renderTree.getPerson(idx).childIn = parentPartnershipIdx;
         if (this.debug) {
