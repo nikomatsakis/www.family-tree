@@ -29,11 +29,11 @@ export default class TextRenderer extends BaseRenderer {
   prepareRenderData(renderTree, options = {}) {
     try {
       // ⚠️ IMPORTANT: Layout root vs Focus person distinction
-      // - LAYOUT ROOT: Where tree structure begins (oldest ancestor)  
+      // - LAYOUT ROOT: Where tree structure begins (oldest ancestor)
       // - FOCUS PERSON: Who gets visual emphasis within the tree
       // Layout must start from root ancestor and flow down generations,
       // even if focus person is someone deeper in the tree
-      
+
       // Use root nodes to determine starting point for text rendering
       let startPersonIndex;
       if (renderTree.rootNodes.length > 0) {

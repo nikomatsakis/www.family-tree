@@ -191,6 +191,23 @@ export function layoutFamily(
       leftParent.y + renderer.getPartnershipLineY(leftParent.height);
     family.addElement(partnershipLine);
 
+    // Add collapse button if partnership is expanded and has children
+    if (partnership.isExpanded && partnership.children.length > 0) {
+      const collapseBox = renderer.measureBox('−');
+      const collapseButton = new Rectangle(
+        '−',
+        'collapse-button',
+        collapseBox.width,
+        collapseBox.height,
+        null, // gender
+        partnership.id, // Store partnership ID for click handling
+      );
+      // Position the collapse button at the junction point of the marriage line
+      collapseButton.x = partnershipLineJunction - collapseBox.width / 2;
+      collapseButton.y = partnershipLine.y - collapseBox.height / 2;
+      family.addElement(collapseButton);
+    }
+
     // Position partner (if present)
     //
     // +---------+       +---------+

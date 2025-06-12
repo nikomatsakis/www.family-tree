@@ -7,11 +7,16 @@
 Create an interactive D3.js-based family tree renderer that provides rich visualization and navigation for family relationships, serving as the foundation for enhanced person detail pages.
 
 ## 🎯 Current Focus
-**Status**: Ready for next enhancement - no active work in progress
+**Status**: Partial implementation of clickable expansion - needs event handler fix
 
-### Next Priority Items
+### Recently Fixed Issues
+- **State management bug**: Fixed! The issue was that `userExpandedPartnerships` was tracking "toggles" instead of explicit expanded/collapsed states. When clicking something already in defaults, it would collapse instead of staying expanded. Now using separate `userExpandedPartnerships` and `userCollapsedPartnerships` sets to track explicit user intentions.
+
+### Next Priority Items  
 - **Add visual indicators for unexpanded ancestors**: Show indication that Sarek has parents who aren't currently shown
 - **Add expand/collapse controls for ancestor relationships**: Allow users to click to expand upward to see more generations
+- **Clear user modifications on person change**: Reset the user expanded/collapsed sets when navigating to a different person
+- **Polish collapse button positioning**: Fine-tune the exact placement of the "−" button on the marriage line
 
 ## ✅ What We've Accomplished
 - **Core D3 SVG rendering** with professional visual appearance
@@ -22,6 +27,9 @@ Create an interactive D3.js-based family tree renderer that provides rich visual
 - **Hover effects** with smooth transitions and visual feedback
 - **Comprehensive test coverage** using real genea fixture data
 - **Limited family tree scope** showing only immediate family relationships (focus person + parents + children)
+- **Clickable expansion placeholders** with "+" buttons that expand partnerships
+- **Collapse functionality** with "−" buttons on marriage lines when partnerships are expanded
+- **Fixed state management** to properly track explicit expanded/collapsed states
 
 ## 🔄 Enhancement Ideas (No Particular Order)
 

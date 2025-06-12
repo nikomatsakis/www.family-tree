@@ -91,6 +91,13 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @param {Object} callbacks - Callback functions for user interactions
    */
   renderToElement(element, renderData, callbacks = {}) {
+    console.log('🔄 D3TreeRenderer.renderToElement called', {
+      hasCallbacks: !!callbacks,
+      hasTogglePartnership: !!callbacks.togglePartnershipExpansion,
+      expandedPartnerships: renderData.data?.metadata?.expandedPartnerships,
+      timestamp: new Date().toISOString(),
+    });
+
     // Clear previous content
     element.innerHTML = '';
 
@@ -174,7 +181,17 @@ export default class D3TreeRenderer extends BaseRenderer {
     const absoluteX = offsetX + rect.x;
     const absoluteY = offsetY + rect.y;
 
-    console.log('Rendering rectangle:', rect.label, 'at', absoluteX, absoluteY, 'class:', rect.class, 'id:', rect.id);
+    console.log(
+      'Rendering rectangle:',
+      rect.label,
+      'at',
+      absoluteX,
+      absoluteY,
+      'class:',
+      rect.class,
+      'id:',
+      rect.id,
+    );
 
     // Track element for testing/debugging
     this.trackElement?.(
@@ -186,34 +203,37 @@ export default class D3TreeRenderer extends BaseRenderer {
       rect.height,
     );
 
+    // Determine element types based on layout-assigned classes
+    const isFocusPerson =
+      rect.class === 'primary-person' && this.isRectangleForFocusPerson(rect);
+    const isExpansionPlaceholder = rect.class === 'expansion-placeholder';
+    const isCollapseButton = rect.class === 'collapse-button';
+    const isRepeatedPerson = rect.class === 'repeated-person';
+    const isButton = isExpansionPlaceholder || isCollapseButton;
+
+    // Render buttons as circles, others as rectangles
+    if (isButton) {
+      this.renderCircularButton(group, rect, absoluteX, absoluteY, callbacks);
+      return;
+    }
+
     // Create group for each person box
     const rectGroup = group
       .append('g')
       .attr('class', `person-box ${rect.class}`)
       .attr('transform', `translate(${absoluteX}, ${absoluteY})`);
 
-    // Determine element types based on layout-assigned classes
-    const isFocusPerson =
-      rect.class === 'primary-person' && this.isRectangleForFocusPerson(rect);
-    const isExpansionPlaceholder = rect.class === 'expansion-placeholder';
-    const isRepeatedPerson = rect.class === 'repeated-person';
-
     // Style based on element type and gender
     let fillColor, strokeColor, strokeWidth, textColor, textContent;
 
     // Debug gender data
     if (this.debug) {
-      console.log(`Rectangle ${rect.label}: class=${rect.class}, gender=${rect.gender}`);
+      console.log(
+        `Rectangle ${rect.label}: class=${rect.class}, gender=${rect.gender}`,
+      );
     }
 
-    if (isExpansionPlaceholder) {
-      // Style as a "+" button - neutral warm gray to match overall scheme
-      fillColor = '#faf8f5';
-      strokeColor = '#8b7d6b';
-      strokeWidth = 2;
-      textColor = '#8b7d6b';
-      textContent = '+';
-    } else if (isRepeatedPerson) {
+    if (isRepeatedPerson) {
       // Fade out repeated appearances - much lighter version of gender color
       const genderColors = this.getGenderColors(rect.gender, true); // faded=true
       fillColor = genderColors.fill;
@@ -239,7 +259,7 @@ export default class D3TreeRenderer extends BaseRenderer {
       textContent = rect.label;
     }
 
-    // Add rectangle
+    // Add rectangle (buttons are handled separately)
     const rectElement = rectGroup
       .append('rect')
       .attr('width', rect.width)
@@ -247,40 +267,54 @@ export default class D3TreeRenderer extends BaseRenderer {
       .attr('fill', fillColor)
       .attr('stroke', strokeColor)
       .attr('stroke-width', strokeWidth)
-      .attr('rx', isExpansionPlaceholder ? 8 : 4)
-      .attr('ry', isExpansionPlaceholder ? 8 : 4);
+      .attr('rx', 4)
+      .attr('ry', 4);
 
     // Add special effects for focus person
     if (isFocusPerson) {
       // Add drop shadow filter
-      const defs = group.select(function() {
-        return this.closest('svg');
-      }).select('defs').size() > 0
-        ? group.select(function() { return this.closest('svg'); }).select('defs')
-        : group.select(function() { return this.closest('svg'); }).append('defs');
-      
+      const defs =
+        group
+          .select(function () {
+            return this.closest('svg');
+          })
+          .select('defs')
+          .size() > 0
+          ? group
+              .select(function () {
+                return this.closest('svg');
+              })
+              .select('defs')
+          : group
+              .select(function () {
+                return this.closest('svg');
+              })
+              .append('defs');
+
       const filterId = 'focus-person-shadow';
       if (defs.select(`#${filterId}`).size() === 0) {
-        const filter = defs.append('filter')
+        const filter = defs
+          .append('filter')
           .attr('id', filterId)
           .attr('x', '-50%')
           .attr('y', '-50%')
           .attr('width', '200%')
           .attr('height', '200%');
-        
-        filter.append('feDropShadow')
+
+        filter
+          .append('feDropShadow')
           .attr('dx', 2)
           .attr('dy', 2)
           .attr('stdDeviation', 3)
           .attr('flood-color', '#000000')
           .attr('flood-opacity', 0.15);
       }
-      
+
       rectElement.style('filter', `url(#${filterId})`);
-      
+
       // Increase stroke width even more
       rectElement.attr('stroke-width', 3);
-      
+
       // Add a subtle glow effect by using a brighter stroke
       rectElement.attr('stroke', d3.color(strokeColor).brighter(0.5));
     }
@@ -293,13 +327,13 @@ export default class D3TreeRenderer extends BaseRenderer {
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .attr('font-family', 'system-ui, -apple-system, sans-serif')
-      .attr('font-size', isExpansionPlaceholder ? '18px' : '14px')
-      .attr('font-weight', isExpansionPlaceholder ? 'bold' : 'normal')
+      .attr('font-size', '14px')
+      .attr('font-weight', 'normal')
       .attr('fill', textColor)
       .text(textContent);
 
-    // Add click navigation and hover effects for person boxes (not expansion placeholders)
-    if (!isExpansionPlaceholder) {
+    // Add click navigation and hover effects for person boxes (not buttons)
+    if (!isExpansionPlaceholder && !isCollapseButton) {
       rectGroup
         .style('cursor', 'pointer')
         .on('click', () => {
@@ -312,7 +346,7 @@ export default class D3TreeRenderer extends BaseRenderer {
             window.location.href = `/person/${encodeURIComponent(rect.id)}`;
           }
         })
-        .on('mouseenter', function() {
+        .on('mouseenter', function () {
           // Add hover effect - slightly darken and thicken border
           const rect = d3.select(this).select('rect');
           const currentStrokeWidth = isFocusPerson ? 3 : strokeWidth;
@@ -320,13 +354,13 @@ export default class D3TreeRenderer extends BaseRenderer {
             .transition()
             .duration(150)
             .attr('stroke-width', currentStrokeWidth + 1);
-          
+
           // Only apply brightness filter if not focus person (which has shadow filter)
           if (!isFocusPerson) {
             rect.style('filter', 'brightness(0.95)');
           }
         })
-        .on('mouseleave', function() {
+        .on('mouseleave', function () {
           // Remove hover effect
           const rect = d3.select(this).select('rect');
           const currentStrokeWidth = isFocusPerson ? 3 : strokeWidth;
@@ -334,7 +368,7 @@ export default class D3TreeRenderer extends BaseRenderer {
             .transition()
             .duration(150)
             .attr('stroke-width', currentStrokeWidth);
-          
+
           // Restore filter state
           if (isFocusPerson) {
             rect.style('filter', `url(#focus-person-shadow)`);
@@ -343,34 +377,111 @@ export default class D3TreeRenderer extends BaseRenderer {
           }
         });
     }
+  }
 
-    // Add click handlers for expansion placeholders
-    if (isExpansionPlaceholder && rect.id) {
-      rectGroup
+  /**
+   * Renders a circular button for expansion/collapse controls
+   * @param {d3.Selection} group - D3 selection for the container group
+   * @param {Rectangle} rect - Rectangle element to render as a button
+   * @param {number} absoluteX - Absolute X position
+   * @param {number} absoluteY - Absolute Y position
+   * @param {Object} callbacks - Callback functions for user interactions
+   */
+  renderCircularButton(group, rect, absoluteX, absoluteY, callbacks = {}) {
+    const isExpansionPlaceholder = rect.class === 'expansion-placeholder';
+    const buttonType = isExpansionPlaceholder ? 'expansion' : 'collapse';
+
+    console.log(`🎯 Rendering circular ${buttonType} button`, {
+      rectId: rect.id,
+      rectLabel: rect.label,
+      position: { x: absoluteX, y: absoluteY },
+    });
+
+    // Create group for the button
+    const buttonGroup = group
+      .append('g')
+      .attr('class', `circular-button ${rect.class}`)
+      .attr('transform', `translate(${absoluteX}, ${absoluteY})`);
+
+    const radius = rect.width / 2; // Should be 12px based on our 24px button size
+    const centerX = radius;
+    const centerY = radius;
+
+    // Button styling
+    const fillColor = isExpansionPlaceholder ? '#f8f9fa' : '#e9ecef';
+    const strokeColor = '#6c757d';
+    const textColor = '#495057';
+    const textContent = isExpansionPlaceholder ? '+' : '−';
+
+    // Add circle background
+    const circleElement = buttonGroup
+      .append('circle')
+      .attr('cx', centerX)
+      .attr('cy', centerY)
+      .attr('r', radius - 2) // Slightly smaller than the measurement to leave room for stroke
+      .attr('fill', fillColor)
+      .attr('stroke', strokeColor)
+      .attr('stroke-width', 1.5);
+
+    // Add text (centered)
+    buttonGroup
+      .append('text')
+      .attr('x', centerX)
+      .attr('y', centerY)
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'middle')
+      .attr('font-family', 'system-ui, -apple-system, sans-serif')
+      .attr('font-size', '14px')
+      .attr('font-weight', 'bold')
+      .attr('fill', textColor)
+      .attr('pointer-events', 'none') // Prevent text from interfering with clicks
+      .text(textContent);
+
+    // Add click handlers and hover effects
+    if (rect.id) {
+      console.log(`🎯 Adding click handler for ${buttonType} button`, {
+        rectId: rect.id,
+        hasCallback: !!callbacks.togglePartnershipExpansion,
+      });
+
+      buttonGroup
         .style('cursor', 'pointer')
         .on('click', () => {
+          console.log(`🖱️ ${buttonType} button clicked!`, {
+            rectId: rect.id,
+            hasCallback: !!callbacks.togglePartnershipExpansion,
+          });
+
           // Toggle partnership expansion using Ember callback
           if (callbacks.togglePartnershipExpansion) {
+            console.log(
+              '📤 Calling togglePartnershipExpansion with ID:',
+              rect.id,
+            );
             callbacks.togglePartnershipExpansion(rect.id);
+          } else {
+            console.error(
+              '❌ No togglePartnershipExpansion callback available!',
+            );
           }
         })
-        .on('mouseenter', function() {
-          // Add hover effect for expansion placeholders
-          const rectElement = d3.select(this).select('rect');
-          rectElement
+        .on('mouseenter', function () {
+          // Add hover effect - darken background and enlarge slightly
+          circleElement
             .transition()
             .duration(150)
+            .attr('fill', d3.color(fillColor).darker(0.1))
             .attr('stroke-width', 2)
-            .style('filter', 'brightness(0.9)');
+            .attr('r', radius - 1); // Slightly larger on hover
         })
-        .on('mouseleave', function() {
+        .on('mouseleave', function () {
           // Remove hover effect
-          const rectElement = d3.select(this).select('rect');
-          rectElement
+          circleElement
             .transition()
             .duration(150)
-            .attr('stroke-width', 1)
-            .style('filter', 'brightness(1)');
+            .attr('fill', fillColor)
+            .attr('stroke-width', 1.5)
+            .attr('r', radius - 2);
         });
     }
   }
@@ -421,10 +532,10 @@ export default class D3TreeRenderer extends BaseRenderer {
     if (!renderData || !renderData.data || !renderData.data.renderTree) {
       return false;
     }
-    
+
     const renderTree = renderData.data.renderTree;
     const focusPerson = renderTree.getFocusPerson();
-    
+
     // Compare the rectangle's ID with the focus person's ID
     return rect.id && focusPerson && rect.id === focusPerson.id;
   }
@@ -510,6 +621,15 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @returns {Object} {width, height} in pixels
    */
   measureBox(text) {
+    // Small circular buttons for + and - controls
+    if (text === '+' || text === '−' || text === '...') {
+      const buttonSize = 24; // Small circular button
+      return {
+        width: buttonSize,
+        height: buttonSize,
+      };
+    }
+
     const textWidth = this.measureText(text);
     const textHeight = this.charHeight;
 
@@ -591,7 +711,9 @@ export default class D3TreeRenderer extends BaseRenderer {
    */
   getGenderColors(gender, faded = false, focus = false) {
     // Normalize gender string - handle null, "null", undefined, empty string
-    const normalizedGender = (gender && gender !== 'null' ? gender : 'unknown').toLowerCase();
+    const normalizedGender = (
+      gender && gender !== 'null' ? gender : 'unknown'
+    ).toLowerCase();
 
     if (faded) {
       // Very light versions for repeated appearances

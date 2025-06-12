@@ -102,7 +102,14 @@ export class AlternateLineagePartnership extends Partnership {
  *    :   Child2
  */
 export class RenderPerson {
-  constructor(id, name, gender = null, comments = null, childIn = null, parentIn = []) {
+  constructor(
+    id,
+    name,
+    gender = null,
+    comments = null,
+    childIn = null,
+    parentIn = [],
+  ) {
     this.id = id; // string - original person ID for reference
     this.name = name;
     this.gender = gender; // string - gender for color coding (male, female, unknown, etc.)
