@@ -16,9 +16,17 @@ Create an interactive D3.js-based family tree renderer that provides rich visual
 - **Text renderer compatibility**: Fixed coordinate system issues and added button support
 - **Test compatibility**: All text renderer tests now pass with new button rendering
 
-### Next Priority Items  
-- **Add visual indicators for unexpanded ancestors**: Show indication that Sarek has parents who aren't currently shown
-- **Add expand/collapse controls for ancestor relationships**: Allow users to click to expand upward to see more generations
+### 🚀 NEXT TASK: URL State Integration
+- **Update URL query params to include expanded/collapsed partnerships**: Persist user's expansion state in the URL for sharing and navigation
+- **Sync userExpandedPartnerships and userCollapsedPartnerships with URL**: Allow deep linking to specific tree states
+- **Maintain backwards compatibility**: Existing URLs should continue to work
+
+### Future Priority Items  
+- **Ancestor expansion/collapse controls**: Add [+]/[-] buttons at person "ports" for progressive ancestor exploration
+  - Focus person + displayed ancestors show [-] buttons (collapse to hide their parents)
+  - Root ancestors show [+] buttons (expand to show their parents)  
+  - Allows incremental exploration upward through generations (parents → grandparents → great-grandparents)
+  - New state tracking: userExpandedPersons/userCollapsedPersons
 - **Clear user modifications on person change**: Reset the user expanded/collapsed sets when navigating to a different person
 
 ## ✅ What We've Accomplished
