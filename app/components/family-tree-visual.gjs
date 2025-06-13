@@ -39,14 +39,6 @@ export default class FamilyTreeVisual extends Component {
 
   // Tracked properties that trigger re-renders when changed
   @tracked selectedRendererType = null;
-  @tracked userExpandedPartnerships = new Set(); // Partnerships user explicitly expanded
-  @tracked userCollapsedPartnerships = new Set(); // Partnerships user explicitly collapsed
-  @tracked userExpandedPersons = new Set(); // Persons user explicitly expanded
-  @tracked userCollapsedPersons = new Set(); // Persons user explicitly collapsed
-
-  constructor() {
-    super(...arguments);
-  }
 
   /**
    * Getter that returns the current renderer type.
@@ -63,8 +55,8 @@ export default class FamilyTreeVisual extends Component {
   }
 
   /**
-   * Reactive getter for expansion state that recomputes when person changes.
-   * Integrates URL state, defaults, and user modifications.
+   * Derived expansion state from URL params or defaults.
+   * No stored state - always computed from current URL and person.
    */
   @cached
   get expandedPartnerships() {
@@ -75,28 +67,18 @@ export default class FamilyTreeVisual extends Component {
     // Parse URL query params
     const urlExpansions = this.parseQueryParams();
 
-    // Start with URL state if present, otherwise use defaults
-    const baseExpansions = urlExpansions.hasData
-      ? urlExpansions.expandedPartnerships
-      : this.computeDefaultExpansions().expandedPartnerships;
-
-    const expansions = new Set(baseExpansions);
-
-    // Apply user's explicit expansions
-    for (const partnershipId of this.userExpandedPartnerships) {
-      expansions.add(partnershipId);
+    if (urlExpansions.hasData) {
+      // Use URL state if present
+      return new Set(urlExpansions.expandedPartnerships);
+    } else {
+      // Use defaults
+      const defaults = this.computeDefaultExpansions();
+      return new Set(defaults.expandedPartnerships);
     }
-
-    // Apply user's explicit collapses
-    for (const partnershipId of this.userCollapsedPartnerships) {
-      expansions.delete(partnershipId);
-    }
-
-    return expansions;
   }
 
   /**
-   * Reactive getter for expanded persons that recomputes when person changes.
+   * Derived expanded persons state from URL params or defaults.
    */
   @cached
   get expandedPersons() {
@@ -107,24 +89,14 @@ export default class FamilyTreeVisual extends Component {
     // Parse URL query params
     const urlExpansions = this.parseQueryParams();
 
-    // Start with URL state if present, otherwise use defaults
-    const baseExpansions = urlExpansions.hasData
-      ? urlExpansions.expandedPersons
-      : this.computeDefaultExpansions().expandedPersons;
-
-    const expansions = new Set(baseExpansions);
-
-    // Apply user's explicit expansions
-    for (const personId of this.userExpandedPersons) {
-      expansions.add(personId);
+    if (urlExpansions.hasData) {
+      // Use URL state if present
+      return new Set(urlExpansions.expandedPersons);
+    } else {
+      // Use defaults
+      const defaults = this.computeDefaultExpansions();
+      return new Set(defaults.expandedPersons);
     }
-
-    // Apply user's explicit collapses
-    for (const personId of this.userCollapsedPersons) {
-      expansions.delete(personId);
-    }
-
-    return expansions;
   }
 
   /**
@@ -237,54 +209,39 @@ export default class FamilyTreeVisual extends Component {
   togglePartnershipExpansion(partnershipId) {
     console.log('🌀 togglePartnershipExpansion called', {
       partnershipId,
-      currentExpanded: Array.from(this.userExpandedPartnerships),
-      hasPartnership: this.userExpandedPartnerships.has(partnershipId),
+      currentExpanded: Array.from(this.expandedPartnerships),
+      hasPartnership: this.expandedPartnerships.has(partnershipId),
     });
 
-    // Check if it's currently expanded (in the computed final state)
-    const currentlyExpanded = this.expandedPartnerships.has(partnershipId);
-
-    if (currentlyExpanded) {
-      // It's expanded, so collapse it
-      this.userExpandedPartnerships.delete(partnershipId);
-      this.userCollapsedPartnerships.add(partnershipId);
+    // Create new state by toggling the partnership
+    const newExpanded = new Set(this.expandedPartnerships);
+    if (newExpanded.has(partnershipId)) {
+      newExpanded.delete(partnershipId);
     } else {
-      // It's collapsed, so expand it
-      this.userCollapsedPartnerships.delete(partnershipId);
-      this.userExpandedPartnerships.add(partnershipId);
+      newExpanded.add(partnershipId);
     }
 
-    // Create new Sets to trigger tracked updates
-    this.userExpandedPartnerships = new Set(this.userExpandedPartnerships);
-    this.userCollapsedPartnerships = new Set(this.userCollapsedPartnerships);
-
     console.log('🌆 After toggle', {
-      newExpanded: Array.from(this.userExpandedPartnerships),
+      newExpanded: Array.from(newExpanded),
       willUpdateURL: true,
     });
 
-    this.updateURL();
+    // Update URL with new state - this will trigger getter recomputation
+    this.updateURLWithState(newExpanded, this.expandedPersons);
   }
 
   @action
   togglePersonExpansion(personId) {
-    // Check if it's currently expanded (in the computed final state)
-    const currentlyExpanded = this.expandedPersons.has(personId);
-
-    if (currentlyExpanded) {
-      // It's expanded, so collapse it
-      this.userExpandedPersons.delete(personId);
-      this.userCollapsedPersons.add(personId);
+    // Create new state by toggling the person
+    const newExpanded = new Set(this.expandedPersons);
+    if (newExpanded.has(personId)) {
+      newExpanded.delete(personId);
     } else {
-      // It's collapsed, so expand it
-      this.userCollapsedPersons.delete(personId);
-      this.userExpandedPersons.add(personId);
+      newExpanded.add(personId);
     }
 
-    // Create new Sets to trigger tracked updates
-    this.userExpandedPersons = new Set(this.userExpandedPersons);
-    this.userCollapsedPersons = new Set(this.userCollapsedPersons);
-    this.updateURL();
+    // Update URL with new state - this will trigger getter recomputation
+    this.updateURLWithState(this.expandedPartnerships, newExpanded);
   }
 
   /**
@@ -298,16 +255,37 @@ export default class FamilyTreeVisual extends Component {
   }
 
   @action
-  updateURL() {
-    const expandedPartnerships = Array.from(this.expandedPartnerships).join(
-      ',',
-    );
-    const expandedPersons = Array.from(this.expandedPersons).join(',');
+  updateURLWithState(expandedPartnerships, expandedPersons) {
+    // Check if current state matches defaults
+    const defaults = this.computeDefaultExpansions();
+    const defaultPartnerships = defaults.expandedPartnerships;
+    const defaultPersons = defaults.expandedPersons;
 
-    this.router.transitionTo('person', this.args.person.id, {
+    // Compare sets - only include in URL if different from defaults
+    const partnershipsMatchDefaults =
+      expandedPartnerships.size === defaultPartnerships.size &&
+      [...expandedPartnerships].every((id) => defaultPartnerships.has(id));
+
+    const personsMatchDefaults =
+      expandedPersons.size === defaultPersons.size &&
+      [...expandedPersons].every((id) => defaultPersons.has(id));
+
+    const expandedPartnershipsStr = partnershipsMatchDefaults
+      ? undefined
+      : Array.from(expandedPartnerships).join(',') || undefined;
+
+    const expandedPersonsStr = personsMatchDefaults
+      ? undefined
+      : Array.from(expandedPersons).join(',') || undefined;
+
+    // Get current query params to preserve renderer setting
+    const currentQueryParams = this.router.currentRoute?.queryParams || {};
+
+    this.router.replaceWith('person', this.args.person.id, {
       queryParams: {
-        expandedPartnerships: expandedPartnerships || undefined,
-        expandedPersons: expandedPersons || undefined,
+        renderer: currentQueryParams.renderer || this.activeRendererType,
+        expandedPartnerships: expandedPartnershipsStr,
+        expandedPersons: expandedPersonsStr,
         referencePersonId: this.args.referencePerson?.id,
       },
     });

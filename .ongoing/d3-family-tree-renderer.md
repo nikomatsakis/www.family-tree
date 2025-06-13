@@ -16,16 +16,18 @@ Create an interactive D3.js-based family tree renderer that provides rich visual
 - **Text renderer compatibility**: Fixed coordinate system issues and added button support
 - **Test compatibility**: All text renderer tests now pass with new button rendering
 
-### 🚀 NEXT TASK: URL State Integration
-- **Update URL query params to include expanded/collapsed partnerships**: Persist user's expansion state in the URL for sharing and navigation
-- **Sync userExpandedPartnerships and userCollapsedPartnerships with URL**: Allow deep linking to specific tree states
-- **Maintain backwards compatibility**: Existing URLs should continue to work
+### ✅ Recently Completed: URL State Integration (NEW!)
+- **URL query params for partnership expansion**: expandedPartnerships and expandedPersons are now persisted in URLs
+- **Deep linking support**: URLs now maintain exact tree state for sharing and navigation
+- **Simplified state management**: Removed complex user modification tracking in favor of derived state from URL + defaults
+- **Smart URL cleanup**: Query params are automatically cleared when expansion state returns to defaults
+- **Backwards compatibility**: Existing URLs continue to work, new URLs provide enhanced state persistence
+
+### 🚀 NEXT TASK: Auto-expand Childless Partnerships
+- **Only show [+] button when partnership has children**: Prevents unnecessary buttons for partnerships that don't add information
+- **Check renderTree.getPartnershipChildren() before creating expansion placeholder**
 
 ### Future Priority Items  
-- **Auto-expand childless partnerships**: Only show [+] button when partnership has children
-  - If partnership has no children, automatically expand it (no button needed)
-  - Prevents unnecessary buttons for partnerships that don't add information
-  - Check renderTree.getPartnershipChildren() before creating expansion placeholder
 - **Ancestor expansion/collapse controls**: Add [+]/[-] buttons at person "ports" for progressive ancestor exploration
   - Focus person + displayed ancestors show [-] buttons (collapse to hide their parents)
   - Root ancestors show [+] buttons (expand to show their parents)  
