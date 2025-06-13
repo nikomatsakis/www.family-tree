@@ -22,6 +22,10 @@ Create an interactive D3.js-based family tree renderer that provides rich visual
 - **Maintain backwards compatibility**: Existing URLs should continue to work
 
 ### Future Priority Items  
+- **Auto-expand childless partnerships**: Only show [+] button when partnership has children
+  - If partnership has no children, automatically expand it (no button needed)
+  - Prevents unnecessary buttons for partnerships that don't add information
+  - Check renderTree.getPartnershipChildren() before creating expansion placeholder
 - **Ancestor expansion/collapse controls**: Add [+]/[-] buttons at person "ports" for progressive ancestor exploration
   - Focus person + displayed ancestors show [-] buttons (collapse to hide their parents)
   - Root ancestors show [+] buttons (expand to show their parents)  
