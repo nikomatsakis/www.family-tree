@@ -207,28 +207,6 @@ module('Unit | Utils | text-canvas', function () {
     assert.strictEqual(canvas.render(), expected);
   });
 
-  test('error: cannot place text on existing text', function (assert) {
-    const canvas = new TextCanvas();
-    canvas.addText(0, 0, 'Hello');
-
-    assert.throws(
-      () => canvas.addText(2, 0, 'XX'),
-      /Cannot place text at \(2,0\) - cell already occupied/,
-      'Should throw when placing text on existing text',
-    );
-  });
-
-  test('error: cannot draw line through text', function (assert) {
-    const canvas = new TextCanvas();
-    canvas.addText(2, 0, 'X');
-
-    assert.throws(
-      () => canvas.drawHorizontalLine(0, 0, 5),
-      /Cannot draw line at \(2,0\) - text already present/,
-      'Should throw when drawing line through text',
-    );
-  });
-
   test('canvas auto-grows to fit content', function (assert) {
     const canvas = new TextCanvas();
 

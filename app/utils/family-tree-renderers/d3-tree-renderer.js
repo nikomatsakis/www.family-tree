@@ -281,15 +281,15 @@ export default class D3TreeRenderer extends BaseRenderer {
           .select('defs')
           .size() > 0
           ? group
-              .select(function () {
-                return this.closest('svg');
-              })
-              .select('defs')
+            .select(function () {
+              return this.closest('svg');
+            })
+            .select('defs')
           : group
-              .select(function () {
-                return this.closest('svg');
-              })
-              .append('defs');
+            .select(function () {
+              return this.closest('svg');
+            })
+            .append('defs');
 
       const filterId = 'focus-person-shadow';
       if (defs.select(`#${filterId}`).size() === 0) {
@@ -700,6 +700,21 @@ export default class D3TreeRenderer extends BaseRenderer {
   }
   get personMargin() {
     return 4;
+  }
+
+  /**
+   * Calculate position for buttons on marriage lines
+   * @param {number} junctionX - X coordinate of marriage line junction
+   * @param {number} lineY - Y coordinate of marriage line
+   * @param {number} buttonWidth - Width of button
+   * @param {number} buttonHeight - Height of button
+   * @returns {Object} {x, y} coordinates for button placement
+   */
+  getButtonPosition(junctionX, lineY, buttonWidth, buttonHeight) {
+    return {
+      x: junctionX - buttonWidth / 2,
+      y: lineY - buttonHeight / 2 + 1, // +1 for visual alignment with line center
+    };
   }
 
   /**

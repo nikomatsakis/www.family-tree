@@ -38,6 +38,14 @@ export class TextRenderer {
    * @returns {Object} {width, height} in layout units
    */
   measureBox(text) {
+    // Button controls get rendered as [+] or [-] (3 characters wide)
+    if (text === '+' || text === '−') {
+      return {
+        width: 3, // [+] or [-] is 3 characters wide
+        height: 1,
+      };
+    }
+
     const textWidth = this.measureText(text);
     const textHeight = this.charHeight;
 
@@ -111,6 +119,21 @@ export class TextRenderer {
   }
 
   /**
+   * Calculate position for buttons on marriage lines
+   * @param {number} junctionX - X coordinate of marriage line junction
+   * @param {number} lineY - Y coordinate of marriage line
+   * @returns {Object} {x, y} coordinates for button placement
+   */
+  getButtonPosition(junctionX, lineY) {
+    // Text renderer requires integer coordinates for canvas compatibility
+    // For 3-character buttons like [+], center them properly
+    return {
+      x: junctionX - 1,
+      y: lineY, // Place button directly on the line for text rendering
+    };
+  }
+
+  /**
    * Render a Family layout to a TextCanvas
    * @param {TextCanvas} canvas - Canvas to draw on
    * @param {Family} family - Family to render
@@ -137,13 +160,23 @@ export class TextRenderer {
    * Render a rectangle (person box or placeholder)
    */
   #renderRectangle(canvas, rect, x, y) {
-    // Draw the box
-    canvas.drawBox(x, y, rect.width, rect.height);
+    const isButton =
+      rect.class === 'expansion-placeholder' ||
+      rect.class === 'collapse-button';
 
-    // Add text with padding offset
-    const textX = x + this.personPadding;
-    const textY = y + this.personPadding;
-    canvas.addText(textX, textY, rect.label);
+    if (isButton) {
+      // Render buttons as [+] or [-] without box borders
+      const buttonText = `[${rect.label}]`;
+      canvas.addText(x, y, buttonText);
+    } else {
+      // Draw the box for person rectangles
+      canvas.drawBox(x, y, rect.width, rect.height);
+
+      // Add text with padding offset
+      const textX = x + this.personPadding;
+      const textY = y + this.personPadding;
+      canvas.addText(textX, textY, rect.label);
+    }
   }
 
   /**

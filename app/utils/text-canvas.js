@@ -100,16 +100,16 @@ export class TextCanvas {
 
   /**
    * Get or create Segments at position
+   * 💡 ANSWER: Lines can now be drawn over text for flexible layout
    */
   #getOrCreateSegments(x, y) {
     this.#ensureSize(x, y);
     let cell = this.rows[y][x];
 
-    if (!cell) {
+    if (!cell || cell instanceof Text) {
+      // Create new segments, potentially overwriting text
       cell = new Segments();
       this.rows[y][x] = cell;
-    } else if (cell instanceof Text) {
-      throw new Error(`Cannot draw line at (${x},${y}) - text already present`);
     }
 
     return cell;
@@ -117,16 +117,12 @@ export class TextCanvas {
 
   /**
    * Add text at position
+   * 💡 ANSWER: Text can now be placed over lines/segments for button overlays
    */
   addText(x, y, text) {
     for (let i = 0; i < text.length; i++) {
       this.#ensureSize(x + i, y);
-      const existing = this.rows[y][x + i];
-      if (existing) {
-        throw new Error(
-          `Cannot place text at (${x + i},${y}) - cell already occupied`,
-        );
-      }
+      // Allow text to overwrite existing content (lines, segments, other text)
       this.rows[y][x + i] = new Text(text[i]);
     }
   }

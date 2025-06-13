@@ -7,16 +7,19 @@
 Create an interactive D3.js-based family tree renderer that provides rich visualization and navigation for family relationships, serving as the foundation for enhanced person detail pages.
 
 ## 🎯 Current Focus
-**Status**: Partial implementation of clickable expansion - needs event handler fix
+**Status**: Core expansion/collapse implementation complete!
 
-### Recently Fixed Issues
-- **State management bug**: Fixed! The issue was that `userExpandedPartnerships` was tracking "toggles" instead of explicit expanded/collapsed states. When clicking something already in defaults, it would collapse instead of staying expanded. Now using separate `userExpandedPartnerships` and `userCollapsedPartnerships` sets to track explicit user intentions.
+### Recently Completed
+- **State management bug**: Fixed! Proper tracking of explicit expanded/collapsed states
+- **Collapse functionality**: Added "−" buttons on marriage lines for expanded partnerships
+- **Button visual design**: Implemented circular buttons with hover effects for professional appearance
+- **Text renderer compatibility**: Fixed coordinate system issues and added button support
+- **Test compatibility**: All text renderer tests now pass with new button rendering
 
 ### Next Priority Items  
 - **Add visual indicators for unexpanded ancestors**: Show indication that Sarek has parents who aren't currently shown
 - **Add expand/collapse controls for ancestor relationships**: Allow users to click to expand upward to see more generations
 - **Clear user modifications on person change**: Reset the user expanded/collapsed sets when navigating to a different person
-- **Polish collapse button positioning**: Fine-tune the exact placement of the "−" button on the marriage line
 
 ## ✅ What We've Accomplished
 - **Core D3 SVG rendering** with professional visual appearance

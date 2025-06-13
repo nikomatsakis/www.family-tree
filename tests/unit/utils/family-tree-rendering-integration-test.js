@@ -211,7 +211,7 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       // Expected output with T-junction and drop lines connecting to child boxes
       const expected = [
         '┌───┐        ┌───┐',
-        '│Dad│ ───┬── │Mom│',
+        '│Dad│ ──[−]─ │Mom│',
         '└───┘    │   └───┘',
         '         ├──────┬──────┐',
         '         │      │      │',
@@ -284,7 +284,7 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       // Expected output with multiple marriages and connected continuity line
       const expected = [
         '┌────┐        ┌────┐',
-        '│John│ ───┬── │Mary│',
+        '│John│ ──[−]─ │Mary│',
         '└╥───┘    │   └────┘',
         ' ║        │',
         ' ║        │',
@@ -296,7 +296,7 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
         ' ║',
         ' ║',
         '┌╨───┐        ┌─────┐',
-        '│John│ ───┬── │Susan│',
+        '│John│ ──[−]─ │Susan│',
         '└────┘    │   └─────┘',
         '          │',
         '          │',
@@ -377,13 +377,13 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       // Expected three-generation layout with connected drop lines
       const expected = [
         '┌───────┐        ┌───────┐',
-        '│GrandPa│ ───┬── │GrandMa│',
+        '│GrandPa│ ──[−]─ │GrandMa│',
         '└───────┘    │   └───────┘',
         '             ├────────────────────────┐',
         '             │                        │',
         '             │                        │',
         '           ┌─┴─┐        ┌───┐      ┌──┴─┐',
-        '           │Dad│ ───┬── │Mom│      │Aunt│',
+        '           │Dad│ ──[−]─ │Mom│      │Aunt│',
         '           └───┘    │   └───┘      └────┘',
         '                    ├────────┐',
         '                    │        │',

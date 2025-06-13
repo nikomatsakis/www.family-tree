@@ -159,18 +159,14 @@ module('Unit | Utility | text-renderer', function () {
     const canvas = new TextCanvas();
     const family = new Family();
 
-    // Add expansion placeholder
-    const placeholder = new Rectangle('...', 'expansion-placeholder', 5, 3);
+    // Add expansion placeholder (now renders as [+] instead of boxed)
+    const placeholder = new Rectangle('+', 'expansion-placeholder', 3, 1);
     family.addElement(placeholder);
 
     renderer.render(canvas, family);
     const output = canvas.render();
 
-    assert.strictEqual(
-      output,
-      ['┌───┐', '│...│', '└───┘'].join('\n'),
-      'Expansion placeholder rendered correctly',
-    );
+    assert.strictEqual(output, '[+]', 'Expansion placeholder rendered as [+]');
   });
 
   test('respects text padding in boxes', function (assert) {

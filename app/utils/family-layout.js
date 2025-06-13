@@ -305,10 +305,16 @@ export function layoutFamily(
         null, // gender
         partnership.id, // Store partnership ID for click handling
       );
-      // Position the collapse button at the junction point of the marriage line
-      // Adjust Y position slightly to account for line stroke width
-      collapseButton.x = partnershipLineJunction - collapseBox.width / 2;
-      collapseButton.y = partnershipLine.y - collapseBox.height / 2 + 1; // +1 to align with line center
+      // ⚠️ IMPORTANT: Always use renderer.getButtonPosition() instead of hardcoding math
+      // Position calculations must be delegated to the renderer to handle coordinate systems properly
+      const collapsePos = renderer.getButtonPosition(
+        partnershipLineJunction,
+        partnershipLine.y,
+        collapseBox.width,
+        collapseBox.height,
+      );
+      collapseButton.x = collapsePos.x;
+      collapseButton.y = collapsePos.y;
       family.addElement(collapseButton);
     } else if (!partnership.isExpanded) {
       // Add expansion placeholder for unexpanded partnerships
@@ -321,10 +327,16 @@ export function layoutFamily(
         null, // gender
         partnership.id, // Store partnership ID for click handling
       );
-      // Position the expansion placeholder at the junction point of the marriage line
-      // Adjust Y position slightly to account for line stroke width
-      expansionPlaceholder.x = partnershipLineJunction - expansionBox.width / 2;
-      expansionPlaceholder.y = partnershipLine.y - expansionBox.height / 2 + 1; // +1 to align with line center
+      // ⚠️ IMPORTANT: Always use renderer.getButtonPosition() instead of hardcoding math
+      // Position calculations must be delegated to the renderer to handle coordinate systems properly
+      const expansionPos = renderer.getButtonPosition(
+        partnershipLineJunction,
+        partnershipLine.y,
+        expansionBox.width,
+        expansionBox.height,
+      );
+      expansionPlaceholder.x = expansionPos.x;
+      expansionPlaceholder.y = expansionPos.y;
       family.addElement(expansionPlaceholder);
     }
 
