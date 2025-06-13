@@ -622,7 +622,7 @@ export default class D3TreeRenderer extends BaseRenderer {
    */
   measureBox(text) {
     // Small circular buttons for + and - controls
-    if (text === '+' || text === '−' || text === '...') {
+    if (text === '+' || text === '−') {
       const buttonSize = 24; // Small circular button
       return {
         width: buttonSize,

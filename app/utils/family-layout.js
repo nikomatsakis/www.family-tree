@@ -136,22 +136,9 @@ export function layoutFamily(
         ); // RECURSIVE
         childFamilies.push(childFamily);
       }
-    } else {
-      // Create expansion placeholder for unexpanded partnership
-      const expansionBox = renderer.measureBox('...');
-      const expansionPlaceholder = new Rectangle(
-        '...',
-        'expansion-placeholder',
-        expansionBox.width,
-        expansionBox.height,
-        null, // gender
-        partnership.id, // Store partnership ID for click handling
-      );
-      const placeholderFamily = new Family();
-      placeholderFamily.addElement(expansionPlaceholder);
-      placeholderFamily.port = renderer.getPortPosition(expansionBox.width);
-      childFamilies.push(placeholderFamily);
     }
+    // Note: if unexpanded, childFamilies remains empty and expansion placeholder
+    // will be added directly on the marriage line at the junction point
 
     // Calculate junction position using our algorithm
     const partnershipLineStart = leftParent.width + renderer.spacerWidth;
@@ -190,23 +177,6 @@ export function layoutFamily(
     partnershipLine.y =
       leftParent.y + renderer.getPartnershipLineY(leftParent.height);
     family.addElement(partnershipLine);
-
-    // Add collapse button if partnership is expanded and has children
-    if (partnership.isExpanded && partnership.children.length > 0) {
-      const collapseBox = renderer.measureBox('−');
-      const collapseButton = new Rectangle(
-        '−',
-        'collapse-button',
-        collapseBox.width,
-        collapseBox.height,
-        null, // gender
-        partnership.id, // Store partnership ID for click handling
-      );
-      // Position the collapse button at the junction point of the marriage line
-      collapseButton.x = partnershipLineJunction - collapseBox.width / 2;
-      collapseButton.y = partnershipLine.y - collapseBox.height / 2;
-      family.addElement(collapseButton);
-    }
 
     // Position partner (if present)
     //
@@ -320,6 +290,42 @@ export function layoutFamily(
           family.addElement(dropLine);
         }
       }
+    }
+
+    // Add expansion/collapse button at junction point after all lines are drawn
+    // This ensures the button appears on top of any lines
+    if (partnership.isExpanded && partnership.children.length > 0) {
+      // Add collapse button for expanded partnerships with children
+      const collapseBox = renderer.measureBox('−');
+      const collapseButton = new Rectangle(
+        '−',
+        'collapse-button',
+        collapseBox.width,
+        collapseBox.height,
+        null, // gender
+        partnership.id, // Store partnership ID for click handling
+      );
+      // Position the collapse button at the junction point of the marriage line
+      // Adjust Y position slightly to account for line stroke width
+      collapseButton.x = partnershipLineJunction - collapseBox.width / 2;
+      collapseButton.y = partnershipLine.y - collapseBox.height / 2 + 1; // +1 to align with line center
+      family.addElement(collapseButton);
+    } else if (!partnership.isExpanded) {
+      // Add expansion placeholder for unexpanded partnerships
+      const expansionBox = renderer.measureBox('+');
+      const expansionPlaceholder = new Rectangle(
+        '+',
+        'expansion-placeholder',
+        expansionBox.width,
+        expansionBox.height,
+        null, // gender
+        partnership.id, // Store partnership ID for click handling
+      );
+      // Position the expansion placeholder at the junction point of the marriage line
+      // Adjust Y position slightly to account for line stroke width
+      expansionPlaceholder.x = partnershipLineJunction - expansionBox.width / 2;
+      expansionPlaceholder.y = partnershipLine.y - expansionBox.height / 2 + 1; // +1 to align with line center
+      family.addElement(expansionPlaceholder);
     }
 
     // Add continuity line and shadow person if not the last partnership
