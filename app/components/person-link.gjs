@@ -1,6 +1,7 @@
 import Component from '@glimmer/component';
 import { LinkTo } from '@ember/routing';
 import { service } from '@ember/service';
+import { DEFAULT_RENDERER_TYPE } from '../utils/family-tree-renderers';
 
 export default class PersonLinkComponent extends Component {
   @service router;
@@ -43,7 +44,9 @@ export default class PersonLinkComponent extends Component {
 
   get currentRenderer() {
     // Get renderer from current route's query params
-    return this.router.currentRoute?.queryParams?.renderer || 'text';
+    return (
+      this.router.currentRoute?.queryParams?.renderer || DEFAULT_RENDERER_TYPE
+    );
   }
 
   get queryParams() {

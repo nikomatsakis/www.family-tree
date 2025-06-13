@@ -3,6 +3,11 @@ import TextRenderer from './text-renderer';
 import D3TreeRenderer from './d3-tree-renderer';
 
 /**
+ * Default renderer type used throughout the application
+ */
+export const DEFAULT_RENDERER_TYPE = 'd3-tree';
+
+/**
  * Factory function to create renderer instances
  * @param {string} type - The renderer type ('debug', 'text', or 'd3-tree')
  * @param {Object} options - Options to pass to the renderer constructor

@@ -3,7 +3,10 @@ import { tracked, cached } from '@glimmer/tracking';
 import { action } from '@ember/object';
 import { service } from '@ember/service';
 import { modifier } from 'ember-modifier';
-import { createRenderer } from '../utils/family-tree-renderers';
+import {
+  createRenderer,
+  DEFAULT_RENDERER_TYPE,
+} from '../utils/family-tree-renderers';
 
 /**
  * FamilyTreeVisual Component - Renders family trees using different visualization strategies
@@ -52,7 +55,11 @@ export default class FamilyTreeVisual extends Component {
    * and external prop changes from the parent.
    */
   get activeRendererType() {
-    return this.selectedRendererType || this.args.rendererType || 'd3-tree';
+    return (
+      this.selectedRendererType ||
+      this.args.rendererType ||
+      DEFAULT_RENDERER_TYPE
+    );
   }
 
   /**

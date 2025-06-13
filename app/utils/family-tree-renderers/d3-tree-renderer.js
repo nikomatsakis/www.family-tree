@@ -281,15 +281,15 @@ export default class D3TreeRenderer extends BaseRenderer {
           .select('defs')
           .size() > 0
           ? group
-            .select(function () {
-              return this.closest('svg');
-            })
-            .select('defs')
+              .select(function () {
+                return this.closest('svg');
+              })
+              .select('defs')
           : group
-            .select(function () {
-              return this.closest('svg');
-            })
-            .append('defs');
+              .select(function () {
+                return this.closest('svg');
+              })
+              .append('defs');
 
       const filterId = 'focus-person-shadow';
       if (defs.select(`#${filterId}`).size() === 0) {
