@@ -120,11 +120,14 @@ export default class BaseRenderer {
       // Create RegularPartnership with proper expansion state
       const isExpanded = this.isPartnershipExpanded(partnership.id);
       const childrenArray = isExpanded ? [] : null; // null = not expanded, [] = expanded but no children yet
+      const hasChildren =
+        partnership.children && partnership.children.length > 0;
 
       const regularPartnership = new RegularPartnership(
         partnership.id,
         [], // parents - will be populated below
         childrenArray,
+        hasChildren,
       );
 
       // Add to render tree and store index mapping

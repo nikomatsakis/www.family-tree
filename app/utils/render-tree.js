@@ -48,11 +48,12 @@ export class Partnership {
  * - [] means "we looked and there are no children" (expanded childless state)
  */
 export class RegularPartnership extends Partnership {
-  constructor(id, parents, children = null) {
+  constructor(id, parents, children = null, hasChildren = false) {
     super(id);
     this.type = 'regular';
     this.parents = parents; // number[] - indices into persons array
     this.children = children; // number[] | null - indices, null if not expanded, [] if expanded but childless
+    this.hasChildren = hasChildren; // boolean - whether the original partnership has any children in the genea data
   }
 
   get isExpanded() {

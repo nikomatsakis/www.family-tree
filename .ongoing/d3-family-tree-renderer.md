@@ -23,17 +23,18 @@ Create an interactive D3.js-based family tree renderer that provides rich visual
 - **Smart URL cleanup**: Query params are automatically cleared when expansion state returns to defaults
 - **Backwards compatibility**: Existing URLs continue to work, new URLs provide enhanced state persistence
 
-### 🚀 NEXT TASK: Auto-expand Childless Partnerships
-- **Only show [+] button when partnership has children**: Prevents unnecessary buttons for partnerships that don't add information
-- **Check renderTree.getPartnershipChildren() before creating expansion placeholder**
+### ✅ Recently Completed: Auto-expand Childless Partnerships (NEW!)
+- **Smart expansion buttons**: Only show [+] button when partnership actually has children to reveal
+- **Added hasChildren property**: RegularPartnership now tracks whether original genea data contains children
+- **Clean UI for childless couples**: Marriage lines appear without unnecessary expansion controls
+- **Preserved functionality**: Partnerships with children still show proper expand/collapse controls
+
+### 🚀 NEXT TASK: Ancestor Expansion/Collapse Controls
+- **Add [+]/[-] buttons at person "ports"**: Enable progressive ancestor exploration upward through generations
+- **Progressive disclosure**: Allow viewing parents → grandparents → great-grandparents incrementally
 
 ### Future Priority Items  
-- **Ancestor expansion/collapse controls**: Add [+]/[-] buttons at person "ports" for progressive ancestor exploration
-  - Focus person + displayed ancestors show [-] buttons (collapse to hide their parents)
-  - Root ancestors show [+] buttons (expand to show their parents)  
-  - Allows incremental exploration upward through generations (parents → grandparents → great-grandparents)
-  - New state tracking: userExpandedPersons/userCollapsedPersons
-- **Clear user modifications on person change**: Reset the user expanded/collapsed sets when navigating to a different person
+- **Clear user modifications on person change**: Reset expansion state when navigating to different person
 
 ## ✅ What We've Accomplished
 - **Core D3 SVG rendering** with professional visual appearance

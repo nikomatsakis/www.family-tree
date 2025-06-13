@@ -316,8 +316,8 @@ export function layoutFamily(
       collapseButton.x = collapsePos.x;
       collapseButton.y = collapsePos.y;
       family.addElement(collapseButton);
-    } else if (!partnership.isExpanded) {
-      // Add expansion placeholder for unexpanded partnerships
+    } else if (!partnership.isExpanded && partnership.hasChildren) {
+      // Add expansion placeholder only for unexpanded partnerships that have children
       const expansionBox = renderer.measureBox('+');
       const expansionPlaceholder = new Rectangle(
         '+',
@@ -339,6 +339,8 @@ export function layoutFamily(
       expansionPlaceholder.y = expansionPos.y;
       family.addElement(expansionPlaceholder);
     }
+    // Note: if !partnership.isExpanded && !partnership.hasChildren, no button is shown
+    // The partnership line appears without any expansion control
 
     // Add continuity line and shadow person if not the last partnership
     if (partnershipIndex < person.parentIn.length - 1) {
