@@ -60,15 +60,15 @@ This is a family tree application that:
 
 ### Running the Application
 - `cargo run -- serve` - Parse genea.doc and serve the web app
-- `npm start` - Run Ember development server only
+- `pnpm start` - Run Ember development server only
 
 ### Testing
-- `npm test` - Run all lints and tests
-- `npm run test:ember` - Run Ember tests only
+- `pnpm test` - Run all lints and tests
+- `pnpm run test:ember` - Run Ember tests only
 - `cargo test` - Run Rust tests
 
 ### Linting
-- `npm run lint` - Run all linters and fix issues
+- `pnpm run lint` - Run all linters and fix issues
 - `cargo clippy` - Run Rust linter
 
 ## Testing with Genea Fixtures

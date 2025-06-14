@@ -7,15 +7,10 @@
  * 1. When adding someone from primary lineage, always add their marriages
  *    (but not necessarily children of those marriages)
  * 2. Each genea person/partnership added only once (tracked via maps)
- * 3. Primary lineage persons get full marriage expansion, partners get alternate lineage placeholders
+ * 3. Primary lineage persons get full marriage expansion
  */
 
-import {
-  RenderTree,
-  RenderPerson,
-  RegularPartnership,
-  AlternateLineagePartnership,
-} from './render-tree.js';
+import { RenderTree, RenderPerson, RegularPartnership } from './render-tree.js';
 
 export class RenderTreeBuilder {
   constructor(geneaService) {
@@ -80,16 +75,7 @@ export class RenderTreeBuilder {
 
     this.personMap.set(geneaPerson, renderIndex);
 
-    // Add alternate lineage placeholder if person has parents
-    if (geneaPerson.childIn) {
-      const alternateLineage = new AlternateLineagePartnership(
-        `alt-${geneaPerson.id}`,
-        renderIndex,
-        null, // TODO: fromPartnership - need to track which partnership brought us here
-      );
-      const altIndex = this.renderTree.addPartnership(alternateLineage);
-      renderPerson.childIn = altIndex;
-    }
+    // TODO: Handle tracking parent partnerships for partner persons
 
     return renderIndex;
   }

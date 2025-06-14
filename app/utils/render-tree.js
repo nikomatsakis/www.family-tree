@@ -15,8 +15,6 @@
  * KEY VISUAL MAPPINGS:
  * - RegularPartnership with parents + children = T-junction marriage display
  * - Multiple parentIn partnerships = repeated person with continuity connectors
- * - UnexpandedAncestorPartnership = "more ancestors above" placeholder
- * - AlternateLineagePartnership = "(show [person]'s family)" navigation buttons
  * - Primary lineage control prevents exponential ancestor explosion (2^n problem)
  */
 
@@ -58,35 +56,6 @@ export class RegularPartnership extends Partnership {
 
   get isExpanded() {
     return this.children !== null;
-  }
-}
-
-/**
- * Placeholder for unexpanded ancestors at top of primary lineage
- *
- * VISUAL MAPPING: Shows "(show ancestors)" at top of tree
- * Prevents exponential growth by limiting to one ancestral path
- */
-export class UnexpandedAncestorPartnership extends Partnership {
-  constructor(id, from) {
-    super(id);
-    this.type = 'unexpanded-ancestor';
-    this.from = from; // number - index of person at top of current lineage
-  }
-}
-
-/**
- * Placeholder for alternate lineage (e.g., Amanda's family)
- *
- * VISUAL MAPPING: Creates "(show Amanda's family)" navigation buttons
- * Enables switching family tree perspective at marriage points
- */
-export class AlternateLineagePartnership extends Partnership {
-  constructor(id, person, fromPartnership) {
-    super(id);
-    this.type = 'alternate-lineage';
-    this.person = person; // number - index of person who could become primary
-    this.fromPartnership = fromPartnership; // number - index of original partnership
   }
 }
 

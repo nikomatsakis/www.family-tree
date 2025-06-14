@@ -212,8 +212,6 @@ The visual design is implemented through dedicated data structures in `app/utils
 
 **Partnership Types Map Directly to Visual Elements:**
 - `RegularPartnership` → T-junction marriages with parents and children
-- `AlternateLineagePartnership` → "(show [person]'s family)" navigation buttons  
-- `UnexpandedAncestorPartnership` → "(show ancestors)" placeholders
 
 **Person Relationships Enable Visual Patterns:**
 - `parentIn` array → Multiple marriage repetition with continuity connectors
