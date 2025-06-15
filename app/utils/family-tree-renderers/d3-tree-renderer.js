@@ -208,8 +208,10 @@ export default class D3TreeRenderer extends BaseRenderer {
       rect.class === 'primary-person' && this.isRectangleForFocusPerson(rect);
     const isExpansionPlaceholder = rect.class === 'expansion-placeholder';
     const isCollapseButton = rect.class === 'collapse-button';
+    const isAncestorButton = rect.class === 'ancestor-expansion-placeholder';
     const isRepeatedPerson = rect.class === 'repeated-person';
-    const isButton = isExpansionPlaceholder || isCollapseButton;
+    const isButton =
+      isExpansionPlaceholder || isCollapseButton || isAncestorButton;
 
     // Render buttons as circles, others as rectangles
     if (isButton) {
@@ -389,7 +391,9 @@ export default class D3TreeRenderer extends BaseRenderer {
    */
   renderCircularButton(group, rect, absoluteX, absoluteY, callbacks = {}) {
     const isExpansionPlaceholder = rect.class === 'expansion-placeholder';
-    const buttonType = isExpansionPlaceholder ? 'expansion' : 'collapse';
+    const isAncestorButton = rect.class === 'ancestor-expansion-placeholder';
+    const buttonType =
+      isExpansionPlaceholder || isAncestorButton ? 'expansion' : 'collapse';
 
     console.log(`🎯 Rendering circular ${buttonType} button`, {
       rectId: rect.id,
@@ -408,10 +412,11 @@ export default class D3TreeRenderer extends BaseRenderer {
     const centerY = radius;
 
     // Button styling
-    const fillColor = isExpansionPlaceholder ? '#f8f9fa' : '#e9ecef';
+    const fillColor =
+      isExpansionPlaceholder || isAncestorButton ? '#f8f9fa' : '#e9ecef';
     const strokeColor = '#6c757d';
     const textColor = '#495057';
-    const textContent = isExpansionPlaceholder ? '+' : '−';
+    const textContent = isExpansionPlaceholder || isAncestorButton ? '+' : '−';
 
     // Add circle background
     const circleElement = buttonGroup
