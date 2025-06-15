@@ -28,34 +28,34 @@ export class Partnership {
 }
 
 /**
- * Partnership in the render tree with parents and optionally children
+ * Family in the render tree with spouses and optionally children
  *
  * VISUAL MAPPING: Creates T-junction display
- * Parent1 ──┬── Parent2
+ * Spouse1 ──┬── Spouse2
  *           |
  *       ┌───┴───┐
  *    Child1   Child2
  *
- * IMPORTANT: Partnership expansion states:
- * - children: null = Partnership exists but hasn't been expanded yet (no children loaded)
- * - children: [] = Partnership has been expanded but has no children (childless couple)
- * - children: [1, 2, ...] = Partnership has been expanded and has children
+ * IMPORTANT: Family expansion states:
+ * - childRIndices: null = Family exists but hasn't been expanded yet (no children loaded)
+ * - childRIndices: [] = Family has been expanded but has no children (childless couple)
+ * - childRIndices: [1, 2, ...] = Family has been expanded and has children
  *
  * The distinction between null and [] is critical:
  * - null means "we haven't looked at the children yet" (collapsed state)
  * - [] means "we looked and there are no children" (expanded childless state)
  */
-export class RenderPartnership extends Partnership {
-  constructor(id, parents, children = null, hasChildren = false) {
+export class RenderFamily extends Partnership {
+  constructor(id, spouseRIndices, childRIndices = null, hasChildren = false) {
     super(id);
     this.type = 'regular';
-    this.parents = parents; // number[] - indices into persons array
-    this.children = children; // number[] | null - indices, null if not expanded, [] if expanded but childless
-    this.hasChildren = hasChildren; // boolean - whether the original partnership has any children in the genea data
+    this.spouseRIndices = spouseRIndices; // number[] - indices into persons array
+    this.childRIndices = childRIndices; // number[] | null - indices, null if not expanded, [] if expanded but childless
+    this.hasChildren = hasChildren; // boolean - whether the original family has any children in the genea data
   }
 
   get isExpanded() {
-    return this.children !== null;
+    return this.childRIndices !== null;
   }
 }
 
@@ -77,15 +77,15 @@ export class RenderPerson {
     name,
     gender = null,
     comments = null,
-    childIn = null,
-    parentIn = [],
+    upFamilyRIndex = null,
+    rightFamilyRIndices = [],
   ) {
     this.id = id; // string - original person ID for reference
     this.name = name;
     this.gender = gender; // string - gender for color coding (male, female, unknown, etc.)
     this.comments = comments; // string - additional person information
-    this.childIn = childIn; // number | null - index of partnership where THIS person is a child (i.e., their parents' partnership)
-    this.parentIn = parentIn; // number[] - indices of partnerships where THIS person is a parent/spouse (i.e., partnerships with their spouses)
+    this.upFamilyRIndex = upFamilyRIndex; // number | null - index of family where THIS person is a child (i.e., their parents' family)
+    this.rightFamilyRIndices = rightFamilyRIndices; // number[] - indices of families where THIS person is a spouse (i.e., families with their spouses)
   }
 }
 
@@ -95,7 +95,7 @@ export class RenderPerson {
 export class RenderTree {
   constructor(focusPersonIndex) {
     this.persons = []; // RenderPerson[]
-    this.partnerships = []; // Partnership[]
+    this.families = []; // RenderFamily[]
     this.focusPersonIndex = focusPersonIndex; // number - index of focus person
     this.rootNodes = []; // number[] - indices of root persons (no parents, not partnered with someone who has parents)
   }
@@ -110,11 +110,11 @@ export class RenderTree {
   }
 
   /**
-   * Add a partnership to the tree and return their index
+   * Add a family to the tree and return their index
    */
-  addPartnership(partnership) {
-    const index = this.partnerships.length;
-    this.partnerships.push(partnership);
+  addFamily(family) {
+    const index = this.families.length;
+    this.families.push(family);
     return index;
   }
 
@@ -126,10 +126,10 @@ export class RenderTree {
   }
 
   /**
-   * Get partnership by index
+   * Get family by index
    */
-  getPartnership(index) {
-    return this.partnerships[index];
+  getFamily(index) {
+    return this.families[index];
   }
 
   /**
@@ -140,12 +140,12 @@ export class RenderTree {
   }
 
   /**
-   * Get partnerships by type
+   * Get families by type
    */
-  getPartnershipsByType(type) {
-    return this.partnerships
-      .map((p, index) => ({ partnership: p, index }))
-      .filter(({ partnership }) => partnership.type === type);
+  getFamiliesByType(type) {
+    return this.families
+      .map((f, index) => ({ family: f, index }))
+      .filter(({ family }) => family.type === type);
   }
 
   /**
@@ -160,21 +160,21 @@ export class RenderTree {
    * Root nodes are persons with no parents who are not partnered with someone who has parents
    */
   computeRootNodes() {
-    // Find persons with no parents (childIn === null)
+    // Find persons with no parents (upFamilyRIndex === null)
     const rootCandidates = this.persons
       .map((person, index) => ({ person, index }))
-      .filter(({ person }) => person.childIn === null);
+      .filter(({ person }) => person.upFamilyRIndex === null);
 
     // Filter out people who are partnered with someone who has parents
     this.rootNodes = rootCandidates
       .filter(({ person, index }) => {
         // Check if this person is partnered with someone who has parents
-        for (const partnershipIndex of person.parentIn) {
-          const partnership = this.getPartnership(partnershipIndex);
-          const partners = partnership.parents.filter((p) => p !== index);
-          for (const partnerIndex of partners) {
-            const partner = this.getPerson(partnerIndex);
-            if (partner.childIn !== null) {
+        for (const familyIndex of person.rightFamilyRIndices) {
+          const family = this.getFamily(familyIndex);
+          const spouses = family.spouseRIndices.filter((p) => p !== index);
+          for (const spouseIndex of spouses) {
+            const spouse = this.getPerson(spouseIndex);
+            if (spouse.upFamilyRIndex !== null) {
               return false; // This person is partnered with someone who has parents
             }
           }
@@ -197,15 +197,15 @@ export class RenderTree {
         index,
         ...person,
       })),
-      partnerships: this.partnerships.map((partnership, index) => ({
+      families: this.families.map((family, index) => ({
         index,
-        ...partnership,
+        ...family,
       })),
       stats: {
         personCount: this.persons.length,
-        partnershipCount: this.partnerships.length,
-        expandedPartnerships: this.partnerships.filter(
-          (p) => p.type === 'regular' && p.isExpanded,
+        familyCount: this.families.length,
+        expandedFamilies: this.families.filter(
+          (f) => f.type === 'regular' && f.isExpanded,
         ).length,
         rootNodeCount: this.rootNodes.length,
       },

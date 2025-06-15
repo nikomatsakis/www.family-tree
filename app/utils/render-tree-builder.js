@@ -10,7 +10,7 @@
  * 3. Primary lineage persons get full marriage expansion
  */
 
-import { RenderTree, RenderPerson, RenderPartnership } from './render-tree.js';
+import { RenderTree, RenderPerson, RenderFamily } from './render-tree.js';
 
 export class RenderTreeBuilder {
   constructor(geneaService) {
@@ -106,14 +106,14 @@ export class RenderTreeBuilder {
       ? [primaryPersonIndex, partnerPersonIndex]
       : [primaryPersonIndex];
 
-    const renderPartnership = new RenderPartnership(
+    const renderFamily = new RenderFamily(
       geneaPartnership.id,
       parents,
       null, // children unexpanded initially
     );
 
-    const partnershipIndex = this.renderTree.addPartnership(renderPartnership);
-    this.partnershipMap.set(geneaPartnership, partnershipIndex);
+    const familyIndex = this.renderTree.addFamily(renderFamily);
+    this.partnershipMap.set(geneaPartnership, familyIndex);
 
     // Update parentIn arrays
     this.renderTree
