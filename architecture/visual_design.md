@@ -211,7 +211,7 @@ This separation allows debugging complex algorithms while keeping rendering tech
 The visual design is implemented through dedicated data structures in `app/utils/render-tree.js`:
 
 **Partnership Types Map Directly to Visual Elements:**
-- `RegularPartnership` → T-junction marriages with parents and children
+- `RenderPartnership` → T-junction marriages with parents and children
 
 **Person Relationships Enable Visual Patterns:**
 - `parentIn` array → Multiple marriage repetition with continuity connectors

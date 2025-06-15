@@ -5,7 +5,7 @@ import { Family, Rectangle, Line } from 'family-tree/utils/layout-elements';
 import {
   RenderTree,
   RenderPerson,
-  RegularPartnership,
+  RenderPartnership,
 } from 'family-tree/utils/render-tree';
 import { layoutFamily } from 'family-tree/utils/family-layout';
 
@@ -136,7 +136,7 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       const janeIndex = renderTree.addPerson(jane);
 
       // Create marriage partnership
-      const marriage = new RegularPartnership(
+      const marriage = new RenderPartnership(
         'marriage-1',
         [johnIndex, janeIndex],
         [], // empty array = expanded with no children
@@ -187,7 +187,7 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       const child3Index = renderTree.addPerson(child3);
 
       // Create marriage with children
-      const marriage = new RegularPartnership(
+      const marriage = new RenderPartnership(
         'marriage-1',
         [dadIndex, momIndex],
         [child1Index, child2Index, child3Index],
@@ -253,14 +253,14 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       const child2Index = renderTree.addPerson(child2);
 
       // Create partnerships
-      const marriage1 = new RegularPartnership(
+      const marriage1 = new RenderPartnership(
         'marriage-1',
         [personIndex, spouse1Index],
         [child1Index],
       );
       const marriage1Index = renderTree.addPartnership(marriage1);
 
-      const marriage2 = new RegularPartnership(
+      const marriage2 = new RenderPartnership(
         'marriage-2',
         [personIndex, spouse2Index],
         [child2Index],
@@ -343,14 +343,14 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       const child2Index = renderTree.addPerson(child2);
 
       // Create partnerships
-      const gpMarriage = new RegularPartnership(
+      const gpMarriage = new RenderPartnership(
         'gp-marriage',
         [gp1Index, gp2Index],
         [parent1Index, parent2Index],
       );
       const gpMarriageIndex = renderTree.addPartnership(gpMarriage);
 
-      const parentMarriage = new RegularPartnership(
+      const parentMarriage = new RenderPartnership(
         'parent-marriage',
         [parent1Index, spouseIndex],
         [child1Index, child2Index],

@@ -1,8 +1,4 @@
-import {
-  RenderTree,
-  RenderPerson,
-  RegularPartnership,
-} from '../render-tree.js';
+import { RenderTree, RenderPerson, RenderPartnership } from '../render-tree.js';
 
 /**
  * Base class for family tree renderers.
@@ -123,7 +119,7 @@ export default class BaseRenderer {
       const hasChildren =
         partnership.children && partnership.children.length > 0;
 
-      const regularPartnership = new RegularPartnership(
+      const renderPartnership = new RenderPartnership(
         partnership.id,
         [], // parents - will be populated below
         childrenArray,
@@ -131,7 +127,7 @@ export default class BaseRenderer {
       );
 
       // Add to render tree and store index mapping
-      const idx = renderTree.addPartnership(regularPartnership);
+      const idx = renderTree.addPartnership(renderPartnership);
       partnershipToIndex.set(partnership.id, idx);
 
       if (this.debug) {

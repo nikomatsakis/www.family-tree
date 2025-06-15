@@ -28,7 +28,7 @@ export class Partnership {
 }
 
 /**
- * Regular partnership with parents and optionally children
+ * Partnership in the render tree with parents and optionally children
  *
  * VISUAL MAPPING: Creates T-junction display
  * Parent1 ──┬── Parent2
@@ -45,7 +45,7 @@ export class Partnership {
  * - null means "we haven't looked at the children yet" (collapsed state)
  * - [] means "we looked and there are no children" (expanded childless state)
  */
-export class RegularPartnership extends Partnership {
+export class RenderPartnership extends Partnership {
   constructor(id, parents, children = null, hasChildren = false) {
     super(id);
     this.type = 'regular';
