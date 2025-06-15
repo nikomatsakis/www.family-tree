@@ -136,16 +136,16 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       const janeIndex = renderTree.addPerson(jane);
 
       // Create marriage partnership
-      const marriage = new RenderPartnership(
+      const marriage = new RenderFamily(
         'marriage-1',
         [johnIndex, janeIndex],
         [], // empty array = expanded with no children
       );
-      const marriageIndex = renderTree.addPartnership(marriage);
+      const marriageIndex = renderTree.addFamily(marriage);
 
       // Update parentIn references
-      john.parentIn = [marriageIndex];
-      jane.parentIn = [marriageIndex];
+      john.rightFamilyRIndices = [marriageIndex];
+      jane.rightFamilyRIndices = [marriageIndex];
 
       // Layout and render
       const renderer = new TextRenderer();
@@ -187,19 +187,19 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       const child3Index = renderTree.addPerson(child3);
 
       // Create marriage with children
-      const marriage = new RenderPartnership(
+      const marriage = new RenderFamily(
         'marriage-1',
         [dadIndex, momIndex],
         [child1Index, child2Index, child3Index],
       );
-      const marriageIndex = renderTree.addPartnership(marriage);
+      const marriageIndex = renderTree.addFamily(marriage);
 
       // Update references
-      dad.parentIn = [marriageIndex];
-      mom.parentIn = [marriageIndex];
-      child1.childIn = marriageIndex;
-      child2.childIn = marriageIndex;
-      child3.childIn = marriageIndex;
+      dad.rightFamilyRIndices = [marriageIndex];
+      mom.rightFamilyRIndices = [marriageIndex];
+      child1.upFamilyRIndex = marriageIndex;
+      child2.upFamilyRIndex = marriageIndex;
+      child3.upFamilyRIndex = marriageIndex;
 
       // Layout and render
       const renderer = new TextRenderer();
@@ -253,26 +253,26 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       const child2Index = renderTree.addPerson(child2);
 
       // Create partnerships
-      const marriage1 = new RenderPartnership(
+      const marriage1 = new RenderFamily(
         'marriage-1',
         [personIndex, spouse1Index],
         [child1Index],
       );
-      const marriage1Index = renderTree.addPartnership(marriage1);
+      const marriage1Index = renderTree.addFamily(marriage1);
 
-      const marriage2 = new RenderPartnership(
+      const marriage2 = new RenderFamily(
         'marriage-2',
         [personIndex, spouse2Index],
         [child2Index],
       );
-      const marriage2Index = renderTree.addPartnership(marriage2);
+      const marriage2Index = renderTree.addFamily(marriage2);
 
       // Update references
-      person.parentIn = [marriage1Index, marriage2Index];
-      spouse1.parentIn = [marriage1Index];
-      spouse2.parentIn = [marriage2Index];
-      child1.childIn = marriage1Index;
-      child2.childIn = marriage2Index;
+      person.rightFamilyRIndices = [marriage1Index, marriage2Index];
+      spouse1.rightFamilyRIndices = [marriage1Index];
+      spouse2.rightFamilyRIndices = [marriage2Index];
+      child1.upFamilyRIndex = marriage1Index;
+      child2.upFamilyRIndex = marriage2Index;
 
       // Layout and render
       const renderer = new TextRenderer();
@@ -343,29 +343,29 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
       const child2Index = renderTree.addPerson(child2);
 
       // Create partnerships
-      const gpMarriage = new RenderPartnership(
+      const gpMarriage = new RenderFamily(
         'gp-marriage',
         [gp1Index, gp2Index],
         [parent1Index, parent2Index],
       );
-      const gpMarriageIndex = renderTree.addPartnership(gpMarriage);
+      const gpMarriageIndex = renderTree.addFamily(gpMarriage);
 
-      const parentMarriage = new RenderPartnership(
+      const parentMarriage = new RenderFamily(
         'parent-marriage',
         [parent1Index, spouseIndex],
         [child1Index, child2Index],
       );
-      const parentMarriageIndex = renderTree.addPartnership(parentMarriage);
+      const parentMarriageIndex = renderTree.addFamily(parentMarriage);
 
       // Update references
-      gp1.parentIn = [gpMarriageIndex];
-      gp2.parentIn = [gpMarriageIndex];
-      parent1.childIn = gpMarriageIndex;
-      parent1.parentIn = [parentMarriageIndex];
-      parent2.childIn = gpMarriageIndex;
-      spouse.parentIn = [parentMarriageIndex];
-      child1.childIn = parentMarriageIndex;
-      child2.childIn = parentMarriageIndex;
+      gp1.rightFamilyRIndices = [gpMarriageIndex];
+      gp2.rightFamilyRIndices = [gpMarriageIndex];
+      parent1.upFamilyRIndex = gpMarriageIndex;
+      parent1.rightFamilyRIndices = [parentMarriageIndex];
+      parent2.upFamilyRIndex = gpMarriageIndex;
+      spouse.rightFamilyRIndices = [parentMarriageIndex];
+      child1.upFamilyRIndex = parentMarriageIndex;
+      child2.upFamilyRIndex = parentMarriageIndex;
 
       // Layout focusing on grandparent (to see three generations)
       const renderer = new TextRenderer();

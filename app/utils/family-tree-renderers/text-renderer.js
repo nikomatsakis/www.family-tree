@@ -75,7 +75,7 @@ export default class TextRenderer extends BaseRenderer {
           ascii: asciiOutput,
           metadata: {
             personCount: renderTree.persons.length,
-            partnershipCount: renderTree.partnerships.length,
+            familyCount: renderTree.families.length,
             expandedPartnerships: Array.from(this.expandedPartnerships),
             expandedPersons: Array.from(this.expandedPersons),
             startPersonIndex: startPersonIndex,
@@ -91,7 +91,7 @@ export default class TextRenderer extends BaseRenderer {
           metadata: {
             error: error.message,
             personCount: renderTree.persons.length,
-            partnershipCount: renderTree.partnerships.length,
+            familyCount: renderTree.families.length,
           },
         },
       };
