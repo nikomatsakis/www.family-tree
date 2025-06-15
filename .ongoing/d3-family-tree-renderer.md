@@ -30,11 +30,36 @@ Create an interactive D3.js-based family tree renderer that provides rich visual
 - **Preserved functionality**: Partnerships with children still show proper expand/collapse controls
 
 ### 🚀 NEXT TASK: Ancestor Expansion/Collapse Controls
-- **Add [+]/[-] buttons at person "ports"**: Enable progressive ancestor exploration upward through generations
-- **Progressive disclosure**: Allow viewing parents → grandparents → great-grandparents incrementally
+
+#### Design Approach (Updated after discussion)
+We'll continue using `expandedPartnerships` for all expansion state - it always means "show the children of this partnership". For ancestor expansion:
+
+1. **State Management**: 
+   - Keep using `expandedPartnerships` Set exclusively (not `expandedPersons`)
+   - A partnership being expanded always means "show its children"
+   - For ancestors, we need to track when a person has an unexpanded parent partnership
+
+2. **Tracking Unexpanded Ancestors**:
+   - When building the render tree, if we encounter a person with `childIn` (parent partnership) that exists but is NOT in `expandedPartnerships`, we need to:
+     - Still build the partnership object in the render tree
+     - Mark it as not expanded (children = null)
+     - Set the person's `childIn` to point to this partnership
+   - This allows the layout to detect "this person has ancestors that aren't shown" and add expansion button
+
+3. **Visual Design**:
+   - Add small [+] button above person boxes who have unexpanded parent partnerships
+   - Position button centered above the person box
+   - When clicked, add parent partnership ID to `expandedPartnerships`
+   - Use same circular button style as partnership buttons
+
+4. **Implementation Steps**:
+   - Modify base renderer to always process parent partnerships (not just when expanded)
+   - Update layout to detect unexpanded parent partnerships and add buttons
+   - Wire up click handlers to toggle partnership expansion
 
 ### Future Priority Items  
 - **Clear user modifications on person change**: Reset expansion state when navigating to different person
+- **Rename RenderTree fields**: Clarify that `childIn`/`parentIn` are render tree indices, not genea object references
 
 ## ✅ What We've Accomplished
 - **Core D3 SVG rendering** with professional visual appearance
