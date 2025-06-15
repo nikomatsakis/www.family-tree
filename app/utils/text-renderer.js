@@ -134,6 +134,30 @@ export class TextRenderer {
   }
 
   /**
+   * Calculate position for ancestor expansion buttons above person boxes
+   * @param {number} personX - X coordinate of person box
+   * @param {number} personY - Y coordinate of person box
+   * @param {number} personWidth - Width of person box
+   * @param {number} personHeight - Height of person box
+   * @param {number} buttonWidth - Width of button
+   * @returns {Object} {x, y} coordinates for button placement
+   */
+  getAncestorButtonPosition(
+    personX,
+    personY,
+    personWidth,
+    personHeight,
+    buttonWidth,
+  ) {
+    // For text rendering, place button directly above person box
+    // Center the 3-character button [+] above the person name
+    return {
+      x: personX + Math.floor((personWidth - buttonWidth) / 2),
+      y: personY - 1, // One line above the person box
+    };
+  }
+
+  /**
    * Render a Family layout to a TextCanvas
    * @param {TextCanvas} canvas - Canvas to draw on
    * @param {Family} family - Family to render
@@ -162,7 +186,8 @@ export class TextRenderer {
   #renderRectangle(canvas, rect, x, y) {
     const isButton =
       rect.class === 'expansion-placeholder' ||
-      rect.class === 'collapse-button';
+      rect.class === 'collapse-button' ||
+      rect.class === 'ancestor-expansion-placeholder';
 
     if (isButton) {
       // Render buttons as [+] or [-] without box borders

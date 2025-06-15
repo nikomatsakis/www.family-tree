@@ -91,6 +91,34 @@ export function layoutFamily(
   family.addElement(primaryRect);
   family.port = renderer.getPortPosition(personBox.width);
 
+  // Step 1.5: Add ancestor expansion button if person has unexpanded ancestors
+  if (person.unexpandedChildIn) {
+    const expansionBox = renderer.measureBox('+');
+    const ancestorButton = new Rectangle(
+      '+',
+      'ancestor-expansion-placeholder',
+      expansionBox.width,
+      expansionBox.height,
+      null, // gender
+      person.unexpandedChildIn, // store partnership ID for click handling
+    );
+
+    // Use renderer method for positioning calculation
+    const buttonPosition = renderer.getAncestorButtonPosition(
+      primaryRect.x,
+      primaryRect.y,
+      primaryRect.width,
+      primaryRect.height,
+      expansionBox.width,
+      expansionBox.height,
+    );
+
+    ancestorButton.x = buttonPosition.x;
+    ancestorButton.y = buttonPosition.y;
+
+    family.addElement(ancestorButton);
+  }
+
   // Step 2: Handle partnerships (stacked vertically for multiple partnerships)
   let leftParent = primaryRect;
 

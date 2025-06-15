@@ -718,6 +718,30 @@ export default class D3TreeRenderer extends BaseRenderer {
   }
 
   /**
+   * Calculate position for ancestor expansion buttons above person boxes
+   * @param {number} personX - X coordinate of person box
+   * @param {number} personY - Y coordinate of person box
+   * @param {number} personWidth - Width of person box
+   * @param {number} personHeight - Height of person box
+   * @param {number} buttonWidth - Width of button
+   * @param {number} buttonHeight - Height of button
+   * @returns {Object} {x, y} coordinates for button placement
+   */
+  getAncestorButtonPosition(
+    personX,
+    personY,
+    personWidth,
+    personHeight,
+    buttonWidth,
+    buttonHeight,
+  ) {
+    return {
+      x: personX + (personWidth - buttonWidth) / 2, // Center button above person
+      y: personY - buttonHeight / 2, // Half-overlap with top border of person box
+    };
+  }
+
+  /**
    * Get gender-based colors for warm professional color scheme
    * @param {string} gender - Gender (male, female, unknown, etc.)
    * @param {boolean} faded - Whether this is a faded/repeated appearance
