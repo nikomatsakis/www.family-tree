@@ -49,10 +49,20 @@ export class TextRenderer {
     const textWidth = this.measureText(text);
     const textHeight = this.charHeight;
 
+    // Calculate width: text + 2 * padding
+    // Examples: "X" = 1 + 2*1 = 3, "Child" = 5 + 2*1 = 7
+    const calculatedWidth =
+      textWidth +
+      2 * (this.personPadding + this.personBorder + this.personMargin);
+
+    // Enforce minimum width to accommodate ancestor buttons with corner characters
+    // Examples:
+    //   "X" calculated = 3, but we need 5 for "┌[+]┐" with corners visible
+    //   "Child" calculated = 7, already > 5 so unchanged as "┌─[+]─┐"
+    const minWidth = 5; // Minimum to show ┌[+]┐ pattern with corners visible
+
     return {
-      width:
-        textWidth +
-        2 * (this.personPadding + this.personBorder + this.personMargin),
+      width: Math.max(calculatedWidth, minWidth),
       height:
         textHeight +
         2 * (this.personPadding + this.personBorder + this.personMargin),
@@ -149,11 +159,11 @@ export class TextRenderer {
     personHeight,
     buttonWidth,
   ) {
-    // For text rendering, place button directly above person box
-    // Center the 3-character button [+] above the person name
+    // For text rendering, place button at same Y as person box to overlap top border
+    // Center the 3-character button [+] horizontally
     return {
       x: personX + Math.floor((personWidth - buttonWidth) / 2),
-      y: personY - 1, // One line above the person box
+      y: personY, // Same Y as person box to create integrated look
     };
   }
 
@@ -197,8 +207,11 @@ export class TextRenderer {
       // Draw the box for person rectangles
       canvas.drawBox(x, y, rect.width, rect.height);
 
-      // Add text with padding offset
-      const textX = x + this.personPadding;
+      // Center text within the box
+      const textWidth = this.measureText(rect.label);
+      const availableWidth = rect.width - 2 * this.personPadding;
+      const textX =
+        x + this.personPadding + Math.floor((availableWidth - textWidth) / 2);
       const textY = y + this.personPadding;
       canvas.addText(textX, textY, rect.label);
     }

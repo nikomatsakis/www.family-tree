@@ -399,5 +399,59 @@ module('Unit | Utils | family-tree-rendering-integration', function () {
         'Complex three-generation family tree renders correctly',
       );
     });
+
+    test('person with unexpanded ancestors shows expansion button', function (assert) {
+      // Create RenderTree with a single person who has unexpanded ancestors
+      const renderTree = new RenderTree(0);
+
+      // Add focus person
+      const child = new RenderPerson('child-id', 'Child');
+      // Simulate that this person has unexpanded ancestors by setting unexpandedChildIn
+      child.unexpandedChildIn = 'parent-partnership-id';
+      const childIndex = renderTree.addPerson(child);
+
+      // Layout and render
+      const renderer = new TextRenderer();
+      const family = layoutFamily(renderTree, childIndex, renderer);
+      const canvas = new TextCanvas();
+      renderer.render(canvas, family);
+      const output = canvas.render();
+
+      // Expected output with ancestor expansion button above the person
+      const expected = ['┌─[+]─┐', '│Child│', '└─────┘'].join('\n');
+
+      assert.strictEqual(
+        output,
+        expected,
+        'Person with unexpanded ancestors shows [+] button above',
+      );
+    });
+
+    test('person with single-letter name and unexpanded ancestors', function (assert) {
+      // Create RenderTree with a person with minimal name length
+      const renderTree = new RenderTree(0);
+
+      // Add focus person with single letter name
+      const person = new RenderPerson('x-id', 'X');
+      // Simulate that this person has unexpanded ancestors
+      person.unexpandedChildIn = 'parent-partnership-id';
+      const personIndex = renderTree.addPerson(person);
+
+      // Layout and render
+      const renderer = new TextRenderer();
+      const family = layoutFamily(renderTree, personIndex, renderer);
+      const canvas = new TextCanvas();
+      renderer.render(canvas, family);
+      const output = canvas.render();
+
+      // Expected output - button should fit exactly in minimal box
+      const expected = ['┌[+]┐', '│ X │', '└───┘'].join('\n');
+
+      assert.strictEqual(
+        output,
+        expected,
+        'Single-letter name with ancestor button renders correctly',
+      );
+    });
   });
 });
