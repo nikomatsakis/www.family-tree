@@ -3,14 +3,14 @@
 ## Status: Ancestor Expansion Feature - Final Phase
 **Last Updated**: June 15, 2025
 
-## 🎯 Current Task
-**Phase 4 IN PROGRESS**: Complete D3 renderer support for ancestor expansion buttons
-- Need to recognize `ancestor-expansion-placeholder` button class in SVG rendering
-- Wire up click handlers to add partnership ID to `expandedPartnerships`
-- Position buttons above person boxes (positioning method already implemented)
+## 🎯 Current Status
+**✅ ANCESTOR EXPANSION FEATURE COMPLETE**: All 4 phases implemented and tested
+- Phases 1-2: Base renderer tracks unexpanded ancestors in `unexpandedChildIn` field
+- Phase 3: Layout and text renderer display integrated buttons (`┌─[+]─┐` style)
+- Phase 4: D3 renderer renders clickable circular buttons above person boxes
 
 ## ✅ Recent Accomplishments
-- **Ancestor expansion foundation**: Phases 1-3 complete - buttons appear and work in text renderer
+- **✅ COMPLETE: Ancestor expansion feature**: All 4 phases implemented across both renderers
 - **Smart partnership expansion**: Only show [+] when partnerships have children to reveal
 - **URL state persistence**: expandedPartnerships and expandedPersons persisted across navigation
 - **Comprehensive field renaming**: Clear RIndex naming distinguishes render tree indices from genea IDs
@@ -24,10 +24,10 @@
 5. **Leverages existing infrastructure**: buttons, styling, click handling patterns all reused
 
 ## Future Priority Items  
-- **Complete Phase 4**: Make ancestor buttons clickable in D3 renderer
 - **Clear user modifications on person change**: Reset expansion state when navigating to different person
-- **Enhanced navigation**: Zoom/pan, auto-centering, keyboard navigation
+- **Enhanced navigation**: Zoom/pan, auto-centering, keyboard navigation  
 - **Performance optimizations**: Animation transitions, responsive design
+- **Visual enhancements**: Generation indicators, line styling variations
 
 ## Technical Architecture
 
