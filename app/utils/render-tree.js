@@ -79,6 +79,7 @@ export class RenderPerson {
     comments = null,
     upFamilyRIndex = null,
     rightFamilyRIndices = [],
+    unexpandedChildIn = null,
   ) {
     this.id = id; // string - original person ID for reference
     this.name = name;
@@ -86,6 +87,7 @@ export class RenderPerson {
     this.comments = comments; // string - additional person information
     this.upFamilyRIndex = upFamilyRIndex; // number | null - index of family where THIS person is a child (i.e., their parents' family)
     this.rightFamilyRIndices = rightFamilyRIndices; // number[] - indices of families where THIS person is a spouse (i.e., families with their spouses)
+    this.unexpandedChildIn = unexpandedChildIn; // string | null - partnership ID of unexpanded parent family (for ancestor expansion buttons)
   }
 }
 

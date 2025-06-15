@@ -80,12 +80,22 @@ export default class BaseRenderer {
       }
 
       // Process family where this person is a child (their parents' family)
-      // Only include parent family if it's explicitly expanded
-      if (person.childIn && this.isPartnershipExpanded(person.childIn.id)) {
-        const parentFamilyIdx = buildFamily(person.childIn);
-        renderTree.getPerson(idx).upFamilyRIndex = parentFamilyIdx;
-        if (this.debug) {
-          console.log(`  - Child in family ${parentFamilyIdx}`);
+      if (person.childIn) {
+        if (this.isPartnershipExpanded(person.childIn.id)) {
+          // Expanded - create RenderFamily as normal
+          const parentFamilyIdx = buildFamily(person.childIn);
+          renderTree.getPerson(idx).upFamilyRIndex = parentFamilyIdx;
+          if (this.debug) {
+            console.log(`  - Child in expanded family ${parentFamilyIdx}`);
+          }
+        } else {
+          // NOT expanded - store partnership ID for ancestor expansion button
+          renderTree.getPerson(idx).unexpandedChildIn = person.childIn.id;
+          if (this.debug) {
+            console.log(
+              `  - Has unexpanded parent partnership: ${person.childIn.id}`,
+            );
+          }
         }
       }
 

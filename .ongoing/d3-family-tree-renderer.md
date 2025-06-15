@@ -29,33 +29,45 @@ Create an interactive D3.js-based family tree renderer that provides rich visual
 - **Clean UI for childless couples**: Marriage lines appear without unnecessary expansion controls
 - **Preserved functionality**: Partnerships with children still show proper expand/collapse controls
 
-### 🚀 NEXT TASK: Ancestor Expansion/Collapse Controls
+### 🚀 CURRENT TASK: Ancestor Expansion/Collapse Controls (IN PROGRESS)
 
-#### Design Approach (Updated after discussion)
-We'll continue using `expandedPartnerships` for all expansion state - it always means "show the children of this partnership". For ancestor expansion:
+#### Final Implementation Plan
+After detailed design discussion, we've finalized a clean 4-phase approach:
 
-1. **State Management**: 
-   - Keep using `expandedPartnerships` Set exclusively (not `expandedPersons`)
-   - A partnership being expanded always means "show its children"
-   - For ancestors, we need to track when a person has an unexpanded parent partnership
+**Phase 1**: Add `unexpandedChildIn` field to RenderPerson class
+- Add `unexpandedChildIn = null` to RenderPerson constructor
+- This field will store the partnership ID when a person has unexpanded ancestors
 
-2. **Tracking Unexpanded Ancestors**:
-   - When building the render tree, if we encounter a person with `childIn` (parent partnership) that exists but is NOT in `expandedPartnerships`, we need to:
-     - Still build the partnership object in the render tree
-     - Mark it as not expanded (children = null)
-     - Set the person's `childIn` to point to this partnership
-   - This allows the layout to detect "this person has ancestors that aren't shown" and add expansion button
+**Phase 2**: Update base renderer to track unexpanded parent partnerships
+- Modify base-renderer.js logic for processing parent partnerships:
+  ```javascript
+  if (person.childIn) {
+    if (this.isPartnershipExpanded(person.childIn.id)) {
+      // Expanded - create RenderFamily as normal
+      const parentFamilyIdx = buildFamily(person.childIn);
+      renderTree.getPerson(idx).upFamilyRIndex = parentFamilyIdx;
+    } else {
+      // NOT expanded - just store the partnership ID for button detection
+      renderTree.getPerson(idx).unexpandedChildIn = person.childIn.id;
+    }
+  }
+  ```
 
-3. **Visual Design**:
-   - Add small [+] button above person boxes who have unexpanded parent partnerships
-   - Position button centered above the person box
-   - When clicked, add parent partnership ID to `expandedPartnerships`
-   - Use same circular button style as partnership buttons
+**Phase 3**: Add ancestor expansion buttons in layout
+- Detect when `unexpandedChildIn` is set and add `[+]` buttons above person boxes
+- Use same circular button style as existing expansion system
+- Store partnership ID in button for click handling
 
-4. **Implementation Steps**:
-   - Modify base renderer to always process parent partnerships (not just when expanded)
-   - Update layout to detect unexpanded parent partnerships and add buttons
-   - Wire up click handlers to toggle partnership expansion
+**Phase 4**: Update D3 renderer to handle ancestor buttons
+- Recognize `ancestor-expansion-placeholder` button class
+- Wire up click handlers to add partnership ID to `expandedPartnerships`
+- Position buttons above person boxes instead of on marriage lines
+
+#### Key Design Insights
+1. **Don't create RenderFamily objects for unexpanded ancestors** - just store the partnership ID
+2. **Reuse existing `expandedPartnerships` state management** - no new state needed
+3. **Clean detection logic** - if `unexpandedChildIn` is set, show button
+4. **Leverages existing infrastructure** - buttons, styling, click handling patterns all reused
 
 ### ✅ Recently Completed: Massive Field Renaming Refactor
 - **Systematic renaming across entire codebase** (240+ lines changed):
@@ -69,6 +81,7 @@ We'll continue using `expandedPartnerships` for all expansion state - it always 
 - **Clear naming achieved**: RIndex suffix makes render tree indices obvious vs genea object IDs
 
 ### Future Priority Items  
+- **Complete ancestor expansion implementation**: Finish all 4 phases above
 - **Clear user modifications on person change**: Reset expansion state when navigating to different person
 - **Rename Partnership to Family in genea code**: For consistency with render tree terminology, consider renaming genea's "Partnership" class to "Family" and related field names (this would be a larger refactor affecting the Rust parser and JSON structures)
 

@@ -105,7 +105,9 @@ export function layoutFamily(
 
     // Always show families (expanded or not)
     // Find partner and create partner rectangle
-    const partnerIndex = renderFamily.spouseRIndices.find((idx) => idx !== personIndex);
+    const partnerIndex = renderFamily.spouseRIndices.find(
+      (idx) => idx !== personIndex,
+    );
     const partner =
       partnerIndex !== undefined ? renderTree.getPerson(partnerIndex) : null;
     const partnerBox = partner ? renderer.measureBox(partner.name) : null;

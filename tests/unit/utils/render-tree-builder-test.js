@@ -94,7 +94,11 @@ module('Unit | Utils | render-tree-builder', function (hooks) {
     const dadPerson = builder.renderTree.getPerson(dadIndex);
     assert.strictEqual(dadPerson.name, 'Dad Smith', 'Dad name correct');
     assert.strictEqual(dadPerson.id, 'p1', 'Dad ID correct');
-    assert.strictEqual(dadPerson.rightFamilyRIndices.length, 1, 'Dad has one marriage');
+    assert.strictEqual(
+      dadPerson.rightFamilyRIndices.length,
+      1,
+      'Dad has one marriage',
+    );
 
     // Check Mom was added as partner
     const momIndex = builder.personMap.get(this.mom);
