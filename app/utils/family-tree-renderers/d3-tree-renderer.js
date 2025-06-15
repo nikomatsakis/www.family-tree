@@ -60,7 +60,7 @@ export default class D3TreeRenderer extends BaseRenderer {
           renderTree: renderTree,
           metadata: {
             personCount: renderTree.persons.length,
-            partnershipCount: renderTree.partnerships.length,
+            familyCount: renderTree.families.length,
             expandedPartnerships: Array.from(this.expandedPartnerships),
             expandedPersons: Array.from(this.expandedPersons),
             startPersonIndex: startPersonIndex,
@@ -77,7 +77,7 @@ export default class D3TreeRenderer extends BaseRenderer {
           metadata: {
             error: error.message,
             personCount: renderTree.persons.length,
-            partnershipCount: renderTree.partnerships.length,
+            familyCount: renderTree.families.length,
           },
         },
       };
@@ -567,7 +567,7 @@ export default class D3TreeRenderer extends BaseRenderer {
     stats.style.cssText = 'font-size: 12px; color: #6c757d; text-align: right;';
     stats.innerHTML = `
       <div>Persons: ${metadata.personCount}</div>
-      <div>Partnerships: ${metadata.partnershipCount}</div>
+      <div>Families: ${metadata.familyCount}</div>
       <div>Focus: Person ${metadata.focusPersonIndex}</div>
     `;
 

@@ -115,17 +115,17 @@ export class RenderTreeBuilder {
     const familyIndex = this.renderTree.addFamily(renderFamily);
     this.partnershipMap.set(geneaPartnership, familyIndex);
 
-    // Update parentIn arrays
+    // Update rightFamilyRIndices arrays
     this.renderTree
       .getPerson(primaryPersonIndex)
-      .parentIn.push(partnershipIndex);
+      .rightFamilyRIndices.push(familyIndex);
     if (partnerPersonIndex) {
       this.renderTree
         .getPerson(partnerPersonIndex)
-        .parentIn.push(partnershipIndex);
+        .rightFamilyRIndices.push(familyIndex);
     }
 
-    return partnershipIndex;
+    return familyIndex;
   }
 
   /**

@@ -5,7 +5,7 @@ import { Family, Rectangle, Line } from 'family-tree/utils/layout-elements';
 import {
   RenderTree,
   RenderPerson,
-  RenderPartnership,
+  RenderFamily,
 } from 'family-tree/utils/render-tree';
 import { layoutFamily } from 'family-tree/utils/family-layout';
 

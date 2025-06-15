@@ -1,4 +1,4 @@
-import { RenderTree, RenderPerson, RenderPartnership } from '../render-tree.js';
+import { RenderTree, RenderPerson, RenderFamily } from '../render-tree.js';
 
 /**
  * Base class for family tree renderers.
@@ -67,8 +67,8 @@ export default class BaseRenderer {
         person.name,
         person.gender,
         person.comments,
-        null, // childIn - will be set below if person has parents
-        [], // parentIn - will be populated below with partnerships where this person is a parent
+        null, // upFamilyRIndex - will be set below if person has parents
+        [], // rightFamilyRIndices - will be populated below with families where this person is a spouse
       );
 
       // Add to render tree and store index mapping
@@ -79,55 +79,55 @@ export default class BaseRenderer {
         console.log(`Added person: ${person.name} at index ${idx}`);
       }
 
-      // Process partnership where this person is a child (their parents' partnership)
-      // Only include parent partnership if it's explicitly expanded
+      // Process family where this person is a child (their parents' family)
+      // Only include parent family if it's explicitly expanded
       if (person.childIn && this.isPartnershipExpanded(person.childIn.id)) {
-        const parentPartnershipIdx = buildPartnership(person.childIn);
-        renderTree.getPerson(idx).childIn = parentPartnershipIdx;
+        const parentFamilyIdx = buildFamily(person.childIn);
+        renderTree.getPerson(idx).upFamilyRIndex = parentFamilyIdx;
         if (this.debug) {
-          console.log(`  - Child in partnership ${parentPartnershipIdx}`);
+          console.log(`  - Child in family ${parentFamilyIdx}`);
         }
       }
 
-      // Process partnerships where this person is a parent (partnerships with their spouses)
+      // Process families where this person is a spouse (families with their spouses)
       for (const partnership of person.parentIn) {
-        const partnershipIdx = buildPartnership(partnership);
-        renderTree.getPerson(idx).parentIn.push(partnershipIdx);
+        const familyIdx = buildFamily(partnership);
+        renderTree.getPerson(idx).rightFamilyRIndices.push(familyIdx);
         if (this.debug) {
-          console.log(`  - Parent in partnership ${partnershipIdx}`);
+          console.log(`  - Spouse in family ${familyIdx}`);
         }
       }
 
       return idx;
     };
 
-    const buildPartnership = (partnership) => {
+    const buildFamily = (partnership) => {
       // Return existing index if already processed
       if (partnershipToIndex.has(partnership.id)) {
         const existingIdx = partnershipToIndex.get(partnership.id);
         if (this.debug) {
           console.log(
-            `Partnership already exists: ${partnership.id} at index ${existingIdx}`,
+            `Family already exists: ${partnership.id} at index ${existingIdx}`,
           );
         }
         return existingIdx;
       }
 
-      // Create RegularPartnership with proper expansion state
+      // Create RenderFamily with proper expansion state
       const isExpanded = this.isPartnershipExpanded(partnership.id);
       const childrenArray = isExpanded ? [] : null; // null = not expanded, [] = expanded but no children yet
       const hasChildren =
         partnership.children && partnership.children.length > 0;
 
-      const renderPartnership = new RenderPartnership(
+      const renderFamily = new RenderFamily(
         partnership.id,
-        [], // parents - will be populated below
+        [], // spouseRIndices - will be populated below
         childrenArray,
         hasChildren,
       );
 
       // Add to render tree and store index mapping
-      const idx = renderTree.addPartnership(renderPartnership);
+      const idx = renderTree.addFamily(renderFamily);
       partnershipToIndex.set(partnership.id, idx);
 
       if (this.debug) {
@@ -137,25 +137,26 @@ export default class BaseRenderer {
         );
       }
 
-      // Add all parents
+      // Add all spouses
       for (const parent of partnership.parents) {
-        const parentIdx = buildPerson(parent);
-        renderTree.getPartnership(idx).parents.push(parentIdx);
+        const spouseIdx = buildPerson(parent);
+        renderTree.getFamily(idx).spouseRIndices.push(spouseIdx);
         if (this.debug) {
-          console.log(`  - Has parent ${parent.name} at index ${parentIdx}`);
+          console.log(`  - Has spouse ${parent.name} at index ${spouseIdx}`);
         }
       }
 
-      // If partnership has only one parent, add a placeholder for missing partner
+      // If family has only one spouse, add a placeholder for missing partner
       if (partnership.parents.length === 1) {
         const unknownPerson = new RenderPerson(
           `unknown-partner-${partnership.id}`,
           'Unknown',
           null,
-          [idx], // This partnership
+          null, // upFamilyRIndex
+          [idx], // rightFamilyRIndices - This family
         );
         const unknownIdx = renderTree.addPerson(unknownPerson);
-        renderTree.getPartnership(idx).parents.push(unknownIdx);
+        renderTree.getFamily(idx).spouseRIndices.push(unknownIdx);
         if (this.debug) {
           console.log(
             `  - Added placeholder Unknown partner at index ${unknownIdx}`,
@@ -168,11 +169,11 @@ export default class BaseRenderer {
         if (this.isPartnershipExpanded(partnership.id)) {
           // If expanded, fully build the child
           const childIdx = buildPerson(child);
-          renderTree.getPartnership(idx).children.push(childIdx);
+          renderTree.getFamily(idx).childRIndices.push(childIdx);
 
-          // Update the child's childIn to point to this partnership (their parents' partnership)
-          if (renderTree.getPerson(childIdx).childIn === null) {
-            renderTree.getPerson(childIdx).childIn = idx;
+          // Update the child's upFamilyRIndex to point to this family (their parents' family)
+          if (renderTree.getPerson(childIdx).upFamilyRIndex === null) {
+            renderTree.getPerson(childIdx).upFamilyRIndex = idx;
           }
 
           if (this.debug) {
@@ -182,12 +183,12 @@ export default class BaseRenderer {
           // If not expanded, check if child already exists in graph
           if (personToIndex.has(child.id)) {
             const childIdx = personToIndex.get(child.id);
-            // Note: for unexpanded partnerships, children array should be null, not populated
+            // Note: for unexpanded families, childRIndices array should be null, not populated
             // This might need adjustment based on the visual design requirements
 
-            // Ensure child knows about this parent partnership
-            if (renderTree.getPerson(childIdx).childIn === null) {
-              renderTree.getPerson(childIdx).childIn = idx;
+            // Ensure child knows about this parent family
+            if (renderTree.getPerson(childIdx).upFamilyRIndex === null) {
+              renderTree.getPerson(childIdx).upFamilyRIndex = idx;
             }
 
             if (this.debug) {
@@ -205,10 +206,10 @@ export default class BaseRenderer {
         partnership.children.length > 0
       ) {
         const connectedCount =
-          renderTree.getPartnership(idx).children?.length || 0;
+          renderTree.getFamily(idx).childRIndices?.length || 0;
         const totalCount = partnership.children.length;
         console.log(
-          `  - Has ${totalCount} children total (${connectedCount} connected, partnership not expanded)`,
+          `  - Has ${totalCount} children total (${connectedCount} connected, family not expanded)`,
         );
       }
 
@@ -221,12 +222,12 @@ export default class BaseRenderer {
     if (this.debug) {
       console.log('\nFinal RenderTree structure:');
       console.log(`Persons: ${renderTree.persons.length}`);
-      console.log(`Partnerships: ${renderTree.partnerships.length}`);
+      console.log(`Families: ${renderTree.families.length}`);
 
       // Find and log root nodes
       const roots = renderTree.persons
         .map((p, idx) => ({ person: p, idx }))
-        .filter((p) => p.person.childIn === null);
+        .filter((p) => p.person.upFamilyRIndex === null);
       console.log(
         `Root nodes: ${roots
           .map((r) => `${r.person.name} (${r.idx})`)
