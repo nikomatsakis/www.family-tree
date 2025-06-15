@@ -99,13 +99,13 @@ export function layoutFamily(
     familyIndex < person.rightFamilyRIndices.length;
     familyIndex++
   ) {
-    const family = renderTree.getFamily(
+    const renderFamily = renderTree.getFamily(
       person.rightFamilyRIndices[familyIndex],
     );
 
     // Always show families (expanded or not)
     // Find partner and create partner rectangle
-    const partnerIndex = family.spouseRIndices.find((idx) => idx !== personIndex);
+    const partnerIndex = renderFamily.spouseRIndices.find((idx) => idx !== personIndex);
     const partner =
       partnerIndex !== undefined ? renderTree.getPerson(partnerIndex) : null;
     const partnerBox = partner ? renderer.measureBox(partner.name) : null;
@@ -118,9 +118,9 @@ export function layoutFamily(
     // ensuring no overlap between sibling subtrees.
     const childFamilies = [];
 
-    if (family.isExpanded) {
+    if (renderFamily.isExpanded) {
       // Layout actual children recursively
-      for (const childIndex of family.childRIndices) {
+      for (const childIndex of renderFamily.childRIndices) {
         if (visitedPersons.has(childIndex)) {
           console.error(
             `WOULD CREATE CYCLE: Child ${childIndex} is already in visitedPersons`,
@@ -294,7 +294,7 @@ export function layoutFamily(
 
     // Add expansion/collapse button at junction point after all lines are drawn
     // This ensures the button appears on top of any lines
-    if (family.isExpanded && family.children.length > 0) {
+    if (renderFamily.isExpanded && renderFamily.childRIndices.length > 0) {
       // Add collapse button for expanded partnerships with children
       const collapseBox = renderer.measureBox('−');
       const collapseButton = new Rectangle(
@@ -303,7 +303,7 @@ export function layoutFamily(
         collapseBox.width,
         collapseBox.height,
         null, // gender
-        family.id, // Store partnership ID for click handling
+        renderFamily.id, // Store partnership ID for click handling
       );
       // ⚠️ IMPORTANT: Always use renderer.getButtonPosition() instead of hardcoding math
       // Position calculations must be delegated to the renderer to handle coordinate systems properly
@@ -316,7 +316,7 @@ export function layoutFamily(
       collapseButton.x = collapsePos.x;
       collapseButton.y = collapsePos.y;
       family.addElement(collapseButton);
-    } else if (!family.isExpanded && family.hasChildren) {
+    } else if (!renderFamily.isExpanded && renderFamily.hasChildren) {
       // Add expansion placeholder only for unexpanded partnerships that have children
       const expansionBox = renderer.measureBox('+');
       const expansionPlaceholder = new Rectangle(
@@ -325,7 +325,7 @@ export function layoutFamily(
         expansionBox.width,
         expansionBox.height,
         null, // gender
-        family.id, // Store partnership ID for click handling
+        renderFamily.id, // Store partnership ID for click handling
       );
       // ⚠️ IMPORTANT: Always use renderer.getButtonPosition() instead of hardcoding math
       // Position calculations must be delegated to the renderer to handle coordinate systems properly
@@ -339,7 +339,7 @@ export function layoutFamily(
       expansionPlaceholder.y = expansionPos.y;
       family.addElement(expansionPlaceholder);
     }
-    // Note: if !family.isExpanded && !family.hasChildren, no button is shown
+    // Note: if !renderFamily.isExpanded && !renderFamily.hasChildren, no button is shown
     // The partnership line appears without any expansion control
 
     // Add continuity line and shadow person if not the last family
