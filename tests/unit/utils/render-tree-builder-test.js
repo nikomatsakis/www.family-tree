@@ -66,7 +66,7 @@ module('Unit | Utils | render-tree-builder', function (hooks) {
       'Starts with empty persons',
     );
     assert.strictEqual(
-      builder.renderTree.partnerships.length,
+      builder.renderTree.families.length,
       0,
       'Starts with empty partnerships',
     );
@@ -85,7 +85,7 @@ module('Unit | Utils | render-tree-builder', function (hooks) {
       'Added Dad and Mom',
     );
     assert.strictEqual(
-      builder.renderTree.partnerships.length,
+      builder.renderTree.families.length,
       1,
       'Added their partnership',
     );
@@ -94,7 +94,7 @@ module('Unit | Utils | render-tree-builder', function (hooks) {
     const dadPerson = builder.renderTree.getPerson(dadIndex);
     assert.strictEqual(dadPerson.name, 'Dad Smith', 'Dad name correct');
     assert.strictEqual(dadPerson.id, 'p1', 'Dad ID correct');
-    assert.strictEqual(dadPerson.parentIn.length, 1, 'Dad has one marriage');
+    assert.strictEqual(dadPerson.rightFamilyRIndices.length, 1, 'Dad has one marriage');
 
     // Check Mom was added as partner
     const momIndex = builder.personMap.get(this.mom);
@@ -103,19 +103,19 @@ module('Unit | Utils | render-tree-builder', function (hooks) {
     assert.strictEqual(momPerson.name, 'Mom Jones', 'Mom name correct');
 
     // Check partnership
-    const partnership = builder.renderTree.getPartnership(0);
+    const partnership = builder.renderTree.getFamily(0);
     assert.strictEqual(
       partnership.type,
       'regular',
       'Partnership is regular type',
     );
     assert.deepEqual(
-      partnership.parents,
+      partnership.spouseRIndices,
       [dadIndex, momIndex],
       'Partnership has correct parents',
     );
     assert.strictEqual(
-      partnership.children,
+      partnership.childRIndices,
       null,
       'Partnership starts unexpanded',
     );
@@ -136,9 +136,9 @@ module('Unit | Utils | render-tree-builder', function (hooks) {
     );
 
     // Check children were added
-    const partnership = builder.renderTree.getPartnership(0);
+    const partnership = builder.renderTree.getFamily(0);
     assert.strictEqual(
-      partnership.children.length,
+      partnership.childRIndices.length,
       2,
       'Partnership has 2 children',
     );
@@ -148,7 +148,7 @@ module('Unit | Utils | render-tree-builder', function (hooks) {
     const child1Person = builder.renderTree.getPerson(child1Index);
     assert.strictEqual(child1Person.name, 'Child One', 'Child name correct');
     assert.strictEqual(
-      child1Person.childIn,
+      child1Person.upFamilyRIndex,
       0,
       'Child linked to parent partnership',
     );
@@ -181,12 +181,12 @@ module('Unit | Utils | render-tree-builder', function (hooks) {
     );
 
     // Should have: Dad+Mom partnership (expanded to show Child One)
-    assert.strictEqual(renderTree.partnerships.length, 1, 'Has 1 partnership');
+    assert.strictEqual(renderTree.families.length, 1, 'Has 1 partnership');
 
-    const partnership = renderTree.getPartnership(0);
+    const partnership = renderTree.getFamily(0);
     assert.strictEqual(partnership.type, 'regular', 'Partnership is regular');
     assert.strictEqual(
-      partnership.children.length,
+      partnership.childRIndices.length,
       2,
       'Partnership expanded to show children',
     );
@@ -238,7 +238,7 @@ module('Unit | Utils | render-tree-builder', function (hooks) {
     );
     assert.ok(debug.stats, 'Debug includes stats');
     assert.ok(debug.stats.personCount > 0, 'Stats show person count');
-    assert.ok(debug.stats.partnershipCount > 0, 'Stats show partnership count');
+    assert.ok(debug.stats.familyCount > 0, 'Stats show family count');
 
     // Log for manual inspection during development
     console.log('Render Tree Debug Output:', JSON.stringify(debug, null, 2));

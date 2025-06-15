@@ -63,7 +63,7 @@ module('Integration | Component | text-renderer', function (hooks) {
 
   test('text renderer renders without errors for empty graph', function (assert) {
     const renderer = createRenderer('text');
-    const emptyGraph = { persons: [], partnerships: [] };
+    const emptyGraph = { persons: [], families: [] };
 
     const result = renderer.prepareRenderData(emptyGraph);
 

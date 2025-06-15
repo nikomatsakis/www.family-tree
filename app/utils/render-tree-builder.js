@@ -135,21 +135,21 @@ export class RenderTreeBuilder {
    * - Updates child.childIn references
    */
   expandPartnership(geneaPartnership) {
-    const partnershipIndex = this.partnershipMap.get(geneaPartnership);
-    if (partnershipIndex === undefined) {
+    const familyIndex = this.partnershipMap.get(geneaPartnership);
+    if (familyIndex === undefined) {
       throw new Error(
         `Partnership ${geneaPartnership.id} not found in render tree`,
       );
     }
 
-    const renderPartnership = this.renderTree.getPartnership(partnershipIndex);
-    if (renderPartnership.type !== 'regular') {
+    const renderFamily = this.renderTree.getFamily(familyIndex);
+    if (renderFamily.type !== 'regular') {
       throw new Error(
-        `Cannot expand non-regular partnership ${geneaPartnership.id}`,
+        `Cannot expand non-regular family ${geneaPartnership.id}`,
       );
     }
 
-    if (renderPartnership.isExpanded) {
+    if (renderFamily.isExpanded) {
       return; // Already expanded
     }
 
@@ -169,13 +169,13 @@ export class RenderTreeBuilder {
         this.personMap.set(geneaChild, childIndex);
       }
 
-      // Set child's parent partnership
-      this.renderTree.getPerson(childIndex).childIn = partnershipIndex;
+      // Set child's parent family
+      this.renderTree.getPerson(childIndex).upFamilyRIndex = familyIndex;
       childIndices.push(childIndex);
     }
 
-    // Update partnership with children
-    renderPartnership.children = childIndices;
+    // Update family with children
+    renderFamily.childRIndices = childIndices;
   }
 
   /**
