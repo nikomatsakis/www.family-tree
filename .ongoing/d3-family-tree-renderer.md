@@ -57,9 +57,19 @@ We'll continue using `expandedPartnerships` for all expansion state - it always 
    - Update layout to detect unexpanded parent partnerships and add buttons
    - Wire up click handlers to toggle partnership expansion
 
+### ✅ Recently Completed: Massive Field Renaming Refactor
+- **Systematic renaming across entire codebase** (240+ lines changed):
+  - RenderPartnership → RenderFamily (class name)
+  - childIn → upFamilyRIndex (parent family index)
+  - parentIn → rightFamilyRIndices (spouse family indices)
+  - parents → spouseRIndices (person indices in family)
+  - children → childRIndices (child person indices)
+  - partnerships → families (array name)
+- **All 109 tests passing** after comprehensive refactor
+- **Clear naming achieved**: RIndex suffix makes render tree indices obvious vs genea object IDs
+
 ### Future Priority Items  
 - **Clear user modifications on person change**: Reset expansion state when navigating to different person
-- **Rename RenderTree fields**: Clarify that `childIn`/`parentIn` are render tree indices, not genea object references
 - **Rename Partnership to Family in genea code**: For consistency with render tree terminology, consider renaming genea's "Partnership" class to "Family" and related field names (this would be a larger refactor affecting the Rust parser and JSON structures)
 
 ## ✅ What We've Accomplished
