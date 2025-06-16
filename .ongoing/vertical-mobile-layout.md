@@ -264,3 +264,54 @@ After completing the renderer interface refactoring:
 - **Breakpoint**: ~768px viewport width for mobile/desktop switch?
 - **User control**: Allow manual override of auto-detection?
 - **Performance**: Vertical mode should be as fast as horizontal
+
+## Key Interface Methods (Already Implemented)
+- `personBoxMetrics(text)` → `{width, height, topPort, leftPort, ancestorButtonX, ancestorButtonY}`
+- `measureButton()` → `{width, height}` 
+- `horizontalXxx` spacing constants (for current layout)
+
+## Incremental Implementation Plan
+
+### Phase 1: Single Person + Vertical Constants ⬅️ NEXT
+- Add vertical spacing constants to text renderer only
+- Create `layoutFamilyVertical()` function 
+- Handle: single person with no family
+- Test: single person renders correctly in vertical mode
+
+### Phase 2: Simple Marriage (No Children)
+- Extend vertical layout to handle partnerships
+- Test: two people connected with marriage line
+
+### Phase 3: Simple Family (Parents + One Child)
+- Add child positioning logic with break-left pattern
+- Use `leftPort` for child connections
+- Test: parents with single child below them
+
+### Phase 4: Multiple Children (Sibling Stacking)
+- Add vertical sibling positioning
+- Test: parents with 2-3 children stacked vertically
+
+### Phase 5: Multiple Partnerships (Continuity Lines)
+- Handle person with multiple spouses
+- Test: continuity line logic works vertically
+
+### Phase 6: Ancestor Expansion Buttons
+- Handle unexpanded ancestors in vertical mode
+- Test: ancestor buttons position correctly
+
+## Vertical Spacing Constants (To Be Added)
+```javascript
+// Text renderer values (characters)
+verticalSpacerWidth: 1          // Gap between person and marriage line
+verticalChildIndent: 2          // Fixed horizontal offset for children  
+verticalGenerationGap: 2        // Vertical gap between parent and children
+verticalSiblingSpacing: 1       // Vertical gap between siblings
+verticalContinuityOffset: 1     // X offset for continuity line
+verticalMinimumLineLength: 3    // Min marriage line length
+```
+
+## Key Technical Differences
+1. **Port Usage**: `leftPort` instead of `topPort` for child connections
+2. **Child Positioning**: Fixed horizontal indent + vertical stacking
+3. **Junction Flow**: Down → break left → connect to child's left side
+4. **Mobile Optimized**: Narrow horizontal space, generous vertical space
