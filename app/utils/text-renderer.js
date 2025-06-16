@@ -109,6 +109,18 @@ export class TextRenderer {
     };
   }
 
+  /**
+   * Measure button dimensions
+   * @returns {Object} {width, height} for button
+   */
+  measureButton() {
+    // Both + and − buttons have same dimensions in text renderer
+    return {
+      width: 3, // [+] or [−] is 3 characters wide
+      height: 1,
+    };
+  }
+
   // Horizontal Layout Spacing Constants
   get horizontalSpacerWidth() {
     return 1;

@@ -112,7 +112,7 @@ export function layoutFamily(
 
   // Step 1.5: Add ancestor expansion button if person has unexpanded ancestors
   if (person.unexpandedChildIn) {
-    const expansionBox = renderer.measureBox('+');
+    const expansionBox = renderer.measureButton();
     const ancestorButton = new Rectangle(
       '+',
       'ancestor-expansion-placeholder',
@@ -344,7 +344,7 @@ export function layoutFamily(
     // This ensures the button appears on top of any lines
     if (renderFamily.isExpanded && renderFamily.childRIndices.length > 0) {
       // Add collapse button for expanded partnerships with children
-      const collapseBox = renderer.measureBox('−');
+      const collapseBox = renderer.measureButton();
       const collapseButton = new Rectangle(
         '−',
         'collapse-button',
@@ -366,7 +366,7 @@ export function layoutFamily(
       family.addElement(collapseButton);
     } else if (!renderFamily.isExpanded && renderFamily.hasChildren) {
       // Add expansion placeholder only for unexpanded partnerships that have children
-      const expansionBox = renderer.measureBox('+');
+      const expansionBox = renderer.measureButton();
       const expansionPlaceholder = new Rectangle(
         '+',
         'expansion-placeholder',

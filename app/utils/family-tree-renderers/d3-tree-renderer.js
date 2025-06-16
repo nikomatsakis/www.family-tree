@@ -683,6 +683,19 @@ export default class D3TreeRenderer extends BaseRenderer {
     };
   }
 
+  /**
+   * Measure button dimensions
+   * @returns {Object} {width, height} for button
+   */
+  measureButton() {
+    // Both + and − buttons have same dimensions in D3 renderer
+    const buttonSize = 24; // Small circular button
+    return {
+      width: buttonSize,
+      height: buttonSize,
+    };
+  }
+
   // Horizontal Layout Spacing Constants (all in pixels)
   get horizontalSpacerWidth() {
     return 12;
