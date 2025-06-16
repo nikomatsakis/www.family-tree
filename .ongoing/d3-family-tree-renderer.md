@@ -23,7 +23,41 @@
 4. **Clean detection logic**: if `unexpandedChildIn` is set, show button
 5. **Leverages existing infrastructure**: buttons, styling, click handling patterns all reused
 
+## 🎨 Design Improvements Needed
+
+### Ancestor Expansion Button Placement (Not Yet Implemented)
+**Issue**: Current D3 implementation places `[+]` button directly on top of person box, which looks awkward (see tmp/screenshot.png)
+
+**Proposed Design**:
+```
+    [+]  <-- Ancestor expansion button (junction point)
+     |
+     |   <-- Vertical connector line  
++--------+
+| Person |
++--------+
+```
+
+**Benefits**:
+- Visual consistency with other expansion buttons at connection points
+- Clear hierarchy showing these are ancestors
+- No overlap with person box
+- Intuitive interaction at natural junction point
+
+**When Expanded**:
+```
++-------+     +-------+
+| Parent|─────| Parent|  <-- Parents appear to sides
++-------+  |  +-------+
+           |
+        +------+
+        |Person|
+        +------+
+```
+
 ## Future Priority Items  
+- **Vertical Layout for Mobile**: Current horizontal layout not mobile-friendly (HIGH PRIORITY)
+- **Ancestor Button Redesign**: Implement improved button placement as designed above
 - **Clear user modifications on person change**: Reset expansion state when navigating to different person
 - **Enhanced navigation**: Zoom/pan, auto-centering, keyboard navigation  
 - **Performance optimizations**: Animation transitions, responsive design
