@@ -6,6 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Always create and propose plans before making edits or taking action. **Never make code edits without explicit approval of the plan first.** Discuss what you intend to change and get confirmation before using Edit, MultiEdit, or Write tools.
 
+### Test Driven Development for Layout Algorithms
+
+When implementing layout algorithm changes or new rendering features:
+
+1. **Show expected ASCII output first**: Present the visual result before any code - user needs to see what the layout should look like
+2. **Use integration tests with real genea fixtures**: Not unit tests. Use `loadGeneaFixture()` with actual family data 
+3. **Single scenario per phase**: Break complex features into incremental phases (e.g., single person → simple marriage → one child → multiple children)
+4. **Specific TDD workflow**:
+   - Present: expected ASCII output + test structure
+   - Get approval for approach
+   - Write failing integration test
+   - Let user review test before implementation
+   - Implement minimal code to make test pass
+   - Run test to verify
+
+This codebase values visual validation and real data flows over isolated unit testing for layout functionality.
+
 ## Ongoing Work Tracking
 
 Track ongoing development work and progress in the `.ongoing/` directory:
