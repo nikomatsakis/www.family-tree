@@ -22,8 +22,9 @@
     "lint:js:fix": "eslint . --fix",
     "start": "ember serve",
     "start:build": "cargo run -- serve genea.doc",
-    "test": "concurrently \"pnpm:lint\" \"pnpm:test:ember\" --names \"lint,test:\"",
-    "test:ember": "ember test"
+    "test": "pnpm run test:fixtures && concurrently \"pnpm:lint\" \"pnpm:test:ember\" --names \"lint,test:\"",
+    "test:ember": "ember test",
+    "test:fixtures": "scripts/generate-test-fixtures.sh"
   },
   "devDependencies": {
     "@babel/core": "^7.27.4",
