@@ -155,6 +155,78 @@ Create a vertical layout mode where:
    - Changes child positioning to branch right more compactly
    - Optimizes spacing for narrow screens
 
+## Renderer Interface Design
+
+### Current Issues
+1. **String comparisons**: `measureBox()` checks if text === '+' or '−' 
+2. **Complex parameters**: Button position methods take 5+ parameters
+3. **Mixed concerns**: Box measurement separate from port calculations
+
+### Agreed Upon Interface Refactor
+```javascript
+// Person box measurement - returns ALL metrics at once
+personBoxMetrics(text) → {
+  width: number,
+  height: number,
+  topPort: number,         // X offset for top connection (horizontal layout)
+  leftPort: number,        // Y offset for left connection (vertical layout)
+  ancestorButtonX: number, // X position for ancestor button placement
+  ancestorButtonY: number, // Y position for ancestor button placement
+}
+
+// Separate button measurement methods (no string checking!)
+measureExpandButton() → {width: number, height: number}
+measureCollapseButton() → {width: number, height: number}
+
+// Cleaner button positioning (fewer parameters)
+getExpandButtonPosition(junctionX, lineY) → {x, y}
+getCollapseButtonPosition(junctionX, lineY) → {x, y}
+
+// Rename existing constants for clarity
+horizontalSpacerWidth: number       // Gap between person and marriage line
+horizontalVerticalSpacing: number   // Gap between generations
+horizontalChildSpacing: number      // Gap between siblings
+horizontalContinuityOffset: number  // X offset for continuity line
+horizontalContinuityMinWidth: number // Min X for first child
+horizontalMinimumLineLength: number // Min marriage line length
+
+// New vertical layout constants
+verticalSpacerWidth: number         // Gap between person and marriage line
+verticalChildIndent: number         // Fixed horizontal offset for children from continuity line
+verticalGenerationGap: number       // Vertical gap between parent and children  
+verticalSiblingSpacing: number      // Vertical gap between siblings
+verticalContinuityOffset: number    // X offset for continuity line
+verticalMinimumLineLength: number   // Min marriage line length
+```
+
+### Implementation Plan - Renderer Interface Refactoring
+
+**Refactor 1: Rename spacing constants** ⬅️ START HERE
+- Add `horizontalXxx` properties that return same values as current ones
+- Update `layoutFamily()` to use new names
+- Keep old names as aliases for backward compatibility
+- Ensure all tests still pass
+
+**Refactor 2: Add `personBoxMetrics()` and update person measurements**
+- Add `personBoxMetrics()` method to text renderer
+- Update layout to use `personBoxMetrics()` for person boxes
+- Extract `topPort`, `ancestorButtonX`, `ancestorButtonY` from metrics
+- Remove calls to `getPortPosition()` and `getAncestorButtonPosition()`
+- Ensure all tests still pass
+
+**Refactor 3: Add button methods and update button measurements**
+- Add `measureExpandButton()` and `measureCollapseButton()`
+- Replace `measureBox('+')` with `measureExpandButton()`
+- Replace `measureBox('−')` with `measureCollapseButton()`
+- Ensure all tests still pass
+
+### Next Phase: Vertical Layout Implementation
+After completing the renderer interface refactoring:
+- Create `layoutFamilyVertical()` function
+- Use vertical spacing constants and leftPort from metrics
+- Implement child positioning with fixed indent and vertical stacking
+- Test with text renderer first, then update D3 renderer
+
 ## Technical Approach (To Be Refined)
 ### Phase 1: Layout Algorithm
 - ~~Create new `layoutFamilyVertical()` function~~ → Maybe just add parameter to existing?

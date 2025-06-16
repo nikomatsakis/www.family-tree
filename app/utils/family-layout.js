@@ -51,6 +51,25 @@ import { Family, Rectangle, Line } from './layout-elements.js';
  * @param {number} personIndex - Index of person to layout
  * @param {TextRenderer} renderer - Text renderer with measurement capabilities
  * @returns {Family} Complete family layout with positioned elements
+ *
+ * Renderer Interface Requirements:
+ * The renderer parameter must implement the following interface:
+ *
+ * Properties (spacing constants):
+ * - spacerWidth: number - Gap between person box and marriage line
+ * - continuityOffset: number - X offset from person where continuity line is placed
+ * - continuityMinWidth: number - Minimum X position where first child can start
+ * - minimumLineLength: number - Minimum length for marriage line segments
+ * - verticalSpacing: number - Gap between generations
+ * - childSpacing: number - Horizontal gap between siblings
+ *
+ * Methods:
+ * - measureBox(text: string) → {width: number, height: number} - Measure dimensions for a box with given text
+ * - getPortPosition(width: number) → number - Calculate X offset for connection point (port) on top of box
+ * - getPartnershipLineY(personHeight: number) → number - Y offset for marriage line relative to person box top
+ * - getSiblingLineY(parentChildLineHeight: number) → number - Y offset for sibling connector line
+ * - getButtonPosition(junctionX: number, lineY: number) → {x: number, y: number} - Position for expand/collapse buttons
+ * - getAncestorButtonPosition(personX: number, personY: number, personWidth: number, personHeight: number, buttonWidth: number) → {x: number, y: number} - Position for ancestor expansion buttons
  */
 export function layoutFamily(
   renderTree,
