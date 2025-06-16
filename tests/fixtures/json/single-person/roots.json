@@ -1,0 +1,1 @@
+{"data":{"type":"root","id":"0","attributes":{"maintainerLink":null},"relationships":{"rootPeople":{"data":[{"type":"person","id":"1"}]}}},"included":[{"type":"person","id":"1","attributes":{"name":"John Doe","comments":"A single person","gender":"male","isSpouse":false},"relationships":{"parentIn":{"data":[]},"childIn":{"data":null}}}]}

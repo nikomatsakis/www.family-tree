@@ -1,0 +1,4 @@
+# Single person with no family for basic rendering tests
+# Format: 10 henry numbers, gender, num_kids, num_spouses, spouse_index, name [\comment]
+
+ 1 0 0 0 0 0 0 0 0 0 M 0 0 0         John Doe\A single person
