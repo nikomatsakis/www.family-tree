@@ -207,18 +207,26 @@ verticalMinimumLineLength: number   // Min marriage line length
 - ✅ Updated `layoutFamily()` to use new names throughout
 - ✅ All tests pass - no functionality broken
 
-**Refactor 2: Add `personBoxMetrics()` and update person measurements** ⬅️ NEXT
-- Add `personBoxMetrics()` method to text renderer
-- Update layout to use `personBoxMetrics()` for person boxes
-- Extract `topPort`, `ancestorButtonX`, `ancestorButtonY` from metrics
-- Remove calls to `getPortPosition()` and `getAncestorButtonPosition()`
-- Ensure all tests still pass
+**Refactor 2: Add `personBoxMetrics()` and update person measurements** ✅ COMPLETED
+- ✅ Added `personBoxMetrics()` method to both text and D3 renderers
+- ✅ Updated layout to use `personBoxMetrics()` for person boxes
+- ✅ Extract `topPort`, `ancestorButtonX`, `ancestorButtonY` from metrics
+- ✅ Removed calls to `getPortPosition()` and `getAncestorButtonPosition()`
+- ✅ All tests pass - functionality preserved
 
-**Refactor 3: Add button methods and update button measurements**
+**Refactor 3: Add button methods and update button measurements** ⬅️ NEXT
 - Add `measureExpandButton()` and `measureCollapseButton()`
 - Replace `measureBox('+')` with `measureExpandButton()`
 - Replace `measureBox('−')` with `measureCollapseButton()`
 - Ensure all tests still pass
+
+### Summary of Refactor Progress
+The `personBoxMetrics()` method now consolidates all person box calculations:
+- Box dimensions (width, height)  
+- Port positions (topPort for horizontal layout, leftPort for vertical layout)
+- Ancestor button positioning (ancestorButtonX, ancestorButtonY)
+
+This eliminates the need for separate method calls and prepares us for clean vertical layout implementation.
 
 ### Next Phase: Vertical Layout Implementation
 After completing the renderer interface refactoring:

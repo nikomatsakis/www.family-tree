@@ -648,6 +648,41 @@ export default class D3TreeRenderer extends BaseRenderer {
     };
   }
 
+  /**
+   * Calculate all metrics for a person box in one call
+   * @param {string} text - Text content for the person box
+   * @returns {Object} Complete metrics for the person box
+   */
+  personBoxMetrics(text) {
+    const textWidth = this.measureText(text);
+    const textHeight = this.charHeight;
+
+    const width =
+      textWidth +
+      2 * (this.personPadding + this.personBorder + this.personMargin);
+    const height =
+      textHeight +
+      2 * (this.personPadding + this.personBorder + this.personMargin);
+
+    // Calculate port positions
+    const topPort = width / 2; // X offset for top connection (horizontal layout)
+    const leftPort = height / 2; // Y offset for left connection (vertical layout)
+
+    // Calculate ancestor button position (above person box)
+    const buttonSize = 24; // Size of circular button
+    const ancestorButtonX = (width - buttonSize) / 2;
+    const ancestorButtonY = 0; // Same Y as person box to create integrated look
+
+    return {
+      width,
+      height,
+      topPort,
+      leftPort,
+      ancestorButtonX,
+      ancestorButtonY,
+    };
+  }
+
   // Horizontal Layout Spacing Constants (all in pixels)
   get horizontalSpacerWidth() {
     return 12;

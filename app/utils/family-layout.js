@@ -98,17 +98,17 @@ export function layoutFamily(
   // +----------+
   // | Parent1  | <--
   // +----------+
-  const personBox = renderer.measureBox(person.name);
+  const personMetrics = renderer.personBoxMetrics(person.name);
   const primaryRect = new Rectangle(
     person.name,
     'primary-person',
-    personBox.width,
-    personBox.height,
+    personMetrics.width,
+    personMetrics.height,
     person.gender,
     person.id,
   );
   family.addElement(primaryRect);
-  family.port = renderer.getPortPosition(personBox.width);
+  family.port = personMetrics.topPort;
 
   // Step 1.5: Add ancestor expansion button if person has unexpanded ancestors
   if (person.unexpandedChildIn) {
@@ -122,18 +122,9 @@ export function layoutFamily(
       person.unexpandedChildIn, // store partnership ID for click handling
     );
 
-    // Use renderer method for positioning calculation
-    const buttonPosition = renderer.getAncestorButtonPosition(
-      primaryRect.x,
-      primaryRect.y,
-      primaryRect.width,
-      primaryRect.height,
-      expansionBox.width,
-      expansionBox.height,
-    );
-
-    ancestorButton.x = buttonPosition.x;
-    ancestorButton.y = buttonPosition.y;
+    // Use position from person metrics
+    ancestorButton.x = primaryRect.x + personMetrics.ancestorButtonX;
+    ancestorButton.y = primaryRect.y + personMetrics.ancestorButtonY;
 
     family.addElement(ancestorButton);
   }
@@ -157,7 +148,9 @@ export function layoutFamily(
     );
     const partner =
       partnerIndex !== undefined ? renderTree.getPerson(partnerIndex) : null;
-    const partnerBox = partner ? renderer.measureBox(partner.name) : null;
+    const partnerMetrics = partner
+      ? renderer.personBoxMetrics(partner.name)
+      : null;
 
     // Layout children recursively FIRST
     //
@@ -236,12 +229,12 @@ export function layoutFamily(
     // | Parent1 | ----- | Parent2 | <--
     // +---------+       +---------+
     let rightParent = null;
-    if (partner && partnerBox) {
+    if (partner && partnerMetrics) {
       rightParent = new Rectangle(
         partner.name,
         'partner',
-        partnerBox.width,
-        partnerBox.height,
+        partnerMetrics.width,
+        partnerMetrics.height,
         partner.gender,
         partner.id,
       );
@@ -429,8 +422,8 @@ export function layoutFamily(
       leftParent = new Rectangle(
         person.name,
         'repeated-person',
-        personBox.width,
-        personBox.height,
+        personMetrics.width,
+        personMetrics.height,
         person.gender,
         person.id,
       );

@@ -69,6 +69,46 @@ export class TextRenderer {
     };
   }
 
+  /**
+   * Calculate all metrics for a person box in one call
+   * @param {string} text - Text content for the person box
+   * @returns {Object} Complete metrics for the person box
+   */
+  personBoxMetrics(text) {
+    const textWidth = this.measureText(text);
+    const textHeight = this.charHeight;
+
+    // Calculate width: text + 2 * padding
+    const calculatedWidth =
+      textWidth +
+      2 * (this.personPadding + this.personBorder + this.personMargin);
+
+    // Enforce minimum width to accommodate ancestor buttons with corner characters
+    const minWidth = 5; // Minimum to show ┌[+]┐ pattern with corners visible
+    const width = Math.max(calculatedWidth, minWidth);
+    const height =
+      textHeight +
+      2 * (this.personPadding + this.personBorder + this.personMargin);
+
+    // Calculate port positions
+    const topPort = Math.floor(width / 2); // X offset for top connection (horizontal layout)
+    const leftPort = Math.floor(height / 2); // Y offset for left connection (vertical layout)
+
+    // Calculate ancestor button position (above person box)
+    const buttonWidth = 3; // [+] is 3 characters wide
+    const ancestorButtonX = Math.floor((width - buttonWidth) / 2);
+    const ancestorButtonY = 0; // Same Y as person box to create integrated look
+
+    return {
+      width,
+      height,
+      topPort,
+      leftPort,
+      ancestorButtonX,
+      ancestorButtonY,
+    };
+  }
+
   // Horizontal Layout Spacing Constants
   get horizontalSpacerWidth() {
     return 1;
