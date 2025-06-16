@@ -69,25 +69,25 @@ export class TextRenderer {
     };
   }
 
-  // Spacing getters (all relative to text size)
-  get spacerWidth() {
+  // Horizontal Layout Spacing Constants
+  get horizontalSpacerWidth() {
     return 1;
-  } // S: distance from person box to marriage line
-  get continuityOffset() {
+  } // Gap between person box and marriage line
+  get horizontalContinuityOffset() {
     return 1;
   } // X offset from person where continuity line is placed
-  get continuityMinWidth() {
+  get horizontalContinuityMinWidth() {
     return 2;
   } // Minimum X position where first child can start
-  get minimumLineLength() {
+  get horizontalMinimumLineLength() {
     return 3;
-  } // LINE_MIN: minimum marriage line segment
-  get verticalSpacing() {
+  } // Minimum marriage line segment length
+  get horizontalVerticalSpacing() {
     return 3;
-  } // distance between generations
-  get childSpacing() {
+  } // Gap between generations
+  get horizontalChildSpacing() {
     return 1;
-  } // horizontal spacing between siblings
+  } // Horizontal gap between siblings
 
   // Line positioning methods
   /**

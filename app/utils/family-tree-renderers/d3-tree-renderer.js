@@ -648,25 +648,25 @@ export default class D3TreeRenderer extends BaseRenderer {
     };
   }
 
-  // Spacing getters (all in pixels)
-  get spacerWidth() {
+  // Horizontal Layout Spacing Constants (all in pixels)
+  get horizontalSpacerWidth() {
     return 12;
-  } // Distance from person box to marriage line
-  get continuityOffset() {
+  } // Gap between person box and marriage line
+  get horizontalContinuityOffset() {
     return 10;
   } // X offset from person where continuity line is placed
-  get continuityMinWidth() {
+  get horizontalContinuityMinWidth() {
     return 30;
   } // Minimum X position where first child can start
-  get minimumLineLength() {
+  get horizontalMinimumLineLength() {
     return 40;
-  } // Minimum marriage line segment
-  get verticalSpacing() {
+  } // Minimum marriage line segment length
+  get horizontalVerticalSpacing() {
     return 50;
-  } // Distance between generations
-  get childSpacing() {
+  } // Gap between generations
+  get horizontalChildSpacing() {
     return 12;
-  } // Horizontal spacing between siblings
+  } // Horizontal gap between siblings
 
   // Line positioning methods
   /**

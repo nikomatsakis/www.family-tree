@@ -190,22 +190,25 @@ export function layoutFamily(
     // will be added directly on the marriage line at the junction point
 
     // Calculate junction position using our algorithm
-    const partnershipLineStart = leftParent.width + renderer.spacerWidth;
+    const partnershipLineStart =
+      leftParent.width + renderer.horizontalSpacerWidth;
     let partnershipLineJunction; // mid point of the partnership line
     if (childFamilies.length > 0) {
       // TODO: insert diagram to depict the two scenarios graphically
       const firstChild = childFamilies[0];
       partnershipLineJunction = Math.max(
-        partnershipLineStart + renderer.minimumLineLength,
+        partnershipLineStart + renderer.horizontalMinimumLineLength,
         // Constraint: firstChild.port aligns with junction, so junction must be
         // at least continuityMinWidth + firstChild.port to ensure the child's
         // left edge doesn't overlap the continuity line reserved area
-        renderer.continuityMinWidth + firstChild.port,
+        renderer.horizontalContinuityMinWidth + firstChild.port,
       );
     } else {
       // TODO: insert diagram to depict the scenario graphically
       partnershipLineJunction =
-        leftParent.width + renderer.spacerWidth + renderer.minimumLineLength;
+        leftParent.width +
+        renderer.horizontalSpacerWidth +
+        renderer.horizontalMinimumLineLength;
     }
 
     // Create and position partnership line
@@ -243,7 +246,9 @@ export function layoutFamily(
         partner.id,
       );
       rightParent.x =
-        partnershipLineStart + partnershipLineLength + renderer.spacerWidth;
+        partnershipLineStart +
+        partnershipLineLength +
+        renderer.horizontalSpacerWidth;
       rightParent.y = leftParent.y;
       family.addElement(rightParent);
     }
@@ -262,7 +267,7 @@ export function layoutFamily(
       const firstChild = childFamilies[0];
       firstChild.x = partnershipLineJunction - firstChild.port;
       firstChild.y =
-        leftParent.y + leftParent.height + renderer.verticalSpacing;
+        leftParent.y + leftParent.height + renderer.horizontalVerticalSpacing;
       family.addElement(firstChild);
 
       // Position remaining children left-justified with spacing
@@ -277,13 +282,14 @@ export function layoutFamily(
       //           | Child1 and family |  | Child2... |  | Child3... |
       //           +-------------------+  +-----------+  +-----------+
       let currentChildX =
-        firstChild.x + firstChild.width + renderer.childSpacing;
+        firstChild.x + firstChild.width + renderer.horizontalChildSpacing;
       for (let i = 1; i < childFamilies.length; i++) {
         const child = childFamilies[i];
         child.x = currentChildX;
-        child.y = leftParent.y + leftParent.height + renderer.verticalSpacing;
+        child.y =
+          leftParent.y + leftParent.height + renderer.horizontalVerticalSpacing;
         family.addElement(child);
-        currentChildX += child.width + renderer.childSpacing;
+        currentChildX += child.width + renderer.horizontalChildSpacing;
       }
 
       // Create parent-child line (vertical drop)
@@ -394,7 +400,7 @@ export function layoutFamily(
     // Add continuity line and shadow person if not the last family
     if (familyIndex < person.rightFamilyRIndices.length - 1) {
       // Calculate where the next partnership should start
-      const nextY = family.height + renderer.verticalSpacing;
+      const nextY = family.height + renderer.horizontalVerticalSpacing;
 
       // Create continuity line from current leftParent to next position
       // +---------+       +---------+
@@ -406,7 +412,7 @@ export function layoutFamily(
       const continuityLineLength =
         nextY - (leftParent.y + leftParent.height) + 2;
       const continuityLine = new Line(continuityLineLength, 'continuity-line');
-      continuityLine.x = renderer.continuityOffset;
+      continuityLine.x = renderer.horizontalContinuityOffset;
       continuityLine.y = leftParent.y + leftParent.height - 1;
       family.addElement(continuityLine);
 
