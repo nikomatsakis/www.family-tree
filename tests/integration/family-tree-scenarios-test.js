@@ -2,7 +2,10 @@ import { module, test } from 'qunit';
 import { setupRenderingTest } from 'family-tree/tests/helpers';
 import { createRenderer } from 'family-tree/utils/family-tree-renderers';
 import { loadGeneaFixture } from 'family-tree/tests/helpers/genea-fixtures';
-import { layoutFamily } from 'family-tree/utils/family-layout';
+import {
+  layoutFamily,
+  layoutFamilyVertical,
+} from 'family-tree/utils/family-layout';
 import { TextCanvas } from 'family-tree/utils/text-canvas';
 import { TextRenderer } from 'family-tree/utils/text-renderer';
 
@@ -62,6 +65,27 @@ module('Integration | Family Tree Scenarios', function (hooks) {
 
     const personText = svg.querySelector('.person-box text').textContent;
     assert.strictEqual(personText, 'John Doe', 'Person name should be correct');
+  });
+
+  test('SCENARIO: single person with no family - VERTICAL', async function (assert) {
+    const { startPerson } = await loadGeneaFixture('single-person');
+
+    const renderer = createRenderer('text');
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+    const textLayoutRenderer = new TextRenderer();
+    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const canvas = new TextCanvas();
+    textLayoutRenderer.render(canvas, family);
+    const output = canvas.render();
+
+    // Should show just the single person box (same as horizontal)
+    const expected = ['┌────────┐', '│John Doe│', '└────────┘'].join('\n');
+
+    assert.strictEqual(
+      output,
+      expected,
+      'Single person should render identically in vertical mode',
+    );
   });
 
   // ===== SCENARIO: Simple Family =====

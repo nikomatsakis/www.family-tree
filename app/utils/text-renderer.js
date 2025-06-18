@@ -141,6 +141,26 @@ export class TextRenderer {
     return 1;
   } // Horizontal gap between siblings
 
+  // Vertical Layout Spacing Constants
+  get verticalSpacerWidth() {
+    return 1;
+  } // Gap between person and marriage line
+  get verticalChildIndent() {
+    return 2;
+  } // Fixed horizontal offset for children from continuity line
+  get verticalGenerationGap() {
+    return 2;
+  } // Vertical gap between parent and children
+  get verticalSiblingSpacing() {
+    return 1;
+  } // Vertical gap between siblings
+  get verticalContinuityOffset() {
+    return 1;
+  } // X offset for continuity line
+  get verticalMinimumLineLength() {
+    return 3;
+  } // Min marriage line length
+
   // Line positioning methods
   /**
    * Calculate Y offset for partnership line relative to person box top

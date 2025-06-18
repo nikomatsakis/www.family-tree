@@ -438,3 +438,54 @@ export function layoutFamily(
 
   return family;
 }
+
+/**
+ * Layout a single person and their immediate family using vertical layout.
+ *
+ * Phase 1: Single person only (no partnerships, children, or ancestors)
+ *
+ * @param {RenderTree} renderTree - The render tree data structure
+ * @param {number} personIndex - Index of person to layout
+ * @param {TextRenderer} renderer - Text renderer with measurement capabilities
+ * @returns {Family} Complete family layout with positioned elements
+ */
+export function layoutFamilyVertical(
+  renderTree,
+  personIndex,
+  renderer,
+  visitedPersons = new Set(),
+) {
+  // Prevent infinite recursion by tracking visited persons
+  if (visitedPersons.has(personIndex)) {
+    console.error(
+      `Circular reference detected: person ${personIndex} already being laid out`,
+    );
+    console.error('Visit chain:', Array.from(visitedPersons));
+    throw new Error(
+      `Circular reference detected in family tree: person ${personIndex}`,
+    );
+  }
+
+  visitedPersons.add(personIndex);
+
+  const person = renderTree.getPerson(personIndex);
+  const family = new Family();
+
+  // Phase 1: Create primary person rectangle at origin (same as horizontal)
+  const personMetrics = renderer.personBoxMetrics(person.name);
+  const primaryRect = new Rectangle(
+    person.name,
+    'primary-person',
+    personMetrics.width,
+    personMetrics.height,
+    person.gender,
+    person.id,
+  );
+  family.addElement(primaryRect);
+
+  // For vertical layout, port calculation will be different in future phases
+  // For now, use topPort since there are no connections
+  family.port = personMetrics.topPort;
+
+  return family;
+}
