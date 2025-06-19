@@ -442,7 +442,7 @@ export function layoutFamily(
 /**
  * Layout a single person and their immediate family using vertical layout.
  *
- * Phase 1: Single person only (no partnerships, children, or ancestors)
+ * Phase 2: Single person and their partner (no children yet)
  *
  * @param {RenderTree} renderTree - The render tree data structure
  * @param {number} personIndex - Index of person to layout
@@ -471,9 +471,9 @@ export function layoutFamilyVertical(
   const person = renderTree.getPerson(personIndex);
   const family = new Family();
 
-  // Phase 1: Create primary person rectangle at origin (same as horizontal)
+  // Create primary person rectangle at origin
   const personMetrics = renderer.personBoxMetrics(person.name);
-  const primaryRect = new Rectangle(
+  const leftParent = new Rectangle(
     person.name,
     'primary-person',
     personMetrics.width,
@@ -481,10 +481,59 @@ export function layoutFamilyVertical(
     person.gender,
     person.id,
   );
-  family.addElement(primaryRect);
+  family.addElement(leftParent);
 
-  // For vertical layout, port calculation will be different in future phases
-  // For now, use topPort since there are no connections
+  // Phase 2: Handle first partnership if present (no children yet)
+  if (person.rightFamilyRIndices.length > 0) {
+    const renderFamily = renderTree.getFamily(person.rightFamilyRIndices[0]);
+
+    // Find partner
+    const partnerIndex = renderFamily.spouseRIndices.find(
+      (idx) => idx !== personIndex,
+    );
+    const partner =
+      partnerIndex !== undefined ? renderTree.getPerson(partnerIndex) : null;
+    const partnerMetrics = partner
+      ? renderer.personBoxMetrics(partner.name)
+      : null;
+
+    // Position partnership line and partner (if present)
+    if (partner && partnerMetrics) {
+      // In vertical mode, partners are still side-by-side like horizontal
+      const partnershipLineStart =
+        leftParent.x + leftParent.width + renderer.verticalSpacerWidth;
+      // Partnership line extends to junction, then mirrors for symmetry
+      const partnershipLineJunction =
+        partnershipLineStart + renderer.verticalMinimumLineLength;
+      const partnershipLineLength =
+        2 * (partnershipLineJunction - partnershipLineStart);
+
+      // Create partnership line
+      const partnershipLine = new Line(partnershipLineLength, 'marriage-line');
+      partnershipLine.x = partnershipLineStart;
+      partnershipLine.y =
+        leftParent.y + renderer.getPartnershipLineY(leftParent.height);
+      family.addElement(partnershipLine);
+
+      // Position partner
+      const rightParent = new Rectangle(
+        partner.name,
+        'partner',
+        partnerMetrics.width,
+        partnerMetrics.height,
+        partner.gender,
+        partner.id,
+      );
+      rightParent.x =
+        partnershipLineStart +
+        partnershipLineLength +
+        renderer.verticalSpacerWidth;
+      rightParent.y = leftParent.y;
+      family.addElement(rightParent);
+    }
+  }
+
+  // For vertical layout, port will be used differently in future phases
   family.port = personMetrics.topPort;
 
   return family;

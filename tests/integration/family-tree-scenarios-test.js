@@ -88,6 +88,31 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     );
   });
 
+  test('SCENARIO: simple marriage (no children) - VERTICAL', async function (assert) {
+    const { startPerson } = await loadGeneaFixture('simple-family');
+
+    const renderer = createRenderer('text');
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+    const textLayoutRenderer = new TextRenderer();
+    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const canvas = new TextCanvas();
+    textLayoutRenderer.render(canvas, family);
+    const output = canvas.render();
+
+    // Partners should be side-by-side with horizontal connection
+    const expected = [
+      '┌────────┐        ┌────────┐',
+      '│Dad Test│ ────── │Mom Test│',
+      '└────────┘        └────────┘',
+    ].join('\n');
+
+    assert.strictEqual(
+      output,
+      expected,
+      'Simple marriage should show partners side-by-side in vertical mode',
+    );
+  });
+
   // ===== SCENARIO: Simple Family =====
 
   test('SCENARIO: simple family (parents + children) - TEXT', async function (assert) {

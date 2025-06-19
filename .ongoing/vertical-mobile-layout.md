@@ -280,15 +280,18 @@ After completing the renderer interface refactoring:
 - ✅ Test: single person renders correctly in vertical mode
 - ✅ All tests pass - linting clean
 
-### Phase 2: Simple Marriage (No Children) ⬅️ NEXT
-- Extend vertical layout to handle partnerships
-- Test: two people connected with marriage line
-- Expected output: Partners side-by-side with horizontal connection
+### Phase 2: Simple Marriage (No Children) ✅ COMPLETED
+- ✅ Extended vertical layout to handle partnerships
+- ✅ Test: two people connected with marriage line
+- ✅ Expected output: Partners side-by-side with horizontal connection
+- ✅ Used correct line length calculation (2x minimum to junction)
+- ✅ All tests pass - linting clean
 
-### Phase 3: Simple Family (Parents + One Child)
+### Phase 3: Simple Family (Parents + One Child) ⬅️ NEXT
 - Add child positioning logic with break-left pattern
 - Use `leftPort` for child connections
 - Test: parents with single child below them
+- Expected: Child appears below partnership with vertical connection
 
 ### Phase 4: Multiple Children (Sibling Stacking)
 - Add vertical sibling positioning
