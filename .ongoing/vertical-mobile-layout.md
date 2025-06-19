@@ -287,15 +287,30 @@ After completing the renderer interface refactoring:
 - ✅ Used correct line length calculation (2x minimum to junction)
 - ✅ All tests pass - linting clean
 
-### Phase 3: Simple Family (Parents + One Child) ⬅️ NEXT
-- Add child positioning logic with break-left pattern
-- Use `leftPort` for child connections
-- Test: parents with single child below them
-- Expected: Child appears below partnership with vertical connection
+### Phase 3: Simple Family (Parents + One Child) ✅ COMPLETED
+- ✅ Added child positioning logic with break-left pattern
+- ✅ Used `leftPort` for child connections to connect at middle of child box
+- ✅ Test: parents with single child below them
+- ✅ Expected: Child appears below partnership with vertical connection
+- ✅ Proper junction characters: `┌─────────┘` and `└─┤`
+- ✅ All vertical tests pass - linting clean
+
+### Phase 3.5: Partnership with No Children ⬅️ NEXT
+- Create fixture with marriage but no children in genea data
+- Test that no expansion button appears (neither `[+]` nor `[−]`)
+- Expected: `│Dad│ ────── │Mom│` (plain marriage line, no button)
+- Validates `hasChildren = false` case
+
+### Phase 3.6: Child with Own Family (Recursive Layout)
+- Test child who has spouse and children
+- Verify recursive `layoutFamilyVertical()` call works properly
+- Expected: Child's family appears as complete unit below parents
+- Critical test of recursive layout algorithm
 
 ### Phase 4: Multiple Children (Sibling Stacking)
 - Add vertical sibling positioning
 - Test: parents with 2-3 children stacked vertically
+- Expected: Children stacked vertically with proper spacing
 
 ### Phase 5: Multiple Partnerships (Continuity Lines)
 - Handle person with multiple spouses

@@ -99,10 +99,10 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     textLayoutRenderer.render(canvas, family);
     const output = canvas.render();
 
-    // Partners should be side-by-side with horizontal connection
+    // Partners should be side-by-side with expansion button (children exist but not expanded)
     const expected = [
       '┌────────┐        ┌────────┐',
-      '│Dad Test│ ────── │Mom Test│',
+      '│Dad Test│ ──[+]─ │Mom Test│',
       '└────────┘        └────────┘',
     ].join('\n');
 
@@ -110,6 +110,37 @@ module('Integration | Family Tree Scenarios', function (hooks) {
       output,
       expected,
       'Simple marriage should show partners side-by-side in vertical mode',
+    );
+  });
+
+  test('SCENARIO: simple family (parents + one child) - VERTICAL', async function (assert) {
+    const { startPerson } = await loadGeneaFixture('simple-family');
+
+    const renderer = createRenderer('text', {
+      expandedPartnerships: new Set(['0']), // Expand the main partnership to show children
+    });
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+    const textLayoutRenderer = new TextRenderer();
+    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const canvas = new TextCanvas();
+    textLayoutRenderer.render(canvas, family);
+    const output = canvas.render();
+
+    // Parents with one child below, with collapse button at junction (expanded)
+    const expected = [
+      '┌────────┐        ┌────────┐',
+      '│Dad Test│ ──[−]─ │Mom Test│',
+      '└────────┘    │   └────────┘',
+      '    ┌─────────┘',
+      '    │ ┌─────────┐',
+      '    └─┤Child One│',
+      '      └─────────┘',
+    ].join('\n');
+
+    assert.strictEqual(
+      output,
+      expected,
+      'Simple family should show child below parents with expansion button and correct spacing',
     );
   });
 
