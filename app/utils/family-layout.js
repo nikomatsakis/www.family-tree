@@ -599,11 +599,8 @@ export function layoutFamilyVertical(
         family.addElement(jogLine);
 
         // Create horizontal connection to child (└─)
-        // For vertical layout, connect to child's left side (leftPort)
-        const childMetrics = renderer.personBoxMetrics(
-          renderTree.getPerson(renderFamily.childRIndices[0]).name,
-        );
-        const childHorizontalY = firstChild.y + childMetrics.leftPort;
+        // For vertical layout, use child family's port (which is set to leftPort)
+        const childHorizontalY = firstChild.y + firstChild.port;
         const childHorizontalLength =
           firstChild.x - childrenLineX + renderer.verticalSpacerWidth; // +1 to overlap with child box
         const childHorizontalLine = new Line(
@@ -666,8 +663,8 @@ export function layoutFamilyVertical(
     }
   }
 
-  // For vertical layout, port will be used differently in future phases
-  family.port = personMetrics.topPort;
+  // For vertical layout, use leftPort for child connections
+  family.port = personMetrics.leftPort;
 
   return family;
 }

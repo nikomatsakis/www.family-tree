@@ -138,6 +138,41 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     );
   });
 
+  test('SCENARIO: child with own family (recursive layout) - VERTICAL', async function (assert) {
+    const { startPerson } = await loadGeneaFixture('child-with-family');
+
+    const renderer = createRenderer('text', {
+      expandedPartnerships: new Set(['0', '1']), // Expand both parent and child partnerships
+    });
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+    const textLayoutRenderer = new TextRenderer();
+    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const canvas = new TextCanvas();
+    textLayoutRenderer.render(canvas, family);
+    const output = canvas.render();
+
+    // Three generations with recursive family layout
+    const expected = [
+      '┌────────┐        ┌────────┐',
+      '│Dad Test│ ──[−]─ │Mom Test│',
+      '└────────┘    │   └────────┘',
+      '    ┌─────────┘',
+      '    │ ┌────────┐        ┌─────────┐',
+      '    └─┤Son Test│ ──[−]─ │Wife Test│',
+      '      └────────┘    │   └─────────┘',
+      '          ┌─────────┘',
+      '          │ ┌─────────────┐',
+      '          └─┤Grandson Test│',
+      '            └─────────────┘',
+    ].join('\n');
+
+    assert.strictEqual(
+      output,
+      expected,
+      'Child with own family should render recursively in vertical mode',
+    );
+  });
+
   test('SCENARIO: simple family (parents + one child) - VERTICAL', async function (assert) {
     const { startPerson } = await loadGeneaFixture('simple-family');
 

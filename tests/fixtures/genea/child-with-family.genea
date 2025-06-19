@@ -1,0 +1,8 @@
+# Three-generation family for testing recursive layout
+# Format: 10 henry numbers, gender, num_kids, num_spouses, spouse_index, name [\comment]
+
+ 1 0 0 0 0 0 0 0 0 0 M 1 1 0         Dad Test\The father  
+ 1 0 0 0 0 0 0 0 0 0 F 1 1 1         Mom Test\The mother
+ 1 1 0 0 0 0 0 0 0 0 M 1 1 0         Son Test\First child who has own family
+ 1 1 0 0 0 0 0 0 0 0 F 1 1 1         Wife Test\Son's wife
+ 1 1 1 0 0 0 0 0 0 0 M 0 0 0         Grandson Test\Son's child

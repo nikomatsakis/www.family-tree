@@ -302,14 +302,18 @@ After completing the renderer interface refactoring:
 - ✅ Validates `hasChildren = false` case
 - ✅ All vertical tests pass
 
-### Phase 3.6: Child with Own Family (Recursive Layout) ⬅️ NEXT
-- Test child who has spouse and children
-- Verify recursive `layoutFamilyVertical()` call works properly
-- Expected: Child's family appears as complete unit below parents
-- Critical test of recursive layout algorithm
+### Phase 3.6: Child with Own Family (Recursive Layout) ✅ COMPLETED
+- ✅ Created fixture with three generations (Dad+Mom → Son+Wife → Grandson)
+- ✅ Test child who has spouse and children
+- ✅ Verified recursive `layoutFamilyVertical()` call works properly
+- ✅ Expected: Child's family appears as complete unit below parents
+- ✅ Critical test of recursive layout algorithm - passes immediately!
+- ✅ Refactored to use Family.port interface instead of digging into renderTree
+- ✅ Set family.port = leftPort for vertical layout connections
+- ✅ All vertical tests pass
 
-### Phase 4: Multiple Children (Sibling Stacking)
-- Add vertical sibling positioning
+### Phase 4: Multiple Children (Sibling Stacking) ⬅️ NEXT
+- Add vertical sibling positioning  
 - Test: parents with 2-3 children stacked vertically
 - Expected: Children stacked vertically with proper spacing
 
