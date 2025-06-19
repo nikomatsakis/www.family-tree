@@ -113,6 +113,31 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     );
   });
 
+  test('SCENARIO: childless marriage (no expansion button) - VERTICAL', async function (assert) {
+    const { startPerson } = await loadGeneaFixture('childless-marriage');
+
+    const renderer = createRenderer('text');
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+    const textLayoutRenderer = new TextRenderer();
+    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const canvas = new TextCanvas();
+    textLayoutRenderer.render(canvas, family);
+    const output = canvas.render();
+
+    // Partners with no children should show plain marriage line (no button)
+    const expected = [
+      '┌────────┐        ┌──────────┐',
+      '│Bob Test│ ────── │Alice Test│',
+      '└────────┘        └──────────┘',
+    ].join('\n');
+
+    assert.strictEqual(
+      output,
+      expected,
+      'Childless marriage should show no expansion button (hasChildren=false)',
+    );
+  });
+
   test('SCENARIO: simple family (parents + one child) - VERTICAL', async function (assert) {
     const { startPerson } = await loadGeneaFixture('simple-family');
 

@@ -1,0 +1,5 @@
+# Childless marriage for testing no expansion button case
+# Format: 10 henry numbers, gender, num_kids, num_spouses, spouse_index, name [\comment]
+
+ 1 0 0 0 0 0 0 0 0 0 M 0 1 0         Bob Test\The husband
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1         Alice Test\The wife

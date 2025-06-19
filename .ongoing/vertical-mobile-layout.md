@@ -295,13 +295,14 @@ After completing the renderer interface refactoring:
 - ✅ Proper junction characters: `┌─────────┘` and `└─┤`
 - ✅ All vertical tests pass - linting clean
 
-### Phase 3.5: Partnership with No Children ⬅️ NEXT
-- Create fixture with marriage but no children in genea data
-- Test that no expansion button appears (neither `[+]` nor `[−]`)
-- Expected: `│Dad│ ────── │Mom│` (plain marriage line, no button)
-- Validates `hasChildren = false` case
+### Phase 3.5: Partnership with No Children ✅ COMPLETED
+- ✅ Created fixture with marriage but no children in genea data
+- ✅ Test that no expansion button appears (neither `[+]` nor `[−]`)
+- ✅ Expected: `│Bob Test│ ────── │Alice Test│` (plain marriage line, no button)
+- ✅ Validates `hasChildren = false` case
+- ✅ All vertical tests pass
 
-### Phase 3.6: Child with Own Family (Recursive Layout)
+### Phase 3.6: Child with Own Family (Recursive Layout) ⬅️ NEXT
 - Test child who has spouse and children
 - Verify recursive `layoutFamilyVertical()` call works properly
 - Expected: Child's family appears as complete unit below parents
