@@ -497,18 +497,26 @@ export function layoutFamilyVertical(
       ? renderer.personBoxMetrics(partner.name)
       : null;
 
-    // Layout first child recursively (Phase 3: only handle first child)
+    // Layout children recursively (Phase 4: handle ALL children)
     const childFamilies = [];
     if (renderFamily.isExpanded && renderFamily.childRIndices.length > 0) {
-      // For Phase 3, only layout the first child
-      const firstChildIndex = renderFamily.childRIndices[0];
-      const childFamily = layoutFamilyVertical(
-        renderTree,
-        firstChildIndex,
-        renderer,
-        visitedPersons,
-      );
-      childFamilies.push(childFamily);
+      // Layout all children recursively
+      for (const childIndex of renderFamily.childRIndices) {
+        if (visitedPersons.has(childIndex)) {
+          console.error(
+            `WOULD CREATE CYCLE: Child ${childIndex} is already in visitedPersons`,
+          );
+          continue; // Skip this child to avoid cycle
+        }
+
+        const childFamily = layoutFamilyVertical(
+          renderTree,
+          childIndex,
+          renderer,
+          visitedPersons,
+        );
+        childFamilies.push(childFamily);
+      }
     }
 
     // Calculate junction position
@@ -544,10 +552,8 @@ export function layoutFamilyVertical(
       rightParent.y = leftParent.y;
       family.addElement(rightParent);
 
-      // Position children if expanded (Phase 3: single child)
+      // Position children if expanded (Phase 4: multiple children stacking)
       if (childFamilies.length > 0) {
-        const firstChild = childFamilies[0];
-
         // Calculate child positioning using renderer constants
         // Continuity line is at offset 1, children line needs gap for continuity + indent
         const childrenLineX =
@@ -561,14 +567,6 @@ export function layoutFamilyVertical(
           renderer.verticalSpacerWidth +
           renderer.verticalSpacerWidth;
 
-        // In vertical layout, children appear below with left-branching pattern
-        firstChild.x = childX;
-        firstChild.y =
-          partnershipLine.y +
-          renderer.verticalGenerationGap +
-          renderer.verticalSpacerWidth;
-        family.addElement(firstChild);
-
         // Create vertical drop line from junction to jog point
         //
         // Expected vertical layout pattern:
@@ -576,12 +574,49 @@ export function layoutFamilyVertical(
         // └────────┘    │   └────────┘  <- parent bottom + junction drop (Y=2)
         //     ┌─────────┘                <- horizontal jog (Y=3)
         //     │ ┌─────────┐              <- vertical line + child (Y=4)
-        //     └─┤Child One│
+        //     ├─┤Child One│              <- continuing child junction
+        //     │ └─────────┘
+        //     │ ┌─────────┐              <- next child (Y=6)
+        //     └─┤Child Two│              <- last child junction
         //       └─────────┘
         //
         // Start below the marriage line, not on it
         const dropLineY = partnershipLine.y + renderer.verticalSpacerWidth;
         const jogY = dropLineY + renderer.verticalSpacerWidth;
+
+        // Position all children vertically with proper spacing
+        let currentChildY = jogY + renderer.verticalSpacerWidth;
+
+        for (let i = 0; i < childFamilies.length; i++) {
+          const child = childFamilies[i];
+
+          // Position child
+          child.x = childX;
+          child.y = currentChildY;
+          family.addElement(child);
+
+          // Create horizontal connection to child (├─ or └─)
+          // For vertical layout, use child family's port (which is set to leftPort)
+          const childHorizontalY = child.y + child.port;
+          const childHorizontalLength =
+            child.x - childrenLineX + renderer.verticalSpacerWidth; // +1 to overlap with child box
+          const childHorizontalLine = new Line(
+            childHorizontalLength,
+            'sibling-line',
+          );
+          childHorizontalLine.x = childrenLineX;
+          childHorizontalLine.y = childHorizontalY;
+          family.addElement(childHorizontalLine);
+
+          // Update Y position for next child (no gap between children for compact stacking)
+          currentChildY += child.height;
+        }
+
+        // Calculate total height needed for all children
+        const lastChild = childFamilies[childFamilies.length - 1];
+        const lastChildConnectionY = lastChild.y + lastChild.port;
+
+        // Create initial drop line from junction
         const dropLineLength = jogY - dropLineY + renderer.verticalSpacerWidth; // +1 to overlap with jog line
         const dropLine = new Line(dropLineLength, 'parent-child-line');
         dropLine.x = partnershipLineJunction;
@@ -598,30 +633,13 @@ export function layoutFamilyVertical(
         jogLine.y = jogY;
         family.addElement(jogLine);
 
-        // Create horizontal connection to child (└─)
-        // For vertical layout, use child family's port (which is set to leftPort)
-        const childHorizontalY = firstChild.y + firstChild.port;
-        const childHorizontalLength =
-          firstChild.x - childrenLineX + renderer.verticalSpacerWidth; // +1 to overlap with child box
-        const childHorizontalLine = new Line(
-          childHorizontalLength,
-          'sibling-line',
-        );
-        childHorizontalLine.x = childrenLineX;
-        childHorizontalLine.y = childHorizontalY;
-        family.addElement(childHorizontalLine);
-
-        // Create vertical connection to child (end at horizontal line)
-        const childConnectY = jogY; // Start at jog line to create overlap
-        const childConnectLength =
-          childHorizontalY - childConnectY + renderer.verticalSpacerWidth; // End at horizontal line
-        const childConnectLine = new Line(
-          childConnectLength,
-          'parent-child-line',
-        );
-        childConnectLine.x = childrenLineX;
-        childConnectLine.y = childConnectY;
-        family.addElement(childConnectLine);
+        // Create vertical spine connecting all children
+        const spineLength =
+          lastChildConnectionY - jogY + renderer.verticalSpacerWidth;
+        const spine = new Line(spineLength, 'parent-child-line');
+        spine.x = childrenLineX;
+        spine.y = jogY;
+        family.addElement(spine);
       }
 
       // Add expansion button LAST so it renders on top of lines

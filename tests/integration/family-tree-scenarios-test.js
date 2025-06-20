@@ -173,8 +173,42 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     );
   });
 
-  test('SCENARIO: simple family (parents + one child) - VERTICAL', async function (assert) {
+  test('SCENARIO: multiple children (vertical stacking) - VERTICAL', async function (assert) {
     const { startPerson } = await loadGeneaFixture('simple-family');
+
+    const renderer = createRenderer('text', {
+      expandedPartnerships: new Set(['0']), // Expand to show all children
+    });
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+    const textLayoutRenderer = new TextRenderer();
+    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const canvas = new TextCanvas();
+    textLayoutRenderer.render(canvas, family);
+    const output = canvas.render();
+
+    // Parents with multiple children stacked vertically
+    const expected = [
+      '┌────────┐        ┌────────┐',
+      '│Dad Test│ ──[−]─ │Mom Test│',
+      '└────────┘    │   └────────┘',
+      '    ┌─────────┘',
+      '    │ ┌─────────┐',
+      '    ├─┤Child One│',
+      '    │ └─────────┘',
+      '    │ ┌─────────┐',
+      '    └─┤Child Two│',
+      '      └─────────┘',
+    ].join('\n');
+
+    assert.strictEqual(
+      output,
+      expected,
+      'Multiple children should stack vertically with proper junction characters',
+    );
+  });
+
+  test('SCENARIO: simple family (parents + one child) - VERTICAL', async function (assert) {
+    const { startPerson } = await loadGeneaFixture('single-child');
 
     const renderer = createRenderer('text', {
       expandedPartnerships: new Set(['0']), // Expand the main partnership to show children
@@ -188,13 +222,13 @@ module('Integration | Family Tree Scenarios', function (hooks) {
 
     // Parents with one child below, with collapse button at junction (expanded)
     const expected = [
-      '┌────────┐        ┌────────┐',
-      '│Dad Test│ ──[−]─ │Mom Test│',
-      '└────────┘    │   └────────┘',
-      '    ┌─────────┘',
-      '    │ ┌─────────┐',
-      '    └─┤Child One│',
-      '      └─────────┘',
+      '┌──────────┐        ┌──────────┐',
+      '│Dad Single│ ──[−]─ │Mom Single│',
+      '└──────────┘    │   └──────────┘',
+      '    ┌───────────┘',
+      '    │ ┌──────────┐',
+      '    └─┤Only Child│',
+      '      └──────────┘',
     ].join('\n');
 
     assert.strictEqual(
