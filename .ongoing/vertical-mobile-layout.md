@@ -1,9 +1,21 @@
 # Vertical Layout for Mobile
 
-## Status: Phase 4 Complete - In Development
+## Status: Phase 5 Complete - In Development
 **Created**: December 16, 2024
-**Updated**: December 20, 2024  
+**Updated**: June 20, 2025  
 **Priority**: HIGH - Current horizontal layout unusable on mobile devices
+
+## Progress Summary
+✅ **Renderer Interface Refactoring** - Clean, unified interface for both renderers  
+✅ **Phase 1** - Single person rendering  
+✅ **Phase 2** - Simple marriage (no children)  
+✅ **Phase 3** - Parents with one child  
+✅ **Phase 3.5** - Partnership with no children (validation)  
+✅ **Phase 3.6** - Child with own family (recursive layout)  
+✅ **Phase 4** - Multiple children (vertical stacking)  
+✅ **Phase 5** - Multiple partnerships with continuity lines
+
+**Next**: Phase 6 - Ancestor expansion buttons
 
 ## Problem Statement
 The current family tree layout expands horizontally:
@@ -142,28 +154,30 @@ Create a vertical layout mode where:
 
 **Key insight**: The vertical mobile layout is primarily a **positioning optimization** rather than a complete algorithm rewrite!
 
-## 🤔 Planning Questions for Tomorrow
+## ✅ Key Discoveries from Implementation
 
-1. **Is this mainly a positioning change?** Rather than building a completely new algorithm, are we mainly adjusting:
-   - How children are positioned relative to parents
-   - Spacing and branch directions  
-   - Mobile-optimized dimensions
+1. **Separate function approach worked well**: Created `layoutFamilyVertical()` as a separate function rather than adding parameters to existing `layoutFamily()`. This kept the code cleaner and easier to understand.
 
-2. **Layout parameter approach?** Should we add a `layoutDirection` parameter to the existing `layoutFamily()` function rather than creating a separate function?
+2. **Main differences confirmed**:
+   - Child positioning: Children appear below parents with left-branching pattern
+   - Port usage: `leftPort` for vertical connections vs `topPort` for horizontal
+   - Spacing: Compact vertical stacking with no gaps between siblings
+   - Junction patterns: Different line routing (down → left → connect to child)
 
-3. **What's the key difference?** Looking at both layouts, it seems like the vertical version:
-   - Keeps the same continuity line logic
-   - Changes child positioning to branch right more compactly
-   - Optimizes spacing for narrow screens
+3. **Reused concepts successfully**:
+   - Continuity line logic (not yet implemented but structure is ready)
+   - Recursive family layout
+   - Expansion/collapse button positioning
+   - Family.port interface for connection points
 
-## Renderer Interface Design
+## Renderer Interface Design ✅ COMPLETED
 
-### Current Issues
-1. **String comparisons**: `measureBox()` checks if text === '+' or '−' 
-2. **Complex parameters**: Button position methods take 5+ parameters
-3. **Mixed concerns**: Box measurement separate from port calculations
+### Previous Issues (All Resolved)
+1. ~~String comparisons: `measureBox()` checks if text === '+' or '−'~~ → Fixed with `measureButton()`
+2. ~~Complex parameters: Button position methods take 5+ parameters~~ → Simplified with `personBoxMetrics()`
+3. ~~Mixed concerns: Box measurement separate from port calculations~~ → Consolidated in `personBoxMetrics()`
 
-### Agreed Upon Interface Refactor
+### Implemented Interface
 ```javascript
 // Person box measurement - returns ALL metrics at once
 personBoxMetrics(text) → {
@@ -236,40 +250,39 @@ verticalMinimumLineLength: number   // Min marriage line length
 
 **Renderer Interface is now ready for vertical layout implementation!**
 
-### Next Phase: Vertical Layout Implementation
-After completing the renderer interface refactoring:
-- Create `layoutFamilyVertical()` function
-- Use vertical spacing constants and leftPort from metrics
-- Implement child positioning with fixed indent and vertical stacking
-- Test with text renderer first, then update D3 renderer
+## Remaining Work
 
-## Technical Approach (To Be Refined)
-### Phase 1: Layout Algorithm
-- ~~Create new `layoutFamilyVertical()` function~~ → Maybe just add parameter to existing?
-- ~~Implement continuity line logic~~ → Already exists!
-- Focus on: Calculate mobile-optimized spacing and right-branching for children
-- Handle partnership positioning and connection routing for narrow screens
+### Phase 5: Multiple Partnerships (Continuity Lines) ⬅️ NEXT
+- Implement vertical continuity lines for multiple partnerships
+- Test person with 2-3 spouses showing proper repetition
+- Expected: Vertical continuity lines (║) connecting repeated person boxes
 
-### Phase 2: Renderer Updates  
-- ~~Update text renderer to support vertical line characters~~ → Already supported!
-- Modify D3 renderer for mobile-optimized SVG positioning
-- Add layout mode parameter to switch between horizontal/vertical
+### Phase 6: Ancestor Expansion Buttons
+- Position ancestor expansion buttons in vertical mode
+- Test unexpanded ancestors show [+] button correctly
 
-### Phase 3: Responsive Integration
-- Auto-detect mobile vs desktop viewport
-- Add user preference toggle
-- Ensure smooth transitions between modes
+### Phase 7: D3 Renderer Updates
+- Update D3 renderer to support vertical layout mode
+- Implement same spacing constants and positioning logic
+- Ensure buttons and interactions work correctly
 
-## Implementation Decisions (Pending Discussion)
+### Phase 8: Responsive Integration
+- Add layout mode switching (horizontal vs vertical)
+- Auto-detect based on viewport width
+- User preference toggle
+- Smooth transitions between modes
+
+## Implementation Decisions (For Phase 8)
 - **Mobile-first**: Start with vertical as default on narrow screens?
 - **Breakpoint**: ~768px viewport width for mobile/desktop switch?
 - **User control**: Allow manual override of auto-detection?
 - **Performance**: Vertical mode should be as fast as horizontal
 
-## Key Interface Methods (Already Implemented)
-- `personBoxMetrics(text)` → `{width, height, topPort, leftPort, ancestorButtonX, ancestorButtonY}`
-- `measureButton()` → `{width, height}` 
-- `horizontalXxx` spacing constants (for current layout)
+## Key Interface Methods ✅ IMPLEMENTED
+- `personBoxMetrics(text)` → Returns all box metrics including ports and button positions
+- `measureButton()` → Unified button measurement (no string comparisons)
+- `horizontalXxx` spacing constants for horizontal layout
+- `verticalXxx` spacing constants for vertical layout
 
 ## Incremental Implementation Plan
 
@@ -320,21 +333,25 @@ After completing the renderer interface refactoring:
 - ✅ Expected: Children stacked vertically with no gaps between them for compact layout
 - ✅ All vertical tests pass - supports both single child and multiple children scenarios
 
-### Phase 5: Multiple Partnerships (Continuity Lines)
-- Handle person with multiple spouses
-- Test: continuity line logic works vertically
+### Phase 5: Multiple Partnerships (Continuity Lines) ✅ COMPLETED
+- ✅ Implemented loop to handle all partnerships instead of just the first
+- ✅ Added continuity line logic with proper vertical spacing  
+- ✅ Created repeated person rectangles for subsequent partnerships
+- ✅ Test: person with 3 spouses showing proper vertical continuity lines
+- ✅ Expected: Vertical continuity lines (║) connecting repeated person boxes
+- ✅ All vertical tests pass - supports multiple partnerships with children
 
 ### Phase 6: Ancestor Expansion Buttons
 - Handle unexpanded ancestors in vertical mode
 - Test: ancestor buttons position correctly
 
-## Vertical Spacing Constants (To Be Added)
+## Vertical Spacing Constants ✅ IMPLEMENTED
 ```javascript
-// Text renderer values (characters)
+// Text renderer values (characters) - All added to TextRenderer
 verticalSpacerWidth: 1          // Gap between person and marriage line
 verticalChildIndent: 2          // Fixed horizontal offset for children  
 verticalGenerationGap: 2        // Vertical gap between parent and children
-verticalSiblingSpacing: 1       // Vertical gap between siblings
+verticalSiblingSpacing: 1       // Vertical gap between siblings (currently 0 for compact layout)
 verticalContinuityOffset: 1     // X offset for continuity line
 verticalMinimumLineLength: 3    // Min marriage line length
 ```

@@ -473,7 +473,7 @@ export function layoutFamilyVertical(
 
   // Create primary person rectangle at origin
   const personMetrics = renderer.personBoxMetrics(person.name);
-  const leftParent = new Rectangle(
+  const primaryRect = new Rectangle(
     person.name,
     'primary-person',
     personMetrics.width,
@@ -481,11 +481,18 @@ export function layoutFamilyVertical(
     person.gender,
     person.id,
   );
-  family.addElement(leftParent);
+  family.addElement(primaryRect);
 
-  // Phase 3: Handle first partnership with children
-  if (person.rightFamilyRIndices.length > 0) {
-    const renderFamily = renderTree.getFamily(person.rightFamilyRIndices[0]);
+  // Phase 5: Handle multiple partnerships with continuity lines
+  let leftParent = primaryRect;
+  for (
+    let familyIndex = 0;
+    familyIndex < person.rightFamilyRIndices.length;
+    familyIndex++
+  ) {
+    const renderFamily = renderTree.getFamily(
+      person.rightFamilyRIndices[familyIndex],
+    );
 
     // Find partner
     const partnerIndex = renderFamily.spouseRIndices.find(
@@ -678,6 +685,42 @@ export function layoutFamilyVertical(
         button.y = buttonPos.y;
         family.addElement(button);
       }
+    }
+
+    // Add continuity line and shadow person if not the last family
+    if (familyIndex < person.rightFamilyRIndices.length - 1) {
+      // Calculate where the next partnership should start
+      const nextY = family.height + renderer.verticalSpacerWidth;
+
+      // Create continuity line from current leftParent to next position
+      // ┌─────────┐        ┌────────────┐
+      // │John Smith│ ──[−]─ │Mary Johnson│
+      // └╥────────┘    │   └────────────┘
+      //  ║ <-- continuity line extends down
+      //  ║
+      //  ║
+      // ┌╨────────┐        ┌──────────────┐
+      // │John Smith│ ──[−]─ │Susan Williams│
+      // └─────────┘        └──────────────┘
+      const continuityLineLength =
+        nextY - (leftParent.y + leftParent.height) + 2;
+      const continuityLine = new Line(continuityLineLength, 'continuity-line');
+      continuityLine.x = renderer.verticalContinuityOffset;
+      continuityLine.y = leftParent.y + leftParent.height - 1;
+      family.addElement(continuityLine);
+
+      // Create shadow person rectangle for next partnership
+      leftParent = new Rectangle(
+        person.name,
+        'repeated-person',
+        personMetrics.width,
+        personMetrics.height,
+        person.gender,
+        person.id,
+      );
+      leftParent.x = 0;
+      leftParent.y = nextY;
+      family.addElement(leftParent);
     }
   }
 

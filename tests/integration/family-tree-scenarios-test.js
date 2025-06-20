@@ -238,6 +238,54 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     );
   });
 
+  test('SCENARIO: multiple partnerships - VERTICAL', async function (assert) {
+    const { startPerson } = await loadGeneaFixture(
+      'multiple-partnerships-vertical',
+    );
+
+    const renderer = createRenderer('text', {
+      expandedPartnerships: new Set(['0', '1', '2']), // Expand all three partnerships
+    });
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+    const textLayoutRenderer = new TextRenderer();
+    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const canvas = new TextCanvas();
+    textLayoutRenderer.render(canvas, family);
+    const output = canvas.render();
+
+    // Expected output: John Smith with 3 partnerships, showing continuity lines
+    const expected = [
+      '┌──────────┐        ┌────────────┐',
+      '│John Smith│ ──[−]─ │Mary Johnson│',
+      '└╥─────────┘    │   └────────────┘',
+      ' ║  ┌───────────┘',
+      ' ║  │ ┌─────────┐',
+      ' ║  ├─┤Bob Smith│',
+      ' ║  │ └─────────┘',
+      ' ║  │ ┌───────────┐',
+      ' ║  └─┤Alice Smith│',
+      ' ║    └───────────┘',
+      ' ║',
+      '┌╨─────────┐        ┌──────────────┐',
+      '│John Smith│ ──[−]─ │Susan Williams│',
+      '└╥─────────┘    │   └──────────────┘',
+      ' ║  ┌───────────┘',
+      ' ║  │ ┌───────────┐',
+      ' ║  └─┤Carol Smith│',
+      ' ║    └───────────┘',
+      ' ║',
+      '┌╨─────────┐        ┌──────────────┐',
+      '│John Smith│ ────── │Jennifer Davis│',
+      '└──────────┘        └──────────────┘',
+    ].join('\n');
+
+    assert.strictEqual(
+      output,
+      expected,
+      'Multiple partnerships should show vertically with continuity lines',
+    );
+  });
+
   // ===== SCENARIO: Simple Family =====
 
   test('SCENARIO: simple family (parents + children) - TEXT', async function (assert) {
