@@ -273,7 +273,7 @@ module('Integration | Component | d3-tree-renderer', function (hooks) {
       'Vertical render data should contain family layout',
     );
 
-    // Test horizontal layout mode (default)
+    // Test horizontal layout mode
     const horizontalRenderData = renderer.prepareRenderData(renderTree, {
       layoutMode: 'horizontal',
     });

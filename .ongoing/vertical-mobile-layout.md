@@ -17,7 +17,7 @@
 ✅ **Phase 6** - Ancestor expansion buttons
 ✅ **Phase 7** - D3 renderer with optimized spacing
 
-**Next**: Phase 8 - Responsive layout switching (optional)
+**Next**: Phase 8 - Change default to vertical layout
 
 ## Problem Statement
 The current family tree layout expands horizontally:
@@ -268,17 +268,17 @@ verticalMinimumLineLength: number   // Min marriage line length
 - Implement same spacing constants and positioning logic
 - Ensure buttons and interactions work correctly
 
-### Phase 8: Responsive Integration
-- Add layout mode switching (horizontal vs vertical)
-- Auto-detect based on viewport width
-- User preference toggle
-- Smooth transitions between modes
+### Phase 8: Change Default Layout Mode ⬅️ NEXT
+- Change default layout from horizontal to vertical across the application
+- Keep horizontal layout available but make vertical the default experience
+- Update family-tree-visual component to use vertical by default
+- Ensure all entry points use vertical layout unless explicitly specified
 
-## Implementation Decisions (For Phase 8)
-- **Mobile-first**: Start with vertical as default on narrow screens?
-- **Breakpoint**: ~768px viewport width for mobile/desktop switch?
-- **User control**: Allow manual override of auto-detection?
-- **Performance**: Vertical mode should be as fast as horizontal
+## Implementation Approach
+- **Simple change**: Update default `layoutMode` from `'horizontal'` to `'vertical'`
+- **Preserve choice**: Horizontal layout remains available via explicit selection
+- **Mobile-first**: Vertical layout provides better mobile experience by default
+- **Future flexibility**: Horizontal layout can be deprecated later if desired
 
 ## Key Interface Methods ✅ IMPLEMENTED
 - `personBoxMetrics(text)` → Returns all box metrics including ports and button positions

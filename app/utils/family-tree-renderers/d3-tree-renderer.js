@@ -52,7 +52,7 @@ export default class D3TreeRenderer extends BaseRenderer {
 
       // Use the layout algorithm with this renderer as the metrics provider
       // Support both horizontal and vertical layout modes
-      const layoutMode = options.layoutMode || 'horizontal';
+      const layoutMode = options.layoutMode || 'vertical';
       const family =
         layoutMode === 'vertical'
           ? layoutFamilyVertical(renderTree, startPersonIndex, this)

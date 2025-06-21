@@ -155,7 +155,6 @@ export default class FamilyTreeVisual extends Component {
     // Convert graph to renderer-specific format (Mermaid code or HTML)
     const renderData = renderer.prepareRenderData(graph, {
       startPersonIdx: 0, // The starting person is always at index 0
-      layoutMode: 'vertical',
     });
 
     // Return complete data structure for rendering
