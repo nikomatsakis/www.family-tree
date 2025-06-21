@@ -1,6 +1,6 @@
 # Vertical Layout for Mobile
 
-## Status: Phase 5 Complete - In Development
+## Status: Phase 6 Complete - In Development
 **Created**: December 16, 2024
 **Updated**: June 20, 2025  
 **Priority**: HIGH - Current horizontal layout unusable on mobile devices
@@ -14,8 +14,9 @@
 ✅ **Phase 3.6** - Child with own family (recursive layout)  
 ✅ **Phase 4** - Multiple children (vertical stacking)  
 ✅ **Phase 5** - Multiple partnerships with continuity lines
+✅ **Phase 6** - Ancestor expansion buttons
 
-**Next**: Phase 6 - Ancestor expansion buttons
+**Next**: Phase 7 - D3 renderer updates
 
 ## Problem Statement
 The current family tree layout expands horizontally:
@@ -341,9 +342,13 @@ verticalMinimumLineLength: number   // Min marriage line length
 - ✅ Expected: Vertical continuity lines (║) connecting repeated person boxes
 - ✅ All vertical tests pass - supports multiple partnerships with children
 
-### Phase 6: Ancestor Expansion Buttons
-- Handle unexpanded ancestors in vertical mode
-- Test: ancestor buttons position correctly
+### Phase 6: Ancestor Expansion Buttons ✅ COMPLETED
+- ✅ Added ancestor expansion button logic to `layoutFamilyVertical()`
+- ✅ Reused existing positioning logic from horizontal layout (`personMetrics.ancestorButtonX/Y`)
+- ✅ Created test focusing on Child One with unexpanded ancestors
+- ✅ Test validates button positioning: `┌───[+]───┐` above person's name box
+- ✅ All 125 tests pass - no regressions introduced
+- ✅ Ancestor buttons now work correctly in vertical layout matching horizontal behavior
 
 ## Vertical Spacing Constants ✅ IMPLEMENTED
 ```javascript

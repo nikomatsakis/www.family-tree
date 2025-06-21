@@ -483,6 +483,25 @@ export function layoutFamilyVertical(
   );
   family.addElement(primaryRect);
 
+  // Add ancestor expansion button if person has unexpanded ancestors
+  if (person.unexpandedChildIn) {
+    const expansionBox = renderer.measureButton();
+    const ancestorButton = new Rectangle(
+      '+',
+      'ancestor-expansion-placeholder',
+      expansionBox.width,
+      expansionBox.height,
+      null, // gender
+      person.unexpandedChildIn, // store partnership ID for click handling
+    );
+
+    // Use position from person metrics
+    ancestorButton.x = primaryRect.x + personMetrics.ancestorButtonX;
+    ancestorButton.y = primaryRect.y + personMetrics.ancestorButtonY;
+
+    family.addElement(ancestorButton);
+  }
+
   // Phase 5: Handle multiple partnerships with continuity lines
   let leftParent = primaryRect;
   for (

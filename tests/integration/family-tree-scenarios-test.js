@@ -238,6 +238,33 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     );
   });
 
+  test('SCENARIO: ancestor expansion button - VERTICAL', async function (assert) {
+    const { service } = await loadGeneaFixture('three-generation');
+
+    // Get Child One who should have unexpanded ancestors
+    const childOne = service.populatedPersonById('1-1-1');
+
+    // Create renderer with NO expanded partnerships so Child One's parents aren't expanded
+    const renderer = createRenderer('text', {
+      expandedPartnerships: new Set(), // Don't expand any partnerships
+    });
+    const renderTree = renderer.buildVisibleGraph(childOne);
+    const textLayoutRenderer = new TextRenderer();
+    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const canvas = new TextCanvas();
+    textLayoutRenderer.render(canvas, family);
+    const output = canvas.render();
+
+    // Expected output: Child One with ancestor expansion button positioned correctly
+    const expected = ['┌───[+]───┐', '│Child One│', '└─────────┘'].join('\n');
+
+    assert.strictEqual(
+      output,
+      expected,
+      'Child One should show with ancestor expansion button in vertical layout',
+    );
+  });
+
   test('SCENARIO: multiple partnerships - VERTICAL', async function (assert) {
     const { startPerson } = await loadGeneaFixture(
       'multiple-partnerships-vertical',
