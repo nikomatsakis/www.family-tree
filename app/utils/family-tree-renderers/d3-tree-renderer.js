@@ -1,5 +1,5 @@
 import BaseRenderer from './base-renderer';
-import { layoutFamily } from '../family-layout';
+import { layoutFamily, layoutFamilyVertical } from '../family-layout';
 import { Family, Rectangle, Line } from '../layout-elements';
 import * as d3 from 'd3';
 
@@ -51,7 +51,12 @@ export default class D3TreeRenderer extends BaseRenderer {
       }
 
       // Use the layout algorithm with this renderer as the metrics provider
-      const family = layoutFamily(renderTree, startPersonIndex, this);
+      // Support both horizontal and vertical layout modes
+      const layoutMode = options.layoutMode || 'horizontal';
+      const family =
+        layoutMode === 'vertical'
+          ? layoutFamilyVertical(renderTree, startPersonIndex, this)
+          : layoutFamily(renderTree, startPersonIndex, this);
 
       return {
         type: 'd3-tree',
@@ -668,10 +673,10 @@ export default class D3TreeRenderer extends BaseRenderer {
     const topPort = width / 2; // X offset for top connection (horizontal layout)
     const leftPort = height / 2; // Y offset for left connection (vertical layout)
 
-    // Calculate ancestor button position (above person box)
+    // Calculate ancestor button position (on top border of person box)
     const buttonSize = 24; // Size of circular button
     const ancestorButtonX = (width - buttonSize) / 2;
-    const ancestorButtonY = 0; // Same Y as person box to create integrated look
+    const ancestorButtonY = -buttonSize / 2; // Half-overlap with top border
 
     return {
       width,
@@ -715,6 +720,26 @@ export default class D3TreeRenderer extends BaseRenderer {
   get horizontalChildSpacing() {
     return 12;
   } // Horizontal gap between siblings
+
+  // Vertical Layout Spacing Constants (all in pixels)
+  get verticalSpacerWidth() {
+    return 20;
+  } // Gap between person box and marriage line
+  get verticalChildIndent() {
+    return 15;
+  } // Fixed horizontal offset for children from continuity line
+  get verticalGenerationGap() {
+    return 100;
+  } // Vertical gap between parent and children (generous spacing)
+  get verticalSiblingSpacing() {
+    return 30;
+  } // Vertical gap between siblings
+  get verticalContinuityOffset() {
+    return 20;
+  } // X offset for continuity line
+  get verticalMinimumLineLength() {
+    return 40;
+  } // Min marriage line length
 
   // Line positioning methods
   /**
@@ -775,7 +800,6 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @param {number} personX - X coordinate of person box
    * @param {number} personY - Y coordinate of person box
    * @param {number} personWidth - Width of person box
-   * @param {number} personHeight - Height of person box
    * @param {number} buttonWidth - Width of button
    * @param {number} buttonHeight - Height of button
    * @returns {Object} {x, y} coordinates for button placement
@@ -784,7 +808,6 @@ export default class D3TreeRenderer extends BaseRenderer {
     personX,
     personY,
     personWidth,
-    personHeight,
     buttonWidth,
     buttonHeight,
   ) {

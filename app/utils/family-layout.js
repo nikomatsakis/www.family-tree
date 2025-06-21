@@ -581,17 +581,13 @@ export function layoutFamilyVertical(
       // Position children if expanded (Phase 4: multiple children stacking)
       if (childFamilies.length > 0) {
         // Calculate child positioning using renderer constants
-        // Continuity line is at offset 1, children line needs gap for continuity + indent
+        // Continuity line is at offset, children line needs equal gap to children
         const childrenLineX =
           leftParent.x +
           renderer.verticalContinuityOffset +
-          renderer.verticalSpacerWidth +
           renderer.verticalChildIndent;
         // Child box starts after the junction characters (└─)
-        const childX =
-          childrenLineX +
-          renderer.verticalSpacerWidth +
-          renderer.verticalSpacerWidth;
+        const childX = childrenLineX + renderer.verticalChildIndent;
 
         // Create vertical drop line from junction to jog point
         //
@@ -624,8 +620,7 @@ export function layoutFamilyVertical(
           // Create horizontal connection to child (├─ or └─)
           // For vertical layout, use child family's port (which is set to leftPort)
           const childHorizontalY = child.y + child.port;
-          const childHorizontalLength =
-            child.x - childrenLineX + renderer.verticalSpacerWidth; // +1 to overlap with child box
+          const childHorizontalLength = child.x - childrenLineX;
           const childHorizontalLine = new Line(
             childHorizontalLength,
             'sibling-line',
@@ -634,8 +629,8 @@ export function layoutFamilyVertical(
           childHorizontalLine.y = childHorizontalY;
           family.addElement(childHorizontalLine);
 
-          // Update Y position for next child (no gap between children for compact stacking)
-          currentChildY += child.height;
+          // Update Y position for next child (add spacing for visual separation)
+          currentChildY += child.height + renderer.verticalSiblingSpacing;
         }
 
         // Calculate total height needed for all children
@@ -643,25 +638,21 @@ export function layoutFamilyVertical(
         const lastChildConnectionY = lastChild.y + lastChild.port;
 
         // Create initial drop line from junction
-        const dropLineLength = jogY - dropLineY + renderer.verticalSpacerWidth; // +1 to overlap with jog line
+        const dropLineLength = jogY - dropLineY;
         const dropLine = new Line(dropLineLength, 'parent-child-line');
         dropLine.x = partnershipLineJunction;
         dropLine.y = dropLineY;
         family.addElement(dropLine);
 
         // Create horizontal jog line
-        const jogLineLength =
-          partnershipLineJunction -
-          childrenLineX +
-          renderer.verticalSpacerWidth; // Include overlap with both vertical lines
+        const jogLineLength = partnershipLineJunction - childrenLineX;
         const jogLine = new Line(jogLineLength, 'sibling-line');
         jogLine.x = childrenLineX;
         jogLine.y = jogY;
         family.addElement(jogLine);
 
         // Create vertical spine connecting all children
-        const spineLength =
-          lastChildConnectionY - jogY + renderer.verticalSpacerWidth;
+        const spineLength = lastChildConnectionY - jogY;
         const spine = new Line(spineLength, 'parent-child-line');
         spine.x = childrenLineX;
         spine.y = jogY;

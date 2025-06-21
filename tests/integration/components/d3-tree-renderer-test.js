@@ -247,4 +247,52 @@ module('Integration | Component | d3-tree-renderer', function (hooks) {
       'Text element should have content',
     );
   });
+
+  test('d3 tree renderer supports vertical layout mode', async function (assert) {
+    const renderer = createRenderer('d3-tree', {
+      expandedPartnerships: new Set(['0']),
+    });
+
+    // Load test data
+    const { startPerson } = await loadGeneaFixture('simple-family');
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+
+    // Test vertical layout mode
+    const verticalRenderData = renderer.prepareRenderData(renderTree, {
+      layoutMode: 'vertical',
+    });
+
+    assert.ok(verticalRenderData, 'Vertical render data should be created');
+    assert.strictEqual(
+      verticalRenderData.type,
+      'd3-tree',
+      'Render data should have correct type',
+    );
+    assert.ok(
+      verticalRenderData.data.family,
+      'Vertical render data should contain family layout',
+    );
+
+    // Test horizontal layout mode (default)
+    const horizontalRenderData = renderer.prepareRenderData(renderTree, {
+      layoutMode: 'horizontal',
+    });
+
+    assert.ok(horizontalRenderData, 'Horizontal render data should be created');
+
+    // Layouts should be different (different positioning)
+    const vFamily = verticalRenderData.data.family;
+    const hFamily = horizontalRenderData.data.family;
+
+    // Basic sanity check - both should have elements
+    assert.ok(vFamily.elements, 'Vertical family should have elements');
+    assert.ok(hFamily.elements, 'Horizontal family should have elements');
+
+    // Port positions should be different for vertical vs horizontal
+    assert.notEqual(
+      vFamily.port,
+      hFamily.port,
+      'Vertical and horizontal layouts should use different port positions',
+    );
+  });
 });
