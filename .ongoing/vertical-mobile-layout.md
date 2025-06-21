@@ -363,15 +363,34 @@ verticalMinimumLineLength: number   // Min marriage line length
 - ✅ D3 vertical layout provides clean, compact family tree visualization for mobile
 - ✅ All visual issues resolved through iterative spacing refinements
 
+### Test Fixes and Spacing Refinements ✅ COMPLETED
+- ✅ Resolved all vertical layout test failures (126/126 tests passing)
+- ✅ Created separate spacing constants for precise control:
+  - Text renderer: `verticalChildIndent`: 3, `verticalChildOffset`: 2, `verticalSiblingSpacing`: 0
+  - D3 renderer: `verticalChildIndent`: 15, `verticalChildOffset`: 15, `verticalSiblingSpacing`: 30
+- ✅ Fixed line length calculations using `+ 1` approach for proper junction characters
+- ✅ Corrected child positioning to prevent extra dashes in connection lines
+- ✅ Both text and D3 renderers now render identical semantic layouts with renderer-appropriate spacing
+
 ## Vertical Spacing Constants ✅ IMPLEMENTED
 ```javascript
 // Text renderer values (characters) - All added to TextRenderer
 verticalSpacerWidth: 1          // Gap between person and marriage line
-verticalChildIndent: 2          // Fixed horizontal offset for children  
+verticalChildIndent: 3          // Fixed horizontal offset for children line from continuity line
+verticalChildOffset: 2          // Fixed horizontal offset for child boxes from children line
 verticalGenerationGap: 2        // Vertical gap between parent and children
-verticalSiblingSpacing: 1       // Vertical gap between siblings (currently 0 for compact layout)
+verticalSiblingSpacing: 0       // Vertical gap between siblings (compact layout)
 verticalContinuityOffset: 1     // X offset for continuity line
 verticalMinimumLineLength: 3    // Min marriage line length
+
+// D3 renderer values (pixels) - All added to D3TreeRenderer
+verticalSpacerWidth: 20         // Gap between person and marriage line
+verticalChildIndent: 15         // Fixed horizontal offset for children line from continuity line
+verticalChildOffset: 15         // Fixed horizontal offset for child boxes from children line
+verticalGenerationGap: 100      // Vertical gap between parent and children
+verticalSiblingSpacing: 30      // Vertical gap between siblings (visual separation)
+verticalContinuityOffset: 20    // X offset for continuity line
+verticalMinimumLineLength: 40   // Min marriage line length
 ```
 
 ## Key Technical Differences
