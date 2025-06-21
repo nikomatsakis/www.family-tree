@@ -587,7 +587,7 @@ export function layoutFamilyVertical(
           renderer.verticalContinuityOffset +
           renderer.verticalChildIndent;
         // Child box starts after the junction characters (└─)
-        const childX = childrenLineX + renderer.verticalChildIndent;
+        const childX = childrenLineX + renderer.verticalChildOffset;
 
         // Create vertical drop line from junction to jog point
         //
@@ -620,7 +620,7 @@ export function layoutFamilyVertical(
           // Create horizontal connection to child (├─ or └─)
           // For vertical layout, use child family's port (which is set to leftPort)
           const childHorizontalY = child.y + child.port;
-          const childHorizontalLength = child.x - childrenLineX;
+          const childHorizontalLength = child.x - childrenLineX + 1;
           const childHorizontalLine = new Line(
             childHorizontalLength,
             'sibling-line',
@@ -638,21 +638,21 @@ export function layoutFamilyVertical(
         const lastChildConnectionY = lastChild.y + lastChild.port;
 
         // Create initial drop line from junction
-        const dropLineLength = jogY - dropLineY;
+        const dropLineLength = jogY - dropLineY + 1;
         const dropLine = new Line(dropLineLength, 'parent-child-line');
         dropLine.x = partnershipLineJunction;
         dropLine.y = dropLineY;
         family.addElement(dropLine);
 
         // Create horizontal jog line
-        const jogLineLength = partnershipLineJunction - childrenLineX;
+        const jogLineLength = partnershipLineJunction - childrenLineX + 1;
         const jogLine = new Line(jogLineLength, 'sibling-line');
         jogLine.x = childrenLineX;
         jogLine.y = jogY;
         family.addElement(jogLine);
 
         // Create vertical spine connecting all children
-        const spineLength = lastChildConnectionY - jogY;
+        const spineLength = lastChildConnectionY - jogY + 1;
         const spine = new Line(spineLength, 'parent-child-line');
         spine.x = childrenLineX;
         spine.y = jogY;

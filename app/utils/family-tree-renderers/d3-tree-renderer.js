@@ -727,7 +727,10 @@ export default class D3TreeRenderer extends BaseRenderer {
   } // Gap between person box and marriage line
   get verticalChildIndent() {
     return 15;
-  } // Fixed horizontal offset for children from continuity line
+  } // Fixed horizontal offset for children line from continuity line
+  get verticalChildOffset() {
+    return 15;
+  } // Fixed horizontal offset for child boxes from children line
   get verticalGenerationGap() {
     return 100;
   } // Vertical gap between parent and children (generous spacing)

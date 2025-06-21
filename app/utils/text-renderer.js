@@ -146,13 +146,16 @@ export class TextRenderer {
     return 1;
   } // Gap between person and marriage line
   get verticalChildIndent() {
+    return 3;
+  } // Fixed horizontal offset for children line from continuity line
+  get verticalChildOffset() {
     return 2;
-  } // Fixed horizontal offset for children from continuity line
+  } // Fixed horizontal offset for child boxes from children line
   get verticalGenerationGap() {
     return 2;
   } // Vertical gap between parent and children
   get verticalSiblingSpacing() {
-    return 1;
+    return 0;
   } // Vertical gap between siblings
   get verticalContinuityOffset() {
     return 1;
@@ -220,17 +223,10 @@ export class TextRenderer {
    * @param {number} personX - X coordinate of person box
    * @param {number} personY - Y coordinate of person box
    * @param {number} personWidth - Width of person box
-   * @param {number} personHeight - Height of person box
    * @param {number} buttonWidth - Width of button
    * @returns {Object} {x, y} coordinates for button placement
    */
-  getAncestorButtonPosition(
-    personX,
-    personY,
-    personWidth,
-    personHeight,
-    buttonWidth,
-  ) {
+  getAncestorButtonPosition(personX, personY, personWidth, buttonWidth) {
     // For text rendering, place button at same Y as person box to overlap top border
     // Center the 3-character button [+] horizontally
     return {
