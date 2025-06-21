@@ -1,0 +1,8 @@
+# Single parent family test case
+# Format: 10 henry numbers, gender, num_kids, num_spouses, spouse_index, name [\comment]
+# 
+# Family structure:
+# Single Parent (unknown partner) → Child
+#
+1 0 0 0 0 0 0 0 0 0 M 1 1 0         Single Parent\Father with unknown partner
+1 1 0 0 0 0 0 0 0 0 F 0 0 0         Child\Child of single parent

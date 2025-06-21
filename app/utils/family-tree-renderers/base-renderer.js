@@ -156,22 +156,14 @@ export default class BaseRenderer {
         }
       }
 
-      // If family has only one spouse, add a placeholder for missing partner
+      // 💡 DESIGN DECISION: Don't create Unknown partner placeholders
+      // Single-parent families are valid in genealogy data. The layout algorithms
+      // already handle missing partners gracefully by checking if partner exists.
+      // This avoids complications with synthetic persons in the render tree.
       if (partnership.parents.length === 1) {
-        const unknownPerson = new RenderPerson(
-          `unknown-partner-${partnership.id}`,
-          'Unknown',
-          null,
-          null, // upFamilyRIndex
-          [idx], // rightFamilyRIndices - This family
+        console.log(
+          `📊 Single parent family for ${partnership.parents[0].name} (partnership ${partnership.id}) - no Unknown placeholder created`,
         );
-        const unknownIdx = renderTree.addPerson(unknownPerson);
-        renderTree.getFamily(idx).spouseRIndices.push(unknownIdx);
-        if (this.debug) {
-          console.log(
-            `  - Added placeholder Unknown partner at index ${unknownIdx}`,
-          );
-        }
       }
 
       // Process children
@@ -250,9 +242,9 @@ export default class BaseRenderer {
 
     if (this.debug) {
       console.log(
-        'Computed root nodes:',
-        renderTree.rootNodes.map(
-          (idx) => `${renderTree.getPerson(idx).name} (${idx})`,
+        'Full person list:',
+        renderTree.persons.map(
+          (p, idx) => `${idx}: ${p.name} (upFamily: ${p.upFamilyRIndex})`,
         ),
       );
     }

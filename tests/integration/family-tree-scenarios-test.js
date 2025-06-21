@@ -414,4 +414,65 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     const personBoxes = svg.querySelectorAll('.person-box');
     assert.ok(personBoxes.length > 0, 'Should have at least one person box');
   });
+
+  test('SCENARIO: single parent family (parent + child) - TEXT', async function (assert) {
+    const { startPerson } = await loadGeneaFixture('single-parent');
+
+    const renderer = createRenderer('text', {
+      expandedPartnerships: new Set(['0']), // Expand the family to show child
+    });
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+    const textLayoutRenderer = new TextRenderer();
+    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const canvas = new TextCanvas();
+    textLayoutRenderer.render(canvas, family);
+    const output = canvas.render();
+
+    // Key assertion: Both parent and child should appear in output
+    assert.true(output.includes('Single Parent'), 'Should show parent name');
+    assert.true(output.includes('Child'), 'Should show child name');
+    assert.true(
+      output.includes('[−]'),
+      'Should show collapse button for expanded family',
+    );
+    assert.false(
+      output.includes('Unknown'),
+      'Should NOT show Unknown partner placeholder',
+    );
+  });
+
+  test('SCENARIO: single parent family shows root node correctly - TEXT', async function (assert) {
+    const { startPerson } = await loadGeneaFixture('single-parent');
+
+    const renderer = createRenderer('text', {
+      expandedPartnerships: new Set(['0']), // Expand to show children
+    });
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+
+    // Verify root node computation identifies parent as root
+    assert.strictEqual(
+      renderTree.rootNodes.length,
+      1,
+      'Should have 1 root node',
+    );
+    assert.strictEqual(
+      renderTree.persons[renderTree.rootNodes[0]].name,
+      'Single Parent',
+      'Root should be the single parent',
+    );
+
+    // Verify the family exists with proper single-parent structure
+    assert.strictEqual(renderTree.families.length, 1, 'Should have 1 family');
+    const family = renderTree.families[0];
+    assert.strictEqual(
+      family.spouseRIndices.length,
+      1,
+      'Single parent family should have 1 spouse (no Unknown partner)',
+    );
+    assert.strictEqual(
+      family.childRIndices.length,
+      1,
+      'Family should have 1 child',
+    );
+  });
 });

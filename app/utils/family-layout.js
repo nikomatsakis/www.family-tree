@@ -554,9 +554,10 @@ export function layoutFamilyVertical(
       2 * (partnershipLineJunction - partnershipLineStart);
 
     // Position partnership line and partner (if present)
+    let partnershipLine = null;
     if (partner && partnerMetrics) {
       // Create partnership line
-      const partnershipLine = new Line(partnershipLineLength, 'marriage-line');
+      partnershipLine = new Line(partnershipLineLength, 'marriage-line');
       partnershipLine.x = partnershipLineStart;
       partnershipLine.y =
         leftParent.y + renderer.getPartnershipLineY(leftParent.height);
@@ -577,124 +578,133 @@ export function layoutFamilyVertical(
         renderer.verticalSpacerWidth;
       rightParent.y = leftParent.y;
       family.addElement(rightParent);
+    }
 
-      // Position children if expanded (Phase 4: multiple children stacking)
-      if (childFamilies.length > 0) {
-        // Calculate child positioning using renderer constants
-        // Continuity line is at offset, children line needs equal gap to children
-        const childrenLineX =
-          leftParent.x +
-          renderer.verticalContinuityOffset +
-          renderer.verticalChildIndent;
-        // Child box starts after the junction characters (└─)
-        const childX = childrenLineX + renderer.verticalChildOffset;
+    // Position children if expanded (Phase 4: multiple children stacking)
+    // This must run for both partnered families AND single parent families
+    if (childFamilies.length > 0) {
+      // Calculate child positioning using renderer constants
+      // Continuity line is at offset, children line needs equal gap to children
+      const childrenLineX =
+        leftParent.x +
+        renderer.verticalContinuityOffset +
+        renderer.verticalChildIndent;
+      // Child box starts after the junction characters (└─)
+      const childX = childrenLineX + renderer.verticalChildOffset;
 
-        // Create vertical drop line from junction to jog point
-        //
-        // Expected vertical layout pattern:
-        // │Dad Test│ ──[−]─ │Mom Test│  <- marriage line (Y=1)
-        // └────────┘    │   └────────┘  <- parent bottom + junction drop (Y=2)
-        //     ┌─────────┘                <- horizontal jog (Y=3)
-        //     │ ┌─────────┐              <- vertical line + child (Y=4)
-        //     ├─┤Child One│              <- continuing child junction
-        //     │ └─────────┘
-        //     │ ┌─────────┐              <- next child (Y=6)
-        //     └─┤Child Two│              <- last child junction
-        //       └─────────┘
-        //
-        // Start below the marriage line, not on it
-        const dropLineY = partnershipLine.y + renderer.verticalSpacerWidth;
-        const jogY = dropLineY + renderer.verticalSpacerWidth;
+      // Create vertical drop line from junction to jog point
+      //
+      // Expected vertical layout pattern:
+      // │Dad Test│ ──[−]─ │Mom Test│  <- marriage line (Y=1)
+      // └────────┘    │   └────────┘  <- parent bottom + junction drop (Y=2)
+      //     ┌─────────┘                <- horizontal jog (Y=3)
+      //     │ ┌─────────┐              <- vertical line + child (Y=4)
+      //     ├─┤Child One│              <- continuing child junction
+      //     │ └─────────┘
+      //     │ ┌─────────┐              <- next child (Y=6)
+      //     └─┤Child Two│              <- last child junction
+      //       └─────────┘
+      //
+      // Start below the marriage line (if present) or parent box (single parent)
+      const dropLineY = partnershipLine
+        ? partnershipLine.y + renderer.verticalSpacerWidth
+        : leftParent.y + leftParent.height + renderer.verticalSpacerWidth;
+      const jogY = dropLineY + renderer.verticalSpacerWidth;
 
-        // Position all children vertically with proper spacing
-        let currentChildY = jogY + renderer.verticalSpacerWidth;
+      // Position all children vertically with proper spacing
+      let currentChildY = jogY + renderer.verticalSpacerWidth;
 
-        for (let i = 0; i < childFamilies.length; i++) {
-          const child = childFamilies[i];
+      for (let i = 0; i < childFamilies.length; i++) {
+        const child = childFamilies[i];
 
-          // Position child
-          child.x = childX;
-          child.y = currentChildY;
-          family.addElement(child);
+        // Position child
+        child.x = childX;
+        child.y = currentChildY;
+        family.addElement(child);
 
-          // Create horizontal connection to child (├─ or └─)
-          // For vertical layout, use child family's port (which is set to leftPort)
-          const childHorizontalY = child.y + child.port;
-          const childHorizontalLength = child.x - childrenLineX + 1;
-          const childHorizontalLine = new Line(
-            childHorizontalLength,
-            'sibling-line',
-          );
-          childHorizontalLine.x = childrenLineX;
-          childHorizontalLine.y = childHorizontalY;
-          family.addElement(childHorizontalLine);
+        // Create horizontal connection to child (├─ or └─)
+        // For vertical layout, use child family's port (which is set to leftPort)
+        const childHorizontalY = child.y + child.port;
+        const childHorizontalLength = child.x - childrenLineX + 1;
+        const childHorizontalLine = new Line(
+          childHorizontalLength,
+          'sibling-line',
+        );
+        childHorizontalLine.x = childrenLineX;
+        childHorizontalLine.y = childHorizontalY;
+        family.addElement(childHorizontalLine);
 
-          // Update Y position for next child (add spacing for visual separation)
-          currentChildY += child.height + renderer.verticalSiblingSpacing;
-        }
-
-        // Calculate total height needed for all children
-        const lastChild = childFamilies[childFamilies.length - 1];
-        const lastChildConnectionY = lastChild.y + lastChild.port;
-
-        // Create initial drop line from junction
-        const dropLineLength = jogY - dropLineY + 1;
-        const dropLine = new Line(dropLineLength, 'parent-child-line');
-        dropLine.x = partnershipLineJunction;
-        dropLine.y = dropLineY;
-        family.addElement(dropLine);
-
-        // Create horizontal jog line
-        const jogLineLength = partnershipLineJunction - childrenLineX + 1;
-        const jogLine = new Line(jogLineLength, 'sibling-line');
-        jogLine.x = childrenLineX;
-        jogLine.y = jogY;
-        family.addElement(jogLine);
-
-        // Create vertical spine connecting all children
-        const spineLength = lastChildConnectionY - jogY + 1;
-        const spine = new Line(spineLength, 'parent-child-line');
-        spine.x = childrenLineX;
-        spine.y = jogY;
-        family.addElement(spine);
+        // Update Y position for next child (add spacing for visual separation)
+        currentChildY += child.height + renderer.verticalSiblingSpacing;
       }
 
-      // Add expansion button LAST so it renders on top of lines
-      //
-      // SUBTLE DISTINCTION: renderFamily.hasChildren vs childFamilies.length > 0
-      // - renderFamily.hasChildren: TRUE if children exist in the genea data (whether expanded or not)
-      // - childFamilies.length > 0: TRUE if children are currently loaded/expanded in this render
-      //
-      // Button logic:
-      // - Show [+] if hasChildren=true but childFamilies.length=0 (children exist but collapsed)
-      // - Show [−] if hasChildren=true and childFamilies.length>0 (children exist and expanded)
-      // - Show nothing if hasChildren=false (no children in data)
-      if (renderFamily.hasChildren) {
-        const expansionBox = renderer.measureButton();
-        const buttonType = renderFamily.isExpanded
-          ? 'collapse-button'
-          : 'expansion-placeholder';
-        const buttonChar = renderFamily.isExpanded ? '−' : '+';
+      // Calculate total height needed for all children
+      const lastChild = childFamilies[childFamilies.length - 1];
+      const lastChildConnectionY = lastChild.y + lastChild.port;
 
-        const button = new Rectangle(
-          buttonChar,
-          buttonType,
-          expansionBox.width,
-          expansionBox.height,
-          null, // gender
-          renderFamily.id, // Store partnership ID for click handling
-        );
+      // Create initial drop line from junction
+      const dropLineLength = jogY - dropLineY + 1;
+      const dropLine = new Line(dropLineLength, 'parent-child-line');
+      dropLine.x = partnershipLineJunction;
+      dropLine.y = dropLineY;
+      family.addElement(dropLine);
 
-        const buttonPos = renderer.getButtonPosition(
-          partnershipLineJunction,
-          partnershipLine.y,
-          expansionBox.width,
-          expansionBox.height,
-        );
-        button.x = buttonPos.x;
-        button.y = buttonPos.y;
-        family.addElement(button);
-      }
+      // Create horizontal jog line
+      const jogLineLength = partnershipLineJunction - childrenLineX + 1;
+      const jogLine = new Line(jogLineLength, 'sibling-line');
+      jogLine.x = childrenLineX;
+      jogLine.y = jogY;
+      family.addElement(jogLine);
+
+      // Create vertical spine connecting all children
+      const spineLength = lastChildConnectionY - jogY + 1;
+      const spine = new Line(spineLength, 'parent-child-line');
+      spine.x = childrenLineX;
+      spine.y = jogY;
+      family.addElement(spine);
+    }
+
+    // Add expansion button LAST so it renders on top of lines
+    // This must run for both partnered families AND single parent families
+    //
+    // SUBTLE DISTINCTION: renderFamily.hasChildren vs childFamilies.length > 0
+    // - renderFamily.hasChildren: TRUE if children exist in the genea data (whether expanded or not)
+    // - childFamilies.length > 0: TRUE if children are currently loaded/expanded in this render
+    //
+    // Button logic:
+    // - Show [+] if hasChildren=true but childFamilies.length=0 (children exist but collapsed)
+    // - Show [−] if hasChildren=true and childFamilies.length>0 (children exist and expanded)
+    // - Show nothing if hasChildren=false (no children in data)
+    if (renderFamily.hasChildren) {
+      const expansionBox = renderer.measureButton();
+      const buttonType = renderFamily.isExpanded
+        ? 'collapse-button'
+        : 'expansion-placeholder';
+      const buttonChar = renderFamily.isExpanded ? '−' : '+';
+
+      const button = new Rectangle(
+        buttonChar,
+        buttonType,
+        expansionBox.width,
+        expansionBox.height,
+        null, // gender
+        renderFamily.id, // Store partnership ID for click handling
+      );
+
+      // For single parents, use parent box position instead of partnership line
+      const buttonLineY = partnershipLine
+        ? partnershipLine.y
+        : leftParent.y + renderer.getPartnershipLineY(leftParent.height);
+
+      const buttonPos = renderer.getButtonPosition(
+        partnershipLineJunction,
+        buttonLineY,
+        expansionBox.width,
+        expansionBox.height,
+      );
+      button.x = buttonPos.x;
+      button.y = buttonPos.y;
+      family.addElement(button);
     }
 
     // Add continuity line and shadow person if not the last family
