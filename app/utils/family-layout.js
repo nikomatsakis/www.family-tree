@@ -138,12 +138,14 @@ export function layoutFamily(
       }
     }
 
-    // Calculate junction position
-    const partnershipLineStart = leftParent.x + leftParent.width;
+    // Calculate junction position with spacing for text compatibility
+    // Add 1 character spacing before and after the marriage line for text rendering
+    const partnershipLineStart = leftParent.x + leftParent.width + 1;
     const partnershipLineJunction =
       partnershipLineStart + renderer.verticalMinimumLineLength;
     const partnershipLineLength =
       2 * (partnershipLineJunction - partnershipLineStart);
+    const totalPartnershipWidth = partnershipLineLength + 2; // Line + spaces
 
     // Position partnership line and partner (show partnerships always)
     // For childless partnerships: simple marriage line
@@ -167,7 +169,7 @@ export function layoutFamily(
         partner.gender,
         partner.id,
       );
-      rightParent.x = partnershipLineStart + partnershipLineLength;
+      rightParent.x = leftParent.x + leftParent.width + totalPartnershipWidth;
       rightParent.y = leftParent.y;
       family.addElement(rightParent);
     } else if (renderFamily.hasChildren) {
@@ -188,7 +190,7 @@ export function layoutFamily(
         null, // gender
         null, // id
       );
-      unknownPartner.x = partnershipLineStart + partnershipLineLength;
+      unknownPartner.x = leftParent.x + leftParent.width + totalPartnershipWidth;
       unknownPartner.y = leftParent.y;
       family.addElement(unknownPartner);
     }
