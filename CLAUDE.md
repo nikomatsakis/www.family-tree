@@ -23,6 +23,52 @@ When implementing layout algorithm changes or new rendering features:
 
 This codebase values visual validation and real data flows over isolated unit testing for layout functionality.
 
+## Integration-First Testing Philosophy
+
+**Core Principle**: Always prefer integration tests starting with genea data over manual unit tests.
+
+### Why Integration Tests Are Superior
+
+1. **Real Data Flow**: Tests the complete pipeline: genea parsing → JSON generation → service loading → renderer processing
+2. **Automatic Setup**: Properties like `hasChildren`, `isExpanded`, `rightFamilyRIndices` are set correctly by the real system
+3. **Realistic Scenarios**: Tests actual family tree structures that users encounter
+4. **Fewer Assumptions**: No need to manually construct complex RenderTree objects with correct relationships
+5. **Catch Real Bugs**: Integration tests revealed expansion button issues that unit tests missed
+
+### When to Use Each Approach
+
+**✅ PREFERRED: Integration Tests with Genea Fixtures**
+- Any family tree rendering scenarios
+- Testing layout algorithms with multiple generations
+- Validating expansion states and buttons
+- Testing complex family structures (single parents, multiple marriages, etc.)
+- End-to-end workflow validation
+
+**⚠️ AVOID: Manual Unit Tests with RenderTree**
+- Manually constructing RenderTree objects is error-prone
+- Easy to miss required properties (hasChildren, isExpanded, etc.)
+- Creates brittle tests that break when data structures evolve
+- Doesn't test the real user experience
+
+**✅ ACCEPTABLE: Unit Tests for Pure Functions**
+- Testing individual utility functions (spacing calculations, etc.)
+- Testing rendering components in isolation (TextCanvas, Rectangle positioning)
+- Testing pure data transformations without complex object relationships
+
+### Implementation Strategy
+
+1. **Create Genea Fixtures**: For new scenarios, create `.genea` files in `tests/fixtures/genea/`
+2. **Generate JSON**: Use `cargo run -- json fixture.genea output/` to create test data
+3. **Write Integration Tests**: Use `loadGeneaFixture()` and test the complete rendering pipeline
+4. **Update Expected Output**: Match the vertical layout output, not legacy horizontal layout
+
+### Success Story
+
+During horizontal layout removal, we converted 3 flawed manual unit tests into proper integration tests:
+- **Before**: 115/125 tests passing, complex manual RenderTree construction
+- **After**: 123/123 tests passing, clean genea-based integration tests
+- **Result**: 100% test coverage with more maintainable and realistic test scenarios
+
 ## Ongoing Work Tracking
 
 Track ongoing development work and progress in the `.ongoing/` directory:
