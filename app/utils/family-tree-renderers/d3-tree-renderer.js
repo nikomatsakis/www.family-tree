@@ -1,5 +1,5 @@
 import BaseRenderer from './base-renderer';
-import { layoutFamily, layoutFamilyVertical } from '../family-layout';
+import { layoutFamily } from '../family-layout';
 import { Family, Rectangle, Line } from '../layout-elements';
 import * as d3 from 'd3';
 
@@ -51,12 +51,8 @@ export default class D3TreeRenderer extends BaseRenderer {
       }
 
       // Use the layout algorithm with this renderer as the metrics provider
-      // Support both horizontal and vertical layout modes
-      const layoutMode = options.layoutMode || 'vertical';
-      const family =
-        layoutMode === 'vertical'
-          ? layoutFamilyVertical(renderTree, startPersonIndex, this)
-          : layoutFamily(renderTree, startPersonIndex, this);
+      // Use vertical layout (only layout mode supported)
+      const family = layoutFamily(renderTree, startPersonIndex, this);
 
       return {
         type: 'd3-tree',

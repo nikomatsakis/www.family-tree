@@ -2,10 +2,7 @@ import { module, test } from 'qunit';
 import { setupRenderingTest } from 'family-tree/tests/helpers';
 import { createRenderer } from 'family-tree/utils/family-tree-renderers';
 import { loadGeneaFixture } from 'family-tree/tests/helpers/genea-fixtures';
-import {
-  layoutFamily,
-  layoutFamilyVertical,
-} from 'family-tree/utils/family-layout';
+import { layoutFamily } from 'family-tree/utils/family-layout';
 import { TextCanvas } from 'family-tree/utils/text-canvas';
 import { TextRenderer } from 'family-tree/utils/text-renderer';
 
@@ -13,27 +10,6 @@ module('Integration | Family Tree Scenarios', function (hooks) {
   setupRenderingTest(hooks);
 
   // ===== SCENARIO: Single Person =====
-
-  test('SCENARIO: single person with no family - TEXT', async function (assert) {
-    const { startPerson } = await loadGeneaFixture('single-person');
-    const renderer = createRenderer('text');
-
-    const renderTree = renderer.buildVisibleGraph(startPerson);
-    const textLayoutRenderer = new TextRenderer();
-    const family = layoutFamily(renderTree, 0, textLayoutRenderer);
-    const canvas = new TextCanvas();
-    textLayoutRenderer.render(canvas, family);
-    const output = canvas.render();
-
-    // Should show just the single person box
-    const expected = ['┌────────┐', '│John Doe│', '└────────┘'].join('\n');
-
-    assert.strictEqual(
-      output,
-      expected,
-      'Single person renders correctly in text',
-    );
-  });
 
   test('SCENARIO: single person with no family - D3', async function (assert) {
     const { startPerson } = await loadGeneaFixture('single-person');
@@ -73,7 +49,7 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     const renderer = createRenderer('text');
     const renderTree = renderer.buildVisibleGraph(startPerson);
     const textLayoutRenderer = new TextRenderer();
-    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const family = layoutFamily(renderTree, 0, textLayoutRenderer);
     const canvas = new TextCanvas();
     textLayoutRenderer.render(canvas, family);
     const output = canvas.render();
@@ -94,7 +70,7 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     const renderer = createRenderer('text');
     const renderTree = renderer.buildVisibleGraph(startPerson);
     const textLayoutRenderer = new TextRenderer();
-    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const family = layoutFamily(renderTree, 0, textLayoutRenderer);
     const canvas = new TextCanvas();
     textLayoutRenderer.render(canvas, family);
     const output = canvas.render();
@@ -119,7 +95,7 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     const renderer = createRenderer('text');
     const renderTree = renderer.buildVisibleGraph(startPerson);
     const textLayoutRenderer = new TextRenderer();
-    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const family = layoutFamily(renderTree, 0, textLayoutRenderer);
     const canvas = new TextCanvas();
     textLayoutRenderer.render(canvas, family);
     const output = canvas.render();
@@ -146,7 +122,7 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     });
     const renderTree = renderer.buildVisibleGraph(startPerson);
     const textLayoutRenderer = new TextRenderer();
-    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const family = layoutFamily(renderTree, 0, textLayoutRenderer);
     const canvas = new TextCanvas();
     textLayoutRenderer.render(canvas, family);
     const output = canvas.render();
@@ -181,7 +157,7 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     });
     const renderTree = renderer.buildVisibleGraph(startPerson);
     const textLayoutRenderer = new TextRenderer();
-    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const family = layoutFamily(renderTree, 0, textLayoutRenderer);
     const canvas = new TextCanvas();
     textLayoutRenderer.render(canvas, family);
     const output = canvas.render();
@@ -215,7 +191,7 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     });
     const renderTree = renderer.buildVisibleGraph(startPerson);
     const textLayoutRenderer = new TextRenderer();
-    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const family = layoutFamily(renderTree, 0, textLayoutRenderer);
     const canvas = new TextCanvas();
     textLayoutRenderer.render(canvas, family);
     const output = canvas.render();
@@ -250,7 +226,7 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     });
     const renderTree = renderer.buildVisibleGraph(childOne);
     const textLayoutRenderer = new TextRenderer();
-    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const family = layoutFamily(renderTree, 0, textLayoutRenderer);
     const canvas = new TextCanvas();
     textLayoutRenderer.render(canvas, family);
     const output = canvas.render();
@@ -275,7 +251,7 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     });
     const renderTree = renderer.buildVisibleGraph(startPerson);
     const textLayoutRenderer = new TextRenderer();
-    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const family = layoutFamily(renderTree, 0, textLayoutRenderer);
     const canvas = new TextCanvas();
     textLayoutRenderer.render(canvas, family);
     const output = canvas.render();
@@ -314,25 +290,6 @@ module('Integration | Family Tree Scenarios', function (hooks) {
   });
 
   // ===== SCENARIO: Simple Family =====
-
-  test('SCENARIO: simple family (parents + children) - TEXT', async function (assert) {
-    const { startPerson } = await loadGeneaFixture('simple-family');
-    const renderer = createRenderer('text');
-
-    const renderTree = renderer.buildVisibleGraph(startPerson);
-    const textLayoutRenderer = new TextRenderer();
-    const family = layoutFamily(renderTree, 0, textLayoutRenderer);
-    const canvas = new TextCanvas();
-    textLayoutRenderer.render(canvas, family);
-    const output = canvas.render();
-
-    // Basic checks - should at least show the parents
-    assert.ok(output.includes('Dad Test'), 'Should include Dad Test');
-    assert.ok(output.includes('Mom Test'), 'Should include Mom Test');
-
-    // For debugging
-    console.log('Simple family output:', output);
-  });
 
   test('SCENARIO: simple family (parents + children) - D3', async function (assert) {
     const { startPerson } = await loadGeneaFixture('simple-family');
@@ -375,29 +332,6 @@ module('Integration | Family Tree Scenarios', function (hooks) {
 
   // ===== SCENARIO: Three Generations with Collapsed Ancestors =====
 
-  test('SCENARIO: three generations with collapsed ancestors - TEXT', async function (assert) {
-    const { startPerson } = await loadGeneaFixture('three-generation');
-    const renderer = createRenderer('text');
-
-    const renderTree = renderer.buildVisibleGraph(startPerson);
-
-    // Debug: Check what people are in the render tree
-    console.log(
-      'Three gen persons:',
-      renderTree.persons.map((p) => p.name),
-    );
-
-    // Just check that we can build the tree
-    assert.ok(renderTree.persons.length > 0, 'Should have some people');
-
-    // Look for any of the expected people
-    const names = renderTree.persons.map((p) => p.name);
-    const hasValidPerson = names.some((name) =>
-      ['Child One', 'Dad Smith', 'Grandpa Smith'].includes(name),
-    );
-    assert.ok(hasValidPerson, 'Should include at least one expected person');
-  });
-
   test('SCENARIO: three generations with collapsed ancestors - D3', async function (assert) {
     const { startPerson } = await loadGeneaFixture('three-generation');
     const renderer = createRenderer('d3-tree');
@@ -423,7 +357,7 @@ module('Integration | Family Tree Scenarios', function (hooks) {
     });
     const renderTree = renderer.buildVisibleGraph(startPerson);
     const textLayoutRenderer = new TextRenderer();
-    const family = layoutFamilyVertical(renderTree, 0, textLayoutRenderer);
+    const family = layoutFamily(renderTree, 0, textLayoutRenderer);
     const canvas = new TextCanvas();
     textLayoutRenderer.render(canvas, family);
     const output = canvas.render();
