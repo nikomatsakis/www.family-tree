@@ -409,4 +409,41 @@ module('Integration | Family Tree Scenarios', function (hooks) {
       'Family should have 1 child',
     );
   });
+
+  test('SCENARIO: three children (vertical T-junction layout) - TEXT', async function (assert) {
+    const { startPerson } = await loadGeneaFixture('three-children');
+
+    const renderer = createRenderer('text', {
+      expandedPartnerships: new Set(['0']), // Expand to show all children
+    });
+    const renderTree = renderer.buildVisibleGraph(startPerson);
+    const textLayoutRenderer = new TextRenderer();
+    const family = layoutFamily(renderTree, 0, textLayoutRenderer);
+    const canvas = new TextCanvas();
+    textLayoutRenderer.render(canvas, family);
+    const output = canvas.render();
+
+    // Parents with three children stacked vertically with proper T-junctions
+    const expected = [
+      '┌───┐        ┌───┐',
+      '│Dad│ ──[−]─ │Mom│',
+      '└───┘    │   └───┘',
+      '    ┌────┘',
+      '    │ ┌─────┐',
+      '    ├─┤Alice│',
+      '    │ └─────┘',
+      '    │ ┌───┐',
+      '    ├─┤Bob│',
+      '    │ └───┘',
+      '    │ ┌─────┐',
+      '    └─┤Carol│',
+      '      └─────┘',
+    ].join('\n');
+
+    assert.strictEqual(
+      output,
+      expected,
+      'Three children should render with vertical T-junction layout and collapse button',
+    );
+  });
 });
