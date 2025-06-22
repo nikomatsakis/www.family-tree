@@ -145,47 +145,52 @@ export function layoutFamily(
     const partnershipLineLength =
       2 * (partnershipLineJunction - partnershipLineStart);
 
-    // Position partnership line and partner (always show for families with children)
+    // Position partnership line and partner (show partnerships always)
+    // For childless partnerships: simple marriage line
+    // For partnerships with children: marriage line with expansion button
     // For single parents: full line with "?" unknown partner box
-    // For partnered families: full line with actual partner box
     let partnershipLine = null;
-    if (renderFamily.hasChildren) {
-      // Always create full partnership line for families with children
+    if (partner && partnerMetrics) {
+      // Real partnership - always show the partnership line and partner
       partnershipLine = new Line(partnershipLineLength, 'marriage-line');
       partnershipLine.x = partnershipLineStart;
       partnershipLine.y =
         leftParent.y + renderer.getPartnershipLineY(leftParent.height);
       family.addElement(partnershipLine);
 
-      // Position partner box (real partner or unknown "?" placeholder)
-      if (partner && partnerMetrics) {
-        // Real partner
-        const rightParent = new Rectangle(
-          partner.name,
-          'partner',
-          partnerMetrics.width,
-          partnerMetrics.height,
-          partner.gender,
-          partner.id,
-        );
-        rightParent.x = partnershipLineStart + partnershipLineLength;
-        rightParent.y = leftParent.y;
-        family.addElement(rightParent);
-      } else {
-        // Unknown partner placeholder
-        const unknownPartnerMetrics = renderer.personBoxMetrics('?');
-        const unknownPartner = new Rectangle(
-          '?',
-          'unknown-partner',
-          unknownPartnerMetrics.width,
-          unknownPartnerMetrics.height,
-          null, // gender
-          null, // id
-        );
-        unknownPartner.x = partnershipLineStart + partnershipLineLength;
-        unknownPartner.y = leftParent.y;
-        family.addElement(unknownPartner);
-      }
+      // Position real partner
+      const rightParent = new Rectangle(
+        partner.name,
+        'partner',
+        partnerMetrics.width,
+        partnerMetrics.height,
+        partner.gender,
+        partner.id,
+      );
+      rightParent.x = partnershipLineStart + partnershipLineLength;
+      rightParent.y = leftParent.y;
+      family.addElement(rightParent);
+    } else if (renderFamily.hasChildren) {
+      // Single parent with children - show unknown partner placeholder
+      partnershipLine = new Line(partnershipLineLength, 'marriage-line');
+      partnershipLine.x = partnershipLineStart;
+      partnershipLine.y =
+        leftParent.y + renderer.getPartnershipLineY(leftParent.height);
+      family.addElement(partnershipLine);
+
+      // Unknown partner placeholder
+      const unknownPartnerMetrics = renderer.personBoxMetrics('?');
+      const unknownPartner = new Rectangle(
+        '?',
+        'unknown-partner',
+        unknownPartnerMetrics.width,
+        unknownPartnerMetrics.height,
+        null, // gender
+        null, // id
+      );
+      unknownPartner.x = partnershipLineStart + partnershipLineLength;
+      unknownPartner.y = leftParent.y;
+      family.addElement(unknownPartner);
     }
 
     // Position children if expanded (multiple children stacking)
@@ -280,7 +285,7 @@ export function layoutFamily(
     // - Show [+] if hasChildren=true but childFamilies.length=0 (children exist but collapsed)
     // - Show [−] if hasChildren=true and childFamilies.length>0 (children exist and expanded)
     // - Show nothing if hasChildren=false (no children in data)
-    if (renderFamily.hasChildren) {
+    if (renderFamily.hasChildren && partnershipLine) {
       const expansionBox = renderer.measureButton();
       const buttonType = renderFamily.isExpanded
         ? 'collapse-button'
@@ -296,7 +301,7 @@ export function layoutFamily(
         renderFamily.id, // Store partnership ID for click handling
       );
 
-      // Partnership line always exists for families with children
+      // Partnership line exists for families with children
       const buttonLineY = partnershipLine.y;
 
       const buttonPos = renderer.getButtonPosition(

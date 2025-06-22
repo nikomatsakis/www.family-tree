@@ -274,8 +274,9 @@ module('Integration | Component | d3-tree-renderer', function (hooks) {
     // Check that we're using vertical layout (leftPort)
     const family = renderData.data.family;
     assert.ok(family.elements, 'Family should have elements');
-    assert.ok(
-      family.port !== undefined,
+    assert.notStrictEqual(
+      family.port,
+      undefined,
       'Family should have a port for vertical connections',
     );
   });
