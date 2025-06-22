@@ -546,38 +546,53 @@ export function layoutFamilyVertical(
     }
 
     // Calculate junction position
-    const partnershipLineStart =
-      leftParent.x + leftParent.width + renderer.verticalSpacerWidth;
+    const partnershipLineStart = leftParent.x + leftParent.width;
     const partnershipLineJunction =
       partnershipLineStart + renderer.verticalMinimumLineLength;
     const partnershipLineLength =
       2 * (partnershipLineJunction - partnershipLineStart);
 
-    // Position partnership line and partner (if present)
+    // Position partnership line and partner (always show for families with children)
+    // For single parents: full line with "?" unknown partner box
+    // For partnered families: full line with actual partner box
     let partnershipLine = null;
-    if (partner && partnerMetrics) {
-      // Create partnership line
+    if (renderFamily.hasChildren) {
+      // Always create full partnership line for families with children
       partnershipLine = new Line(partnershipLineLength, 'marriage-line');
       partnershipLine.x = partnershipLineStart;
       partnershipLine.y =
         leftParent.y + renderer.getPartnershipLineY(leftParent.height);
       family.addElement(partnershipLine);
 
-      // Position partner
-      const rightParent = new Rectangle(
-        partner.name,
-        'partner',
-        partnerMetrics.width,
-        partnerMetrics.height,
-        partner.gender,
-        partner.id,
-      );
-      rightParent.x =
-        partnershipLineStart +
-        partnershipLineLength +
-        renderer.verticalSpacerWidth;
-      rightParent.y = leftParent.y;
-      family.addElement(rightParent);
+      // Position partner box (real partner or unknown "?" placeholder)
+      if (partner && partnerMetrics) {
+        // Real partner
+        const rightParent = new Rectangle(
+          partner.name,
+          'partner',
+          partnerMetrics.width,
+          partnerMetrics.height,
+          partner.gender,
+          partner.id,
+        );
+        rightParent.x = partnershipLineStart + partnershipLineLength;
+        rightParent.y = leftParent.y;
+        family.addElement(rightParent);
+      } else {
+        // Unknown partner placeholder
+        const unknownPartnerMetrics = renderer.personBoxMetrics('?');
+        const unknownPartner = new Rectangle(
+          '?',
+          'unknown-partner',
+          unknownPartnerMetrics.width,
+          unknownPartnerMetrics.height,
+          null, // gender
+          null, // id
+        );
+        unknownPartner.x = partnershipLineStart + partnershipLineLength;
+        unknownPartner.y = leftParent.y;
+        family.addElement(unknownPartner);
+      }
     }
 
     // Position children if expanded (Phase 4: multiple children stacking)
@@ -606,10 +621,7 @@ export function layoutFamilyVertical(
       //       └─────────┘
       //
       // Start below the marriage line (if present) or parent box (single parent)
-      const dropLineY = partnershipLine
-        ? partnershipLine.y + renderer.verticalSpacerWidth
-        : leftParent.y + leftParent.height + renderer.verticalSpacerWidth;
-      const jogY = dropLineY + renderer.verticalSpacerWidth;
+      const jogY = partnershipLine.y + 2 * renderer.verticalSpacerWidth;
 
       // Position all children vertically with proper spacing
       let currentChildY = jogY + renderer.verticalSpacerWidth;
@@ -643,10 +655,10 @@ export function layoutFamilyVertical(
       const lastChildConnectionY = lastChild.y + lastChild.port;
 
       // Create initial drop line from junction
-      const dropLineLength = jogY - dropLineY + 1;
+      const dropLineLength = jogY - partnershipLine.y + 1;
       const dropLine = new Line(dropLineLength, 'parent-child-line');
       dropLine.x = partnershipLineJunction;
-      dropLine.y = dropLineY;
+      dropLine.y = partnershipLine.y;
       family.addElement(dropLine);
 
       // Create horizontal jog line
@@ -691,10 +703,8 @@ export function layoutFamilyVertical(
         renderFamily.id, // Store partnership ID for click handling
       );
 
-      // For single parents, use parent box position instead of partnership line
-      const buttonLineY = partnershipLine
-        ? partnershipLine.y
-        : leftParent.y + renderer.getPartnershipLineY(leftParent.height);
+      // Partnership line always exists for families with children
+      const buttonLineY = partnershipLine.y;
 
       const buttonPos = renderer.getButtonPosition(
         partnershipLineJunction,

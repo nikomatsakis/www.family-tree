@@ -1,5 +1,5 @@
 import BaseRenderer from './base-renderer';
-import { layoutFamily } from '../family-layout';
+import { layoutFamilyVertical } from '../family-layout';
 import { TextRenderer as TextLayoutRenderer } from '../text-renderer';
 import { TextCanvas } from '../text-canvas';
 
@@ -58,7 +58,7 @@ export default class TextRenderer extends BaseRenderer {
         );
       }
 
-      const family = layoutFamily(
+      const family = layoutFamilyVertical(
         renderTree,
         startPersonIndex,
         textLayoutRenderer,
