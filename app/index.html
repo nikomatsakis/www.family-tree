@@ -3,8 +3,16 @@
   <head>
     <meta charset="utf-8">
     <title>FamilyTree</title>
-    <meta name="description" content="">
+    <meta name="description" content="Explore our family tree and discover how we're all connected">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{rootURL}}manifest.json">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="FamilyTree">
 
     {{content-for "head"}}
 
@@ -18,6 +26,9 @@
 
     <script src="{{rootURL}}assets/vendor.js"></script>
     <script src="{{rootURL}}assets/family-tree.js"></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script src="{{rootURL}}sw-registration.js"></script>
 
     {{content-for "body-footer"}}
   </body>
