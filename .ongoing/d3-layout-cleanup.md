@@ -1,7 +1,8 @@
 # D3 Layout Cleanup
 
-## Status: IDENTIFIED - Needs Investigation
+## Status: COMPLETED ✅
 **Created**: June 21, 2025
+**Completed**: June 21, 2025
 **Priority**: HIGH - Visual rendering issues affecting user experience
 
 ## Problem Description
@@ -67,8 +68,31 @@ Single parent families should show:
 - Consistent visual styling across all person boxes
 - Proper ancestor line from Solkar → Skon → Sarek → Spock
 
-## Success Criteria
-- Screenshot shows clean tree structure
-- No duplicate person boxes
-- Proper visual hierarchy
-- TextRenderer and D3Renderer show consistent logical structure
+## Resolution Summary
+
+### Changes Made:
+1. **Unknown Partner Placeholders** (`family-layout.js`):
+   - Added "?" boxes for single-parent families at the layout layer
+   - Clean architecture - layout handles visualization, not data model
+   - Consistent visual pattern for all family structures
+
+2. **Fixed Vertical Layout Spacing** (`family-layout.js`):
+   - Removed excessive `verticalSpacerWidth` gaps
+   - Lines connect directly to junction points and parent boxes
+   - Drop line from junction to jog now has proper length
+
+3. **TextRenderer Update** (`text-renderer.js`):
+   - Changed to use `layoutFamilyVertical` by default
+   - Better for testing and visualizing vertical layout patterns
+
+### Impact:
+- **Visual consistency**: All families show partnership patterns
+- **User clarity**: "?" explicitly indicates unknown partners
+- **Clean connections**: No excessive gaps in line connections
+- **Proper hierarchy**: Clear parent-child relationships
+
+## Success Criteria ✅
+- Screenshot shows clean tree structure ✅
+- No duplicate person boxes ✅
+- Proper visual hierarchy ✅
+- TextRenderer and D3Renderer show consistent logical structure ✅
