@@ -87,46 +87,20 @@ export default class PwaStatus extends Component {
   }
 
   <template>
-    <div class='pwa-status-container'>
-      {{! Offline/Online indicator }}
-      <div class='pwa-status {{if this.isOnline "online" "offline"}}'>
-        {{#if this.isOnline}}
-          <span class='status-icon'>🌐</span>
-          <span class='status-text'>Online</span>
-        {{else}}
-          <span class='status-icon'>📱</span>
-          <span class='status-text'>Offline Mode</span>
-        {{/if}}
-        
-        {{#if this.isCached}}
-          <span class='cache-indicator' title='Family data is cached for offline use'>
-            💾
-          </span>
-        {{/if}}
-      </div>
-
-      {{! Refresh button }}
-      <button 
-        type='button' 
-        class='pwa-refresh-button' 
-        {{on 'click' this.refreshData}}
-        title='Refresh family data'
-      >
-        🔄
-      </button>
-
-      {{! Update prompt }}
-      {{#if this.showRefreshPrompt}}
-        <div class='pwa-update-prompt'>
-          <span>New family data available!</span>
-          <button type='button' {{on 'click' this.refreshData}}>
-            Update Now
+    {{! Only show update prompt when new data is available }}
+    {{#if this.showRefreshPrompt}}
+      <div class='pwa-update-notification'>
+        <div class='update-content'>
+          <span class='update-icon'>🔄</span>
+          <span class='update-text'>New family data available</span>
+          <button type='button' class='update-button' {{on 'click' this.refreshData}}>
+            Update
           </button>
-          <button type='button' {{on 'click' this.dismissRefreshPrompt}}>
-            Later
+          <button type='button' class='dismiss-button' {{on 'click' this.dismissRefreshPrompt}}>
+            ×
           </button>
         </div>
-      {{/if}}
-    </div>
+      </div>
+    {{/if}}
   </template>
 }

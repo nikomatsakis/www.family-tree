@@ -731,204 +731,172 @@
   border-radius: 0.375rem;
 }
 
-/* PWA Status Indicator */
-.pwa-status-container {
+/* PWA Update Notification */
+.pwa-update-notification {
   position: fixed;
-  top: 10px;
-  right: 10px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  top: 20px;
+  right: 20px;
   z-index: 1000;
-}
-
-.pwa-status {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 14px;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.pwa-status.online {
-  border: 1px solid #28a745;
-  color: #28a745;
-}
-
-.pwa-status.offline {
-  border: 1px solid #dc3545;
-  color: #dc3545;
-  background: rgba(255, 243, 243, 0.9);
-}
-
-.status-icon {
-  font-size: 16px;
-}
-
-.cache-indicator {
-  margin-left: 5px;
-  opacity: 0.7;
-}
-
-.pwa-refresh-button {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid #ddd;
-  background: white;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.pwa-refresh-button:hover {
-  background: #f8f9fa;
-  transform: rotate(180deg);
-}
-
-.pwa-update-prompt {
-  position: absolute;
-  top: 50px;
-  right: 0;
   background: white;
   border: 1px solid #007bff;
-  border-radius: 5px;
-  padding: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.update-content {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  padding: 12px 16px;
   font-size: 14px;
 }
 
-.pwa-update-prompt button {
-  padding: 5px 10px;
-  border: 1px solid #007bff;
-  border-radius: 3px;
-  background: white;
+.update-icon {
   color: #007bff;
-  cursor: pointer;
-  font-size: 12px;
+  font-size: 16px;
 }
 
-.pwa-update-prompt button:first-of-type {
+.update-text {
+  color: #333;
+  flex: 1;
+}
+
+.update-button {
   background: #007bff;
   color: white;
-}
-
-.pwa-update-prompt button:hover {
-  opacity: 0.8;
-}
-
-/* Greece Travel Prep */
-.pwa-greece-button {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  border: 2px solid #0066cc;
-  background: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 12px;
   cursor: pointer;
-  font-size: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
+  transition: background-color 0.2s;
 }
 
-.pwa-greece-button:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+.update-button:hover {
+  background: #0056b3;
 }
 
-.pwa-greece-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 10px;
-  padding: 30px;
-  max-width: 500px;
-  width: 90%;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-}
-
-.modal-content h3 {
-  margin-top: 0;
-  color: #0066cc;
-  font-size: 24px;
-  text-align: center;
-}
-
-.modal-content p {
-  text-align: center;
+.dismiss-button {
+  background: transparent;
+  border: none;
   color: #666;
-  margin: 20px 0;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
 }
 
-.prep-features {
-  margin: 30px 0;
+.dismiss-button:hover {
+  background: #f8f9fa;
 }
 
-.feature {
+/* PWA Installation Instructions */
+.install-instructions {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin: 2rem 0;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.install-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin: 15px 0;
-  padding: 10px;
-  background: #f8f9fa;
-  border-radius: 5px;
-}
-
-.feature strong {
-  color: #333;
-}
-
-.preload-status,
-.preload-success {
-  text-align: center;
-  padding: 15px;
-  border-radius: 5px;
-  margin: 20px 0;
-  font-weight: 500;
-}
-
-.preload-status {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.preload-success {
-  background: #e8f5e9;
-  color: #388e3c;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 10px;
   justify-content: center;
-  margin-top: 30px;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.install-icon {
+  font-size: 24px;
+}
+
+.install-instructions h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.install-instructions p {
+  margin: 0 0 20px 0;
+  opacity: 0.9;
+  font-size: 16px;
+}
+
+.install-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.install-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.install-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.install-step {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 12px 16px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+}
+
+.install-step strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .install-instructions {
+    margin: 1rem 0;
+    padding: 20px;
+  }
+  
+  .install-instructions h3 {
+    font-size: 18px;
+  }
+  
+  .install-instructions p {
+    font-size: 14px;
+  }
+  
+  .install-button {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
 }
 
 .btn-primary,

@@ -1,4 +1,4 @@
-// Simple Family Tree Service Worker for Testing
+// Family Tree Service Worker
 console.log('🔧 Service Worker: Script loaded');
 
 const CACHE_NAME = 'family-tree-v1';
@@ -66,7 +66,7 @@ self.addEventListener('fetch', event => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
   
-  // Family data API - Cache aggressively for Greece travel
+  // Family data API - Cache with offline-first strategy
   if (url.pathname.includes('/api/v1/') || url.pathname.endsWith('.json')) {
     event.respondWith(handleFamilyDataRequest(event.request));
     return;
@@ -95,14 +95,14 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// Handle family data with aggressive caching for Greece travel
+// Handle family data with offline-first caching strategy
 async function handleFamilyDataRequest(request) {
   const cache = await caches.open(CACHE_NAME);
   const cachedResponse = await cache.match(request);
   
-  // 🇬🇷 Greece Travel Mode: Cache first, then update in background
+  // Cache first, then update in background
   if (cachedResponse) {
-    console.log('📱 GREECE MODE: Using cached family data');
+    console.log('📱 Using cached family data');
     
     // Update cache in background for next time
     fetch(request).then(response => {
@@ -112,7 +112,7 @@ async function handleFamilyDataRequest(request) {
       }
     }).catch(() => {
       // Ignore network errors - we have cached data
-      console.log('📡 No connection: Cached family data is perfect for Greece!');
+      console.log('📡 No connection: Using cached family data');
     });
     
     return cachedResponse;
@@ -123,7 +123,7 @@ async function handleFamilyDataRequest(request) {
     const networkResponse = await fetch(request);
     if (networkResponse.ok) {
       await cache.put(request, networkResponse.clone());
-      console.log('✅ Family data cached for Greece travel');
+      console.log('✅ Family data cached for offline use');
     }
     return networkResponse;
   } catch (error) {
