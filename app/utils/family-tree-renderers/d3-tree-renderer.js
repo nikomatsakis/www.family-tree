@@ -111,7 +111,6 @@ export default class D3TreeRenderer extends BaseRenderer {
     }
 
     const family = renderData.data.family;
-    const metadata = renderData.data.metadata;
 
     // Add padding around the family tree
     const padding = 20;
@@ -134,9 +133,6 @@ export default class D3TreeRenderer extends BaseRenderer {
 
     // Recursively render the family and all child families
     this.renderFamily(mainGroup, family, 0, 0, callbacks);
-
-    // Add title and metadata display
-    this.addHeader(element, metadata);
   }
 
   /**
@@ -544,44 +540,6 @@ export default class D3TreeRenderer extends BaseRenderer {
 
     // Compare the rectangle's ID with the focus person's ID
     return rect.id && focusPerson && rect.id === focusPerson.id;
-  }
-
-  /**
-   * Add header with title and metadata
-   * @param {HTMLElement} element - Container element
-   * @param {Object} metadata - Rendering metadata
-   */
-  addHeader(element, metadata) {
-    const header = document.createElement('div');
-    header.style.cssText = `
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      padding: 12px;
-      background: #f8f9fa;
-      border: 1px solid #dee2e6;
-      border-radius: 4px;
-      font-family: system-ui, -apple-system, sans-serif;
-    `;
-
-    const title = document.createElement('h4');
-    title.textContent = 'D3 Family Tree';
-    title.style.cssText = 'margin: 0; color: #495057;';
-
-    const stats = document.createElement('div');
-    stats.style.cssText = 'font-size: 12px; color: #6c757d; text-align: right;';
-    stats.innerHTML = `
-      <div>Persons: ${metadata.personCount}</div>
-      <div>Families: ${metadata.familyCount}</div>
-      <div>Focus: Person ${metadata.focusPersonIndex}</div>
-    `;
-
-    header.appendChild(title);
-    header.appendChild(stats);
-
-    // Insert header before the SVG
-    element.insertBefore(header, element.firstChild);
   }
 
   // =============================================================================

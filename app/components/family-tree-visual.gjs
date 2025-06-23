@@ -357,16 +357,14 @@ export default class FamilyTreeVisual extends Component {
   }
 
   <template>
-    <div class='family-tree-visual-container'>
-      <div class='renderer-info' data-renderer-type={{this.rendererType}}>
-        {{#if this.computedTreeData}}
-          <div class='tree-container' {{this.renderTree}}>
-            {{! Content will be rendered by the modifier }}
-          </div>
-        {{else}}
-          <div class='loading'>Building family tree...</div>
-        {{/if}}
+    {{#if this.computedTreeData}}
+      <div class='family-tree-visual-container' {{this.renderTree}}>
+        {{! Content will be rendered by the modifier }}
       </div>
-    </div>
+    {{else}}
+      <div class='family-tree-visual-container'>
+        <div class='loading'>Building family tree...</div>
+      </div>
+    {{/if}}
   </template>
 }
