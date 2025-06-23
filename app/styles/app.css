@@ -322,7 +322,6 @@
 /* Family Tree Visualization */
 .family-tree-visual-container {
   width: 100%;
-  overflow: auto;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background-color: #f9fafb;
@@ -586,7 +585,6 @@
 
 .tree-container {
   width: 100%;
-  overflow: auto;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;

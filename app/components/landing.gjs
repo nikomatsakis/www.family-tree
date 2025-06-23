@@ -1,16 +1,15 @@
 import Component from '@glimmer/component';
 import { action } from '@ember/object';
 import { tracked } from '@glimmer/tracking';
-import { LinkTo } from '@ember/routing';
 import { on } from '@ember/modifier';
 import { inject as service } from '@ember/service';
 import PersonLink from './person-link';
-import awaitEach from './await-each';
 
 export default class Landing extends Component {
   @service genea;
   @tracked searchTerm = '';
   @tracked searchResults = [];
+  @tracked randomPersonName = null;
 
   <template>
     <div class='landing-page'>
@@ -21,7 +20,7 @@ export default class Landing extends Component {
         <input
           id='search-box'
           type='text'
-          placeholder='Search for a person...'
+          placeholder={{this.searchPlaceholder}}
           value={{this.searchTerm}}
           {{on 'input' this.updateSearchTerm}}
           class='search-box'
@@ -65,22 +64,33 @@ export default class Landing extends Component {
         {{/if}}
       </div>
 
-      <div class='root-ancestors'>
-        <h2>Root Ancestors</h2>
-        <ul class='ancestor-list'>
-          {{#awaitEach @rootPeople as |person|}}
-            <li>
-              <PersonLink @person={{person}} />
-            </li>
-          {{/awaitEach}}
-        </ul>
-      </div>
-
-      <div class='all-link'>
-        <LinkTo @route='all'>View all people</LinkTo>
-      </div>
     </div>
   </template>
+
+  constructor() {
+    super(...arguments);
+    this.loadRandomPersonName();
+  }
+
+  get searchPlaceholder() {
+    return this.randomPersonName
+      ? `Search by name (e.g., ${this.randomPersonName})`
+      : 'Search by name...';
+  }
+
+  async loadRandomPersonName() {
+    try {
+      await this.genea.populate();
+      const allPeople = this.genea.allPeople();
+      if (allPeople.length > 0) {
+        const randomIndex = Math.floor(Math.random() * allPeople.length);
+        this.randomPersonName = allPeople[randomIndex].name;
+      }
+    } catch (error) {
+      console.log('Could not load random person name:', error);
+      // randomPersonName stays null, will use fallback placeholder
+    }
+  }
 
   @action
   updateSearchTerm(event) {
@@ -95,12 +105,17 @@ export default class Landing extends Component {
       return;
     }
 
-    await this.genea.populate();
-    const searchLower = this.searchTerm.toLowerCase();
-    const allPeople = this.genea.allPeople();
+    try {
+      await this.genea.populate();
+      const searchLower = this.searchTerm.toLowerCase();
+      const allPeople = this.genea.allPeople();
 
-    this.searchResults = allPeople.filter((person) =>
-      person.name.toLowerCase().includes(searchLower),
-    );
+      this.searchResults = allPeople.filter((person) =>
+        person.name.toLowerCase().includes(searchLower),
+      );
+    } catch (error) {
+      console.error('Search error:', error);
+      this.searchResults = [];
+    }
   }
 }

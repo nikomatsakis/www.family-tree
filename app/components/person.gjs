@@ -5,14 +5,8 @@ import { LinkTo } from '@ember/routing';
 import PersonLink from './person-link';
 import FamilyTreeVisual from './family-tree-visual';
 import { hash } from '@ember/helper';
-import eq from '../helpers/eq';
 import Component from '@glimmer/component';
 import { action } from '@ember/object';
-import { on } from '@ember/modifier';
-import {
-  getAvailableRenderers,
-  getRendererDisplayNames,
-} from '../utils/family-tree-renderers';
 
 export default class Person extends Component {
   @service genea;
@@ -38,24 +32,6 @@ export default class Person extends Component {
               {{@model.name}}
               is related to other people
             </IndexLink>
-
-            <div class='renderer-controls'>
-              <label for='renderer-select'>View:</label>
-              <select
-                id='renderer-select'
-                {{on 'change' this.changeRenderer}}
-                class='renderer-select'
-              >
-                {{#each this.availableRenderers as |rendererType|}}
-                  <option
-                    value={{rendererType}}
-                    selected={{eq this.rendererType rendererType}}
-                  >
-                    {{this.getRendererDisplayName rendererType}}
-                  </option>
-                {{/each}}
-              </select>
-            </div>
           </div>
 
           {{#if @model}}
@@ -172,10 +148,6 @@ export default class Person extends Component {
   generationsFrom = (person, partnership) =>
     person.generationsFromAncestralPartnership(partnership);
 
-  get availableRenderers() {
-    return getAvailableRenderers();
-  }
-
   get rendererType() {
     return this.args.renderer || 'd3-tree';
   }
@@ -195,24 +167,4 @@ export default class Person extends Component {
       });
     }
   }
-
-  @action
-  changeRenderer(event) {
-    const newRenderer = event.target.value;
-    if (this.args.onRendererChange) {
-      this.args.onRendererChange(newRenderer);
-    }
-    // Update URL with new renderer
-    this.router.transitionTo('person', this.args.model, {
-      queryParams: {
-        referencePersonId: this.args.reference.getId(),
-        renderer: newRenderer,
-      },
-    });
-  }
-
-  getRendererDisplayName = (type) => {
-    const displayNames = getRendererDisplayNames();
-    return displayNames[type] || type;
-  };
 }
