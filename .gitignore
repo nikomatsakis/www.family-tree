@@ -30,3 +30,6 @@
 
 tmp
 
+# Screenshots and temporary images
+screenshot.png
+*.screenshot.png
