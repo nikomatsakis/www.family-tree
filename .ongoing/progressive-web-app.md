@@ -1,11 +1,29 @@
 # Progressive Web App Implementation
 
-## Status: Planning - New Feature Implementation
+## Status: Implemented - Needs Usability Improvements
 **Created**: June 21, 2025
-**Priority**: HIGH - Critical for mobile user experience
+**Updated**: June 23, 2025
+**Priority**: HIGH - Refining user experience
 
 ## Overview
-Transform the family tree application into a Progressive Web App (PWA) to enable mobile installation, offline functionality, and improved caching for better mobile performance.
+PWA functionality has been implemented with basic offline support. Current "Greece vacation mode" requires explicit user action to cache data. Need to refine for transparent, automatic operation.
+
+## Current Implementation Issues
+- **"Greece vacation mode"**: Cute but counterintuitive - requires explicit user action to cache
+- Users must manually trigger offline caching before going offline
+- Not discoverable or intuitive for typical users
+
+## Proposed Improvements
+
+### Transparent Caching (Preferred)
+- **Automatic caching**: Cache all family tree data transparently as users browse
+- **Background updates**: Periodic refresh when online to get latest data
+- **Manual refresh option**: Allow explicit refresh when user wants latest data
+- **Seamless experience**: Works offline without user needing to prepare
+
+### Alternative: Explicit Offline Toggle
+- Convert "online" indicator to clickable "Go offline" button
+- Still less ideal than fully transparent operation
 
 ## Objectives
 - Enable "Add to Home Screen" functionality on mobile devices
@@ -40,25 +58,37 @@ Transform the family tree application into a Progressive Web App (PWA) to enable
 - [ ] Push notifications for family tree updates (future consideration)
 - [ ] Offline indicator and graceful degradation
 
-## Technical Implementation Plan
+## Implementation Tasks
 
-### Phase 1: Basic PWA Setup
-- Create web app manifest with app metadata
-- Set up service worker with basic caching
-- Test installation flow on mobile devices
-- Ensure HTTPS deployment requirements
+### Remove "Greece Vacation Mode" 
+- [ ] Remove explicit caching mode UI/controls
+- [ ] Convert to automatic transparent caching
 
-### Phase 2: Smart Caching
-- Implement cache-first strategy for family tree data
-- Add background sync for data updates
-- Create cache management for large family trees
-- Handle cache versioning and invalidation
+### Implement Transparent Caching
+- [ ] Auto-cache family tree data as users browse
+- [ ] Cache person data on first view
+- [ ] Pre-cache immediate family members for better performance
+- [ ] Implement intelligent cache management for storage limits
 
-### Phase 3: Enhanced Mobile Experience
-- Add native app-like interactions
-- Implement advanced loading strategies
-- Optimize performance metrics (Core Web Vitals)
-- Add analytics for PWA usage patterns
+### Background Sync & Updates
+- [ ] Set up periodic background sync when online
+- [ ] Check for data updates without user intervention
+- [ ] Handle cache invalidation gracefully
+- [ ] Show subtle indicator when data is refreshed
+
+### User Controls
+- [ ] Add manual refresh option (pull-to-refresh or button)
+- [ ] Show last updated timestamp
+- [ ] Clear offline/online status indicators (make subtle)
+- [ ] Ensure offline functionality is discoverable through normal use
+
+### Installation Instructions
+- [ ] Add prominent installation instructions on front page below search bar
+- [ ] Detect if app is installable but not yet installed
+- [ ] Show platform-specific instructions (iOS vs Android)
+- [ ] Include visual guide or icons for clarity
+- [ ] Hide instructions if app is already installed
+- [ ] Make instructions dismissible but recoverable
 
 ## Benefits
 - **Mobile Installation**: Users can install app from browser
