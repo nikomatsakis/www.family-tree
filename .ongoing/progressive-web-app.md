@@ -90,6 +90,14 @@ PWA functionality has been implemented with basic offline support. Current "Gree
 - [ ] Hide instructions if app is already installed
 - [ ] Make instructions dismissible but recoverable
 
+### App Icon Design
+- [ ] Replace default "F" icon with proper family tree icon
+- [ ] Create icon in multiple sizes for different devices (192x192, 512x512, etc.)
+- [ ] Design should represent family tree/genealogy concept
+- [ ] Ensure icon works well on various backgrounds
+- [ ] Update manifest.json with new icon paths
+- [ ] Test icon appearance on iOS and Android home screens
+
 ## Benefits
 - **Mobile Installation**: Users can install app from browser
 - **Offline Access**: View family trees without internet connection
