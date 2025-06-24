@@ -58,13 +58,19 @@ export default class Person extends Component {
                     {{@model.name}}
                     is
                     {{this.selectedPerson.name}}'s
-                    <strong>{{this.relationshipName r}}</strong>
                     <a
                       href='/family-tree-explainer.png'
                       target='_blank'
                       rel='noopener noreferrer'
-                      class='explain-link'
-                    >(explain)</a>
+                      class='relationship-link'
+                    ><strong>{{this.relationshipName r}}</strong></a>
+                    <button
+                      type='button'
+                      class='clear-comparison'
+                      {{on 'click' this.clearComparison}}
+                    >
+                      Clear comparison
+                    </button>
                   </div>
                   <FamilyTreeVisual
                     @person={{r.commonAncestor}}
@@ -82,13 +88,6 @@ export default class Person extends Component {
                 </div>
               {{/if}}
 
-              <button
-                type='button'
-                class='clear-comparison'
-                {{on 'click' this.clearComparison}}
-              >
-                Clear comparison
-              </button>
             </div>
           {{else}}
             {{#if @model}}
