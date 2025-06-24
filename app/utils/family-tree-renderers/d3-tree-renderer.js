@@ -66,6 +66,8 @@ export default class D3TreeRenderer extends BaseRenderer {
             expandedPersons: Array.from(this.expandedPersons),
             startPersonIndex: startPersonIndex,
             focusPersonIndex: renderTree.focusPersonIndex,
+            personStyles: options.personStyles || {},
+            defaultStyle: options.defaultStyle || 'normal',
           },
         },
       };
@@ -132,7 +134,7 @@ export default class D3TreeRenderer extends BaseRenderer {
       .attr('transform', `translate(${padding}, ${padding})`);
 
     // Recursively render the family and all child families
-    this.renderFamily(mainGroup, family, 0, 0, callbacks);
+    this.renderFamily(mainGroup, family, 0, 0, callbacks, renderData);
   }
 
   /**
@@ -143,7 +145,7 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @param {number} offsetY - Cumulative Y offset from parent families
    * @param {Object} callbacks - Callback functions for user interactions
    */
-  renderFamily(group, family, offsetX = 0, offsetY = 0, callbacks = {}) {
+  renderFamily(group, family, offsetX = 0, offsetY = 0, callbacks = {}, renderData = {}) {
     // Calculate absolute position for this family
     const absoluteX = offsetX + family.x;
     const absoluteY = offsetY + family.y;
@@ -152,12 +154,12 @@ export default class D3TreeRenderer extends BaseRenderer {
     if (family.elements) {
       family.elements.forEach((element) => {
         if (element instanceof Rectangle) {
-          this.renderRectangle(group, element, absoluteX, absoluteY, callbacks);
+          this.renderRectangle(group, element, absoluteX, absoluteY, callbacks, renderData);
         } else if (element instanceof Line) {
           this.renderLine(group, element, absoluteX, absoluteY);
         } else if (element instanceof Family) {
           // Recursively render child families with cumulative offset
-          this.renderFamily(group, element, absoluteX, absoluteY, callbacks);
+          this.renderFamily(group, element, absoluteX, absoluteY, callbacks, renderData);
         } else {
           throw new Error(`Unknown element type: ${element.constructor.name}`);
         }
@@ -173,7 +175,7 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @param {number} offsetY - Y offset from parent families
    * @param {Object} callbacks - Callback functions for user interactions
    */
-  renderRectangle(group, rect, offsetX, offsetY, callbacks = {}) {
+  renderRectangle(group, rect, offsetX, offsetY, callbacks = {}, renderData = {}) {
     // Calculate absolute position
     const absoluteX = offsetX + rect.x;
     const absoluteY = offsetY + rect.y;
@@ -210,6 +212,11 @@ export default class D3TreeRenderer extends BaseRenderer {
     const isButton =
       isExpansionPlaceholder || isCollapseButton || isAncestorButton;
 
+    // Determine styling based on person-specific styles or defaults
+    const personStyles = renderData?.data?.metadata?.personStyles || {};
+    const defaultStyle = renderData?.data?.metadata?.defaultStyle || 'normal';
+    const personStyle = personStyles[rect.id] || defaultStyle;
+
     // Render buttons as circles, others as rectangles
     if (isButton) {
       this.renderCircularButton(group, rect, absoluteX, absoluteY, callbacks);
@@ -240,21 +247,13 @@ export default class D3TreeRenderer extends BaseRenderer {
       strokeWidth = 1;
       textColor = '#bbbbbb'; // Very light text to make fading obvious
       textContent = rect.label;
-    } else if (isFocusPerson) {
-      // Focus person gets stronger accent version of their gender color
-      const genderColors = this.getGenderColors(rect.gender, false, true); // focus=true
-      fillColor = genderColors.fill;
-      strokeColor = genderColors.stroke;
-      strokeWidth = 2;
-      textColor = '#212529';
-      textContent = rect.label;
     } else {
-      // Regular person gets subtle gender-based warm colors
-      const genderColors = this.getGenderColors(rect.gender);
-      fillColor = genderColors.fill;
-      strokeColor = genderColors.stroke;
-      strokeWidth = 1;
-      textColor = '#212529';
+      // Apply styling based on personStyle
+      const { fillColor: styleFill, strokeColor: styleStroke, strokeWidth: styleStrokeWidth, textColor: styleTextColor } = this.getPersonStyleColors(personStyle, rect.gender, isFocusPerson);
+      fillColor = styleFill;
+      strokeColor = styleStroke;
+      strokeWidth = styleStrokeWidth;
+      textColor = styleTextColor;
       textContent = rect.label;
     }
 
@@ -781,6 +780,63 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @param {boolean} focus - Whether this is the focus person (stronger accent)
    * @returns {Object} {fill, stroke} colors
    */
+  getPersonStyleColors(personStyle, gender, isFocusPerson) {
+    switch (personStyle) {
+      case 'highlight-focus': {
+        // Focus person gets stronger accent version of their gender color
+        const focusColors = this.getGenderColors(gender, false, true); // focus=true
+        return {
+          fillColor: focusColors.fill,
+          strokeColor: focusColors.stroke,
+          strokeWidth: 2,
+          textColor: '#212529',
+        };
+      }
+
+      case 'highlight-reference': {
+        // Reference person gets bright highlighting to distinguish from focus
+        return {
+          fillColor: '#e3f2fd', // Light blue background
+          strokeColor: '#1976d2', // Strong blue border
+          strokeWidth: 2,
+          textColor: '#212529',
+        };
+      }
+
+      case 'greyed-out': {
+        // Greyed out people are de-emphasized
+        return {
+          fillColor: '#f5f5f5', // Light grey background
+          strokeColor: '#cccccc', // Light grey border
+          strokeWidth: 1,
+          textColor: '#999999', // Muted text
+        };
+      }
+
+      case 'normal':
+      default: {
+        // Regular styling based on existing logic
+        if (isFocusPerson) {
+          const focusColors = this.getGenderColors(gender, false, true);
+          return {
+            fillColor: focusColors.fill,
+            strokeColor: focusColors.stroke,
+            strokeWidth: 2,
+            textColor: '#212529',
+          };
+        } else {
+          const genderColors = this.getGenderColors(gender);
+          return {
+            fillColor: genderColors.fill,
+            strokeColor: genderColors.stroke,
+            strokeWidth: 1,
+            textColor: '#212529',
+          };
+        }
+      }
+    }
+  }
+
   getGenderColors(gender, faded = false, focus = false) {
     // Normalize gender string - handle null, "null", undefined, empty string
     const normalizedGender = (

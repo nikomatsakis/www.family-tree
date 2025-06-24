@@ -152,9 +152,14 @@ export default class FamilyTreeVisual extends Component {
     // Build the graph structure using the current renderer
     const graph = renderer.buildVisibleGraph(person);
 
+    // Determine person styling based on context
+    const personStyles = this.computePersonStyles(pagePerson, referencePerson);
+
     // Convert graph to renderer-specific format (Mermaid code or HTML)
     const renderData = renderer.prepareRenderData(graph, {
       startPersonIdx: 0, // The starting person is always at index 0
+      personStyles: personStyles.personStyles,
+      defaultStyle: personStyles.defaultStyle,
     });
 
     // Return complete data structure for rendering
@@ -296,6 +301,25 @@ export default class FamilyTreeVisual extends Component {
     if (this.args.onPersonClick) {
       this.args.onPersonClick(person);
     }
+  }
+
+  computePersonStyles(pagePerson, referencePerson) {
+    const personStyles = {};
+    let defaultStyle = 'normal';
+
+    // If we have both a page person and reference person, we're in comparison mode
+    if (pagePerson && referencePerson && pagePerson.id !== referencePerson.id) {
+      // Comparison mode: highlight the two people being compared, grey out others
+      personStyles[pagePerson.id] = 'highlight-focus';
+      personStyles[referencePerson.id] = 'highlight-reference';
+      defaultStyle = 'greyed-out';
+    } else if (pagePerson) {
+      // Normal mode: just highlight the page person
+      personStyles[pagePerson.id] = 'highlight-focus';
+      defaultStyle = 'normal';
+    }
+
+    return { personStyles, defaultStyle };
   }
 
   /**
