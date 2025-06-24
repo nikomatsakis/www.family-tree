@@ -13,30 +13,35 @@ Review and potentially improve the existing relationship calculation functionali
 - Test coverage exists for relationship calculations
 - Used in the family tree interface to show connections
 
-## Areas for Review
+## Findings
 
-### Accuracy & Completeness
-- [ ] Verify accuracy of relationship calculations across different scenarios
-- [ ] Test edge cases (multiple marriages, step-relationships, adoption)
-- [ ] Review handling of complex relationships (double cousins, etc.)
-- [ ] Validate generational calculations (great-great-grandparents, etc.)
+### Current Implementation Issues
+- **Bug**: The existing "See how X is related to other people" link loses the `referencePersonId` parameter during navigation
+- **UX Problem**: Current interface requires navigating away from person page, not intuitive
+- **Missing Feature**: No easy way to compare current person to others directly from their page
 
-### User Experience
-- [ ] Assess current UI for displaying relationship information
-- [ ] Consider adding relationship info to person detail views
-- [ ] Evaluate discoverability of the relationship feature
-- [ ] Review terminology and language used for relationships
+## Planned Enhancement: Search-Based Relationship Interface
 
-### Performance & Scalability
-- [ ] Analyze performance with large family trees
-- [ ] Review algorithm efficiency for distant relationships
-- [ ] Consider caching strategies for frequently calculated relationships
+### New Design
+Replace the current "See how X is related to other people" link with an inline search interface:
 
-### Feature Enhancements
-- [ ] Add visual relationship path highlighting in tree view
-- [ ] Consider "shortest path" vs "most direct relationship" options
-- [ ] Add support for showing multiple relationship paths
-- [ ] Integrate with search functionality ("show me how I'm related to...")
+**Interface**: `"See how [Current Person] is related to: [Search Box]"`
+- **Example**: "See how Spock is related to: [search with autocomplete]"
+- **Autocomplete**: Reuse existing search component from main page
+- **Results**: When user selects someone, show relationship immediately on same page
+
+### Implementation Plan
+- [ ] Remove current buggy IndexLink for relationship discovery
+- [ ] Add search box component to person page using existing landing page search logic
+- [ ] Implement relationship display when person is selected from search
+- [ ] Show focused family tree (expand only partnerships needed for relationship path)
+- [ ] Ensure mobile-friendly layout
+
+### Benefits
+- **Stays on person page**: No navigation away and back
+- **Intuitive UX**: Direct "compare A to B" interface
+- **Reuses working code**: Leverage existing search autocomplete
+- **Visual clarity**: Show minimal tree focused on relationship path
 
 ## Technical Implementation
 - Current location: genea service relationship calculations
