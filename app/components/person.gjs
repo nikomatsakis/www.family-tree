@@ -191,6 +191,7 @@ export default class Person extends Component {
   @action
   clearComparison() {
     this.selectedPerson = null;
+    // TODO: Reset the search component - need a cleaner way to do this
   }
 
   get referencePerson() {

@@ -93,6 +93,12 @@ export default class PersonSearch extends Component {
   }
 
   @action
+  reset() {
+    this.searchTerm = '';
+    this.searchResults = [];
+  }
+
+  @action
   async performSearch() {
     if (!this.searchTerm || this.searchTerm.length < 2) {
       this.searchResults = [];
