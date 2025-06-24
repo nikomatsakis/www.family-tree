@@ -60,7 +60,7 @@ export default class FamilyTreeVisual extends Component {
    */
   @cached
   get expandedPartnerships() {
-    if (!this.args.person) {
+    if (!this.args.pagePerson) {
       return new Set();
     }
 
@@ -82,7 +82,7 @@ export default class FamilyTreeVisual extends Component {
    */
   @cached
   get expandedPersons() {
-    if (!this.args.person) {
+    if (!this.args.pagePerson) {
       return new Set();
     }
 
@@ -123,7 +123,8 @@ export default class FamilyTreeVisual extends Component {
    *
    * This is called by the template when it renders {{#if this.computedTreeData}}.
    * It automatically re-runs when any of its dependencies change:
-   * - this.args.person (from parent)
+   * - this.args.pagePerson (from parent)
+   * - this.args.referencePerson (from parent)
    * - this.currentRenderer (when renderer type changes)
    * - this.expandedPartnerships/expandedPersons (when user expands/collapses nodes)
    *
@@ -132,7 +133,6 @@ export default class FamilyTreeVisual extends Component {
    */
   @cached
   get computedTreeData() {
-    const person = this.args.person;
     const pagePerson = this.args.pagePerson;
     const referencePerson = this.args.referencePerson;
     const renderer = this.currentRenderer;
@@ -140,17 +140,17 @@ export default class FamilyTreeVisual extends Component {
     // Debug: log when tree data is recomputed
     console.log(
       'computedTreeData recomputing for person:',
-      person?.name,
+      pagePerson?.name,
       'ID:',
-      person?.id,
+      pagePerson?.id,
     );
 
-    if (!renderer || !person) {
+    if (!renderer || !pagePerson) {
       return null;
     }
 
     // Build the graph structure using the current renderer
-    const graph = renderer.buildVisibleGraph(person);
+    const graph = renderer.buildVisibleGraph(pagePerson);
 
     // Determine person styling based on context
     const personStyles = this.computePersonStyles(pagePerson, referencePerson);
@@ -194,20 +194,82 @@ export default class FamilyTreeVisual extends Component {
     const expandedPartnerships = new Set();
     const expandedPersons = new Set();
 
-    // 1. Expand focus person's own partnerships (to show their children)
-    this.args.person.parentIn.forEach((partnership) => {
-      expandedPartnerships.add(partnership.id);
-    });
+    // Check if we're in relationship comparison mode and have a relationship object
+    if (this.args.relationship) {
+      // Extract partnerships from the relationship paths
+      this.extractPartnershipIdsFromPath(this.args.relationship.thisPath, expandedPartnerships);
+      this.extractPartnershipIdsFromPath(this.args.relationship.thatPath, expandedPartnerships);
+      
+      console.log(
+        '🔗 Using relationship paths to expand partnerships:',
+        Array.from(expandedPartnerships),
+      );
+    } else {
+      // Normal mode: show immediate family around focus person
+      // 1. Expand focus person's own partnerships (to show their children)
+      this.args.pagePerson.parentIn.forEach((partnership) => {
+        expandedPartnerships.add(partnership.id);
+      });
 
-    // 2. Expand parent partnership that produced current person
-    if (this.args.person.childIn) {
-      expandedPartnerships.add(this.args.person.childIn.id);
+      // 2. Expand parent partnership that produced current person
+      if (this.args.pagePerson.childIn) {
+        expandedPartnerships.add(this.args.pagePerson.childIn.id);
+      }
+
+      // 3. Only show immediate family - stop at focus person's parents
+      // (Removed ancestor chain walking to limit tree size)
     }
 
-    // 3. Only show immediate family - stop at focus person's parents
-    // (Removed ancestor chain walking to limit tree size)
-
     return { expandedPartnerships, expandedPersons };
+  }
+
+  /**
+   * Extract partnership IDs from a single relationship path.
+   * Each link in the path represents a step between people that requires a partnership to be visible.
+   */
+  extractPartnershipIdsFromPath(path, partnershipIds) {
+    for (const link of path.links) {
+      let partnershipId = null;
+
+      if (link.relation === 'parent' || link.relation === 'child') {
+        // For parent/child relationships, find the partnership that connects them
+        // The child's childIn partnership should connect to the parent
+        if (link.relation === 'parent') {
+          // Going from child to parent - child's childIn partnership
+          partnershipId = link.fromPerson.childIn?.id;
+        } else {
+          // Going from parent to child - child's childIn partnership
+          partnershipId = link.toPerson.childIn?.id;
+        }
+      } else if (link.relation === 'partner') {
+        // For partner relationships, find the partnership where both are parents
+        partnershipId = this.findPartnershipBetween(
+          link.fromPerson,
+          link.toPerson,
+        );
+      }
+
+      if (partnershipId) {
+        partnershipIds.add(partnershipId);
+        console.log(
+          `  📎 Added partnership ${partnershipId} for ${link.relation} link: ${link.fromPerson.name} → ${link.toPerson.name}`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Find the partnership ID where two people are both parents.
+   */
+  findPartnershipBetween(person1, person2) {
+    // Look through person1's partnerships to find one where person2 is also a parent
+    for (const partnership of person1.parentIn) {
+      const partnerIds = partnership.parents.map((p) => p.id);
+      if (partnerIds.includes(person2.id)) {
+        return partnership.id;
+      }
+    }
+    return null;
   }
 
   @action
@@ -286,7 +348,7 @@ export default class FamilyTreeVisual extends Component {
     // Get current query params to preserve renderer setting
     const currentQueryParams = this.router.currentRoute?.queryParams || {};
 
-    this.router.replaceWith('person', this.args.person.id, {
+    this.router.replaceWith('person', this.args.pagePerson.id, {
       queryParams: {
         renderer: currentQueryParams.renderer || this.activeRendererType,
         expandedPartnerships: expandedPartnershipsStr,

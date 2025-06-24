@@ -72,7 +72,7 @@ export default class Person extends Component {
                     </button>
                   </div>
                   <FamilyTreeVisual
-                    @person={{r.commonAncestor}}
+                    @relationship={{r}}
                     @pagePerson={{@model}}
                     @referencePerson={{this.referencePerson}}
                     @onPersonClick={{this.navigateToPerson}}
@@ -91,9 +91,7 @@ export default class Person extends Component {
           {{else}}
             {{#if @model}}
               <FamilyTreeVisual
-                @person={{@model}}
                 @pagePerson={{@model}}
-                @referencePerson={{this.referencePerson}}
                 @onPersonClick={{this.navigateToPerson}}
                 @rendererType={{this.rendererType}}
               />
@@ -137,6 +135,9 @@ export default class Person extends Component {
       queryParams: {
         referencePersonId: person.id,
         renderer: this.rendererType,
+        // Clear expanded partnerships to use relationship-specific defaults
+        expandedPartnerships: null,
+        expandedPersons: null,
       },
     });
   }
@@ -147,6 +148,9 @@ export default class Person extends Component {
       queryParams: {
         referencePersonId: null,
         renderer: this.rendererType,
+        // Clear expanded partnerships to return to normal defaults
+        expandedPartnerships: null,
+        expandedPersons: null,
       },
     });
   }
