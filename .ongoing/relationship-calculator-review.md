@@ -1,14 +1,17 @@
 # "How is X related to Y" Functionality Review
 
-## Status: BUGS FOUND - Testing Revealed Issues ⚠️
+## Status: MOSTLY COMPLETE - Only Search Formatting Remains 🎯
 
 ### ✅ Fixed Issues
 - **Unknown renderer type 'list' error**: Removed invalid `@rendererType='list'` from FamilyTreeVisual components
 - **Excessive whitespace gap**: Added `position: relative` to `.person-search-container` CSS to fix dropdown positioning
+- **Clear comparison button**: Now works properly, clears comparison state
+- **Improved UI layout**: Moved clear button inline with relationship, made relationship name the link to explainer
+- **Unified state management**: Converted from tracked selectedPerson to URL-based referencePersonId for bookmarkable comparisons
+- **Navigation from D3 tree**: Fixed to clear reference person when clicking people in tree (found issue in family-tree-visual.gjs)
+- **Visual highlighting**: Implemented style-based rendering - focus person highlighted with accent, reference person in blue, others greyed out
 
 ### 🔄 Remaining Issues
-- **Navigation from D3 tree preserves reference person**: When clicking people in relationship tree, should navigate to their page WITHOUT keeping reference person
-- **Hard to find focus and reference persons in tree**: Tree shows common ancestor as root, but focus person (Alexandra) and reference person (Cleveland Booker) are not visually highlighted - should highlight these two and grey out all others
 - **Search results formatting**: Make relationship search results match main page format (show names + parents instead of just names)
 **Created**: June 21, 2025
 **Priority**: LOW - Feature enhancement and accuracy review
