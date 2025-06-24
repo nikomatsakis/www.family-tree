@@ -90,6 +90,11 @@
   text-decoration: underline;
 }
 
+/* Person Search Container */
+.person-search-container {
+  position: relative;
+}
+
 /* Search Results */
 .search-results {
   position: absolute;

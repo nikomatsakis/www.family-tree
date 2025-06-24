@@ -71,7 +71,6 @@ export default class Person extends Component {
                     @pagePerson={{@model}}
                     @referencePerson={{this.selectedPerson}}
                     @onPersonClick={{this.navigateToPerson}}
-                    @rendererType='list'
                   />
                 {{/each}}
               {{else}}
@@ -150,7 +149,6 @@ export default class Person extends Component {
               @pagePerson={{@model}}
               @referencePerson={{this.referencePerson}}
               @onPersonClick={{this.navigateToPerson}}
-              @rendererType='list'
             />
           {{/each}}
         </div>

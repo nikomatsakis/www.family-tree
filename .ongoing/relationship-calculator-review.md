@@ -1,6 +1,14 @@
 # "How is X related to Y" Functionality Review
 
-## Status: COMPLETED ✅ - Search-Based Interface Implemented
+## Status: BUGS FOUND - Testing Revealed Issues ⚠️
+
+### ✅ Fixed Issues
+- **Unknown renderer type 'list' error**: Removed invalid `@rendererType='list'` from FamilyTreeVisual components
+- **Excessive whitespace gap**: Added `position: relative` to `.person-search-container` CSS to fix dropdown positioning
+
+### 🔄 Remaining Issues
+- Relationship visualization needs focused D3 tree showing only relevant paths
+- Additional bugs found during testing (details pending)
 **Created**: June 21, 2025
 **Priority**: LOW - Feature enhancement and accuracy review
 
