@@ -3,14 +3,18 @@ import IndexLink from './index-link';
 import MaintainerLink from './maintainer-link';
 import { LinkTo } from '@ember/routing';
 import PersonLink from './person-link';
+import PersonSearch from './person-search';
 import FamilyTreeVisual from './family-tree-visual';
 import { hash } from '@ember/helper';
+import { on } from '@ember/modifier';
 import Component from '@glimmer/component';
 import { action } from '@ember/object';
+import { tracked } from '@glimmer/tracking';
 
 export default class Person extends Component {
   @service genea;
   @service router;
+  @tracked selectedPerson = null;
 
   <template>
     <div class='person-detail'>
@@ -26,24 +30,79 @@ export default class Person extends Component {
       {{#if this.showSiblings}}
         <div class='family-section'>
           <h2>Parents, partners, and children</h2>
-          <div class='relationship-info'>
-            <IndexLink @referencePerson={{@model}} class='nav-link'>
-              See how
-              {{@model.name}}
-              is related to other people
-            </IndexLink>
+
+          <div class='relationship-search'>
+            <PersonSearch
+              @label='See how {{@model.name}} is related to:'
+              @placeholder='Search for someone...'
+              @onSelectPerson={{this.selectPersonForComparison}}
+              @excludePerson={{@model}}
+              @showDetails={{false}}
+              @inputClass='relationship-search-input'
+              @inputId='relationship-search'
+            />
           </div>
 
-          {{#if @model}}
-            <FamilyTreeVisual
-              @person={{@model}}
-              @pagePerson={{@model}}
-              @referencePerson={{this.referencePerson}}
-              @onPersonClick={{this.navigateToPerson}}
-              @rendererType={{this.rendererType}}
-            />
+          {{#if this.selectedPerson}}
+            <div class='relationship-display'>
+              <h3>
+                {{@model.name}}
+                and
+                {{this.selectedPerson.name}}
+                relationship:
+              </h3>
+
+              {{#if this.selectedRelationships.length}}
+                {{#each this.selectedRelationships as |r|}}
+                  <div class='relationship-info'>
+                    {{@model.name}}
+                    is
+                    {{this.selectedPerson.name}}'s
+                    <strong>{{this.relationshipName r}}</strong>
+                    <a
+                      href='/family-tree-explainer.png'
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      class='explain-link'
+                    >(explain)</a>
+                  </div>
+                  <FamilyTreeVisual
+                    @person={{r.commonAncestor}}
+                    @pagePerson={{@model}}
+                    @referencePerson={{this.selectedPerson}}
+                    @onPersonClick={{this.navigateToPerson}}
+                    @rendererType='list'
+                  />
+                {{/each}}
+              {{else}}
+                <div class='no-relation'>
+                  No relation found between
+                  {{@model.name}}
+                  and
+                  {{this.selectedPerson.name}}!
+                </div>
+              {{/if}}
+
+              <button
+                type='button'
+                class='clear-comparison'
+                {{on 'click' this.clearComparison}}
+              >
+                Clear comparison
+              </button>
+            </div>
           {{else}}
-            <div>Loading person data...</div>
+            {{#if @model}}
+              <FamilyTreeVisual
+                @person={{@model}}
+                @pagePerson={{@model}}
+                @referencePerson={{this.referencePerson}}
+                @onPersonClick={{this.navigateToPerson}}
+                @rendererType={{this.rendererType}}
+              />
+            {{else}}
+              <div>Loading person data...</div>
+            {{/if}}
           {{/if}}
         </div>
       {{else if this.referencePerson}}
@@ -117,6 +176,23 @@ export default class Person extends Component {
     return (
       this.referencePerson === null || this.referencePerson === this.args.model
     );
+  }
+
+  get selectedRelationships() {
+    if (this.selectedPerson) {
+      return this.args.model.relationshipsTo(this.selectedPerson);
+    }
+    return [];
+  }
+
+  @action
+  selectPersonForComparison(person) {
+    this.selectedPerson = person;
+  }
+
+  @action
+  clearComparison() {
+    this.selectedPerson = null;
   }
 
   get referencePerson() {
