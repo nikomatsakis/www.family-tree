@@ -323,7 +323,7 @@ export default class FamilyTreeVisual extends Component {
 
         this.router.transitionTo('person', personId, {
           queryParams: {
-            referencePersonId: this.args.referencePerson?.id,
+            referencePersonId: null,
             renderer: this.activeRendererType,
           },
         });
