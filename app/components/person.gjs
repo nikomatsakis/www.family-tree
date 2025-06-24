@@ -14,7 +14,6 @@ import { tracked } from '@glimmer/tracking';
 export default class Person extends Component {
   @service genea;
   @service router;
-  @tracked selectedPerson = null;
 
   <template>
     <div class='person-detail'>
@@ -43,12 +42,12 @@ export default class Person extends Component {
             />
           </div>
 
-          {{#if this.selectedPerson}}
+          {{#if this.referencePerson}}
             <div class='relationship-display'>
               <h3>
                 {{@model.name}}
                 and
-                {{this.selectedPerson.name}}
+                {{this.referencePerson.name}}
                 relationship:
               </h3>
 
@@ -57,7 +56,7 @@ export default class Person extends Component {
                   <div class='relationship-info'>
                     {{@model.name}}
                     is
-                    {{this.selectedPerson.name}}'s
+                    {{this.referencePerson.name}}'s
                     <a
                       href='/family-tree-explainer.png'
                       target='_blank'
@@ -75,7 +74,7 @@ export default class Person extends Component {
                   <FamilyTreeVisual
                     @person={{r.commonAncestor}}
                     @pagePerson={{@model}}
-                    @referencePerson={{this.selectedPerson}}
+                    @referencePerson={{this.referencePerson}}
                     @onPersonClick={{this.navigateToPerson}}
                   />
                 {{/each}}
@@ -84,7 +83,7 @@ export default class Person extends Component {
                   No relation found between
                   {{@model.name}}
                   and
-                  {{this.selectedPerson.name}}!
+                  {{this.referencePerson.name}}!
                 </div>
               {{/if}}
 
@@ -102,54 +101,6 @@ export default class Person extends Component {
               <div>Loading person data...</div>
             {{/if}}
           {{/if}}
-        </div>
-      {{else if this.referencePerson}}
-        <div class='family-section'>
-          <h2>How is
-            <PersonLink @person={{this.referencePerson}} />
-            related to
-            {{@model.name}}?
-          </h2>
-
-          <div class='relationship-actions'>
-            <LinkTo @query={{hash referencePersonId=null}} class='nav-link'>
-              Stop comparing relationships
-            </LinkTo>
-            <LinkTo
-              @model={{this.referencePerson}}
-              @query={{hash referencePersonId=@model.id}}
-              class='nav-link'
-            >
-              Switch comparison
-            </LinkTo>
-          </div>
-
-          {{#if this.notRelated}}
-            <div class='no-relation'>
-              No relation found!
-            </div>
-          {{/if}}
-
-          {{#each this.relationships as |r|}}
-            <div class='relationship-info'>
-              {{@model.name}}
-              is
-              {{this.referencePerson.name}}'s
-              <strong>{{this.relationshipName r}}</strong>
-              <a
-                href='/family-tree-explainer.png'
-                target='_blank'
-                rel='noopener noreferrer'
-                class='explain-link'
-              >(explain)</a>
-            </div>
-            <FamilyTreeVisual
-              @person={{r.commonAncestor}}
-              @pagePerson={{@model}}
-              @referencePerson={{this.referencePerson}}
-              @onPersonClick={{this.navigateToPerson}}
-            />
-          {{/each}}
         </div>
       {{/if}}
 
@@ -170,27 +121,34 @@ export default class Person extends Component {
   relationshipName = (r) => r.name;
 
   get showSiblings() {
-    return (
-      this.referencePerson === null || this.referencePerson === this.args.model
-    );
+    return true; // Always show the new search interface
   }
 
   get selectedRelationships() {
-    if (this.selectedPerson) {
-      return this.args.model.relationshipsTo(this.selectedPerson);
+    if (this.referencePerson) {
+      return this.args.model.relationshipsTo(this.referencePerson);
     }
     return [];
   }
 
   @action
   selectPersonForComparison(person) {
-    this.selectedPerson = person;
+    this.router.transitionTo('person', this.args.model.id, {
+      queryParams: {
+        referencePersonId: person.id,
+        renderer: this.rendererType,
+      },
+    });
   }
 
   @action
   clearComparison() {
-    this.selectedPerson = null;
-    // TODO: Reset the search component - need a cleaner way to do this
+    this.router.transitionTo('person', this.args.model.id, {
+      queryParams: {
+        referencePersonId: null,
+        renderer: this.rendererType,
+      },
+    });
   }
 
   get referencePerson() {
