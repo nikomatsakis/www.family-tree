@@ -7,8 +7,9 @@
 - **Excessive whitespace gap**: Added `position: relative` to `.person-search-container` CSS to fix dropdown positioning
 
 ### 🔄 Remaining Issues
-- Relationship visualization needs focused D3 tree showing only relevant paths
-- Additional bugs found during testing (details pending)
+- **Navigation from D3 tree preserves reference person**: When clicking people in relationship tree, should navigate to their page WITHOUT keeping reference person
+- **Hard to find focus and reference persons in tree**: Tree shows common ancestor as root, but focus person (Alexandra) and reference person (Cleveland Booker) are not visually highlighted - should highlight these two and grey out all others
+- **Search results formatting**: Make relationship search results match main page format (show names + parents instead of just names)
 **Created**: June 21, 2025
 **Priority**: LOW - Feature enhancement and accuracy review
 
