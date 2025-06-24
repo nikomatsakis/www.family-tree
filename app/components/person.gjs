@@ -36,7 +36,7 @@ export default class Person extends Component {
               @placeholder='Search for someone...'
               @onSelectPerson={{this.selectPersonForComparison}}
               @excludePerson={{@model}}
-              @showDetails={{false}}
+              @showDetails={{true}}
               @inputClass='relationship-search-input'
               @inputId='relationship-search'
             />

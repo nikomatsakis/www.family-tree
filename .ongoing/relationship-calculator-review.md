@@ -1,6 +1,6 @@
 # "How is X related to Y" Functionality Review
 
-## Status: MOSTLY COMPLETE - Only Search Formatting Remains 🎯
+## Status: COMPLETED ✅
 
 ### ✅ Fixed Issues
 - **Unknown renderer type 'list' error**: Removed invalid `@rendererType='list'` from FamilyTreeVisual components
@@ -11,8 +11,8 @@
 - **Navigation from D3 tree**: Fixed to clear reference person when clicking people in tree (found issue in family-tree-visual.gjs)
 - **Visual highlighting**: Implemented style-based rendering - focus person highlighted with accent, reference person in blue, others greyed out
 
-### 🔄 Remaining Issues
-- **Search results formatting**: Make relationship search results match main page format (show names + parents instead of just names)
+### ✅ Completed Issues  
+- **Search results formatting**: Fixed - search results now show names + parents like main page (changed `@showDetails={{true}}` in person.gjs:39)
 **Created**: June 21, 2025
 **Priority**: LOW - Feature enhancement and accuracy review
 
