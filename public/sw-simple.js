@@ -4,11 +4,12 @@ console.log('🔧 Service Worker: Script loaded');
 const CACHE_NAME = 'family-tree-v1';
 
 // Install event
-self.addEventListener('install', event => {
+self.addEventListener('install', (event) => {
   console.log('🔧 Service Worker: Installing...');
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => {
         console.log('📦 Service Worker: Cache opened');
         // Try to cache files individually to see which one fails
         const urlsToCache = [
@@ -18,80 +19,83 @@ self.addEventListener('install', event => {
           '/assets/vendor.css',
           '/assets/family-tree.css',
           '/api/v1/people.json',
-          '/api/v1/partnerships.json'
+          '/api/v1/partnerships.json',
         ];
-        
+
         return Promise.all(
-          urlsToCache.map(url => {
+          urlsToCache.map((url) => {
             return fetch(url)
-              .then(response => {
+              .then((response) => {
                 if (response.ok) {
                   console.log('✅ Caching:', url);
                   return cache.put(url, response);
                 } else {
-                  console.error('❌ Failed to fetch for cache:', url, response.status);
+                  console.error(
+                    '❌ Failed to fetch for cache:',
+                    url,
+                    response.status,
+                  );
                   // Don't fail the whole installation for missing assets
                   return Promise.resolve();
                 }
               })
-              .catch(error => {
+              .catch((error) => {
                 console.error('❌ Error caching:', url, error);
                 // Don't fail the whole installation for missing assets
                 return Promise.resolve();
               });
-          })
+          }),
         );
       })
       .then(() => {
         console.log('✅ Service Worker: Install complete');
         return self.skipWaiting();
       })
-      .catch(error => {
+      .catch((error) => {
         console.error('❌ Service Worker: Install failed:', error);
         throw error;
-      })
+      }),
   );
 });
 
 // Activate event
-self.addEventListener('activate', event => {
+self.addEventListener('activate', (event) => {
   console.log('🚀 Service Worker: Activating...');
   event.waitUntil(self.clients.claim());
 });
 
 // Fetch event
-self.addEventListener('fetch', event => {
+self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  
+
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
-  
+
   // Family data API - Cache with offline-first strategy
   if (url.pathname.includes('/api/v1/') || url.pathname.endsWith('.json')) {
     event.respondWith(handleFamilyDataRequest(event.request));
     return;
   }
-  
+
   // Everything else - Cache first with network fallback
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        if (response) {
-          console.log('⚡ From cache:', event.request.url);
-          return response;
+    caches.match(event.request).then((response) => {
+      if (response) {
+        console.log('⚡ From cache:', event.request.url);
+        return response;
+      }
+      console.log('🌐 From network:', event.request.url);
+      return fetch(event.request).then((networkResponse) => {
+        // Cache successful responses for next time
+        if (networkResponse.ok) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
         }
-        console.log('🌐 From network:', event.request.url);
-        return fetch(event.request).then(networkResponse => {
-          // Cache successful responses for next time
-          if (networkResponse.ok) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, responseClone);
-            });
-          }
-          return networkResponse;
-        });
-      })
+        return networkResponse;
+      });
+    }),
   );
 });
 
@@ -99,25 +103,27 @@ self.addEventListener('fetch', event => {
 async function handleFamilyDataRequest(request) {
   const cache = await caches.open(CACHE_NAME);
   const cachedResponse = await cache.match(request);
-  
+
   // Cache first, then update in background
   if (cachedResponse) {
     console.log('📱 Using cached family data');
-    
+
     // Update cache in background for next time
-    fetch(request).then(response => {
-      if (response.ok) {
-        console.log('🔄 Background update: Family data refreshed');
-        cache.put(request, response.clone());
-      }
-    }).catch(() => {
-      // Ignore network errors - we have cached data
-      console.log('📡 No connection: Using cached family data');
-    });
-    
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          console.log('🔄 Background update: Family data refreshed');
+          cache.put(request, response.clone());
+        }
+      })
+      .catch(() => {
+        // Ignore network errors - we have cached data
+        console.log('📡 No connection: Using cached family data');
+      });
+
     return cachedResponse;
   }
-  
+
   // No cache - try network and cache result
   try {
     const networkResponse = await fetch(request);

@@ -74,12 +74,13 @@ export default class Landing extends Component {
             <span class='install-icon'>📱</span>
             <h3>Install as Mobile App</h3>
           </div>
-          <p>Get the best experience by installing this family tree on your device!</p>
-          
+          <p>Get the best experience by installing this family tree on your
+            device!</p>
+
           {{#if this.deferredPrompt}}
-            <button 
-              type='button' 
-              class='install-button' 
+            <button
+              type='button'
+              class='install-button'
               {{on 'click' this.installApp}}
             >
               📱 Install App
@@ -87,10 +88,12 @@ export default class Landing extends Component {
           {{else}}
             <div class='install-steps'>
               <div class='install-step'>
-                <strong>📱 On iPhone:</strong> Tap the Share button, then "Add to Home Screen"
+                <strong>📱 On iPhone:</strong>
+                Tap the Share button, then "Add to Home Screen"
               </div>
               <div class='install-step'>
-                <strong>🤖 On Android:</strong> Tap the menu (⋯), then "Add to Home screen"
+                <strong>🤖 On Android:</strong>
+                Tap the menu (⋯), then "Add to Home screen"
               </div>
             </div>
           {{/if}}
@@ -108,7 +111,10 @@ export default class Landing extends Component {
 
   setupPWAInstallation() {
     // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+    if (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone
+    ) {
       this.isInstalled = true;
       return;
     }

@@ -11,14 +11,14 @@ export default class PwaStatus extends Component {
 
   constructor() {
     super(...arguments);
-    
+
     // Listen for online/offline events
     window.addEventListener('online', this.updateOnlineStatus);
     window.addEventListener('offline', this.updateOnlineStatus);
-    
+
     // Check if we have cached data
     this.checkCacheStatus();
-    
+
     // Check for service worker updates
     if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
       navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -43,12 +43,16 @@ export default class PwaStatus extends Component {
     if ('caches' in window) {
       try {
         const cacheNames = await caches.keys();
-        const hasCache = cacheNames.some(name => name.includes('family-tree'));
-        
+        const hasCache = cacheNames.some((name) =>
+          name.includes('family-tree'),
+        );
+
         if (hasCache) {
-          const cache = await caches.open(cacheNames.find(name => name.includes('family-tree')));
+          const cache = await caches.open(
+            cacheNames.find((name) => name.includes('family-tree')),
+          );
           const keys = await cache.keys();
-          this.isCached = keys.some(req => req.url.includes('/api/v1/'));
+          this.isCached = keys.some((req) => req.url.includes('/api/v1/'));
         }
       } catch (error) {
         console.error('Error checking cache status:', error);
@@ -62,8 +66,9 @@ export default class PwaStatus extends Component {
     if (!navigator.onLine) {
       // Show offline message in the UI
       this.showRefreshPrompt = true;
-      this.preloadStatus = '📱 You are offline - cannot refresh from server. Using cached data.';
-      
+      this.preloadStatus =
+        '📱 You are offline - cannot refresh from server. Using cached data.';
+
       // Auto-hide after 3 seconds
       setTimeout(() => {
         this.showRefreshPrompt = false;
@@ -71,7 +76,7 @@ export default class PwaStatus extends Component {
       }, 3000);
       return;
     }
-    
+
     // Online - proceed with refresh
     if (window.FamilyTreePWA && window.FamilyTreePWA.refreshFamilyData) {
       window.FamilyTreePWA.refreshFamilyData();
@@ -93,10 +98,18 @@ export default class PwaStatus extends Component {
         <div class='update-content'>
           <span class='update-icon'>🔄</span>
           <span class='update-text'>New family data available</span>
-          <button type='button' class='update-button' {{on 'click' this.refreshData}}>
+          <button
+            type='button'
+            class='update-button'
+            {{on 'click' this.refreshData}}
+          >
             Update
           </button>
-          <button type='button' class='dismiss-button' {{on 'click' this.dismissRefreshPrompt}}>
+          <button
+            type='button'
+            class='dismiss-button'
+            {{on 'click' this.dismissRefreshPrompt}}
+          >
             ×
           </button>
         </div>

@@ -25,7 +25,7 @@ module.exports = function (environment) {
       versionStrategy: 'every-build',
       skipWaiting: true,
       clientsClaim: true,
-      registrationStrategy: 'async'
+      registrationStrategy: 'async',
     },
   };
 

@@ -190,7 +190,8 @@ export function layoutFamily(
         null, // gender
         null, // id
       );
-      unknownPartner.x = leftParent.x + leftParent.width + totalPartnershipWidth;
+      unknownPartner.x =
+        leftParent.x + leftParent.width + totalPartnershipWidth;
       unknownPartner.y = leftParent.y;
       family.addElement(unknownPartner);
     }
