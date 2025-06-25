@@ -197,9 +197,15 @@ export default class FamilyTreeVisual extends Component {
     // Check if we're in relationship comparison mode and have a relationship object
     if (this.args.relationship) {
       // Extract partnerships from the relationship paths
-      this.extractPartnershipIdsFromPath(this.args.relationship.thisPath, expandedPartnerships);
-      this.extractPartnershipIdsFromPath(this.args.relationship.thatPath, expandedPartnerships);
-      
+      this.extractPartnershipIdsFromPath(
+        this.args.relationship.thisPath,
+        expandedPartnerships,
+      );
+      this.extractPartnershipIdsFromPath(
+        this.args.relationship.thatPath,
+        expandedPartnerships,
+      );
+
       console.log(
         '🔗 Using relationship paths to expand partnerships:',
         Array.from(expandedPartnerships),

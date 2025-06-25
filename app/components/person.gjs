@@ -191,9 +191,9 @@ export default class Person extends Component {
   @action
   navigateToPerson(person) {
     this.router.transitionTo('person', person, {
-      queryParams: { 
+      queryParams: {
         referencePersonId: null,
-        renderer: this.rendererType 
+        renderer: this.rendererType,
       },
     });
   }

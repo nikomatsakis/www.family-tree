@@ -77,11 +77,25 @@ pub fn main() -> anyhow::Result<()> {
         Args::Serve { genea_path } => {
             let genea = Genea::from_genea_doc(genea_path)?;
             json::generate(&genea, "public/api/v1")?;
+            
+            // Encrypt JSON files if FAMILY_TREE_PASSWORD is set
+            Command::new("node")
+                .arg("scripts/encrypt-json.js")
+                .arg("public/api/v1/")
+                .status()?;
+                
             Command::new("pnpm").arg("start").status()?;
         }
         Args::Build { genea_path } => {
             let genea = Genea::from_genea_doc(genea_path)?;
             json::generate(&genea, "public/api/v1")?;
+            
+            // Encrypt JSON files if FAMILY_TREE_PASSWORD is set
+            Command::new("node")
+                .arg("scripts/encrypt-json.js")
+                .arg("public/api/v1/")
+                .status()?;
+                
             Command::new("pnpm").arg("build").status()?;
         }
     }

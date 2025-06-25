@@ -4,8 +4,8 @@ import { service } from '@ember/service';
 export default class PersonRoute extends Route {
   @service genea;
 
-  async model(params) {
-    await this.genea.populate();
+  model(params) {
+    // Data should already be loaded by application route
     return this.genea.person(params.id);
   }
 }

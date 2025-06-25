@@ -145,7 +145,14 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @param {number} offsetY - Cumulative Y offset from parent families
    * @param {Object} callbacks - Callback functions for user interactions
    */
-  renderFamily(group, family, offsetX = 0, offsetY = 0, callbacks = {}, renderData = {}) {
+  renderFamily(
+    group,
+    family,
+    offsetX = 0,
+    offsetY = 0,
+    callbacks = {},
+    renderData = {},
+  ) {
     // Calculate absolute position for this family
     const absoluteX = offsetX + family.x;
     const absoluteY = offsetY + family.y;
@@ -154,12 +161,26 @@ export default class D3TreeRenderer extends BaseRenderer {
     if (family.elements) {
       family.elements.forEach((element) => {
         if (element instanceof Rectangle) {
-          this.renderRectangle(group, element, absoluteX, absoluteY, callbacks, renderData);
+          this.renderRectangle(
+            group,
+            element,
+            absoluteX,
+            absoluteY,
+            callbacks,
+            renderData,
+          );
         } else if (element instanceof Line) {
           this.renderLine(group, element, absoluteX, absoluteY);
         } else if (element instanceof Family) {
           // Recursively render child families with cumulative offset
-          this.renderFamily(group, element, absoluteX, absoluteY, callbacks, renderData);
+          this.renderFamily(
+            group,
+            element,
+            absoluteX,
+            absoluteY,
+            callbacks,
+            renderData,
+          );
         } else {
           throw new Error(`Unknown element type: ${element.constructor.name}`);
         }
@@ -175,7 +196,14 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @param {number} offsetY - Y offset from parent families
    * @param {Object} callbacks - Callback functions for user interactions
    */
-  renderRectangle(group, rect, offsetX, offsetY, callbacks = {}, renderData = {}) {
+  renderRectangle(
+    group,
+    rect,
+    offsetX,
+    offsetY,
+    callbacks = {},
+    renderData = {},
+  ) {
     // Calculate absolute position
     const absoluteX = offsetX + rect.x;
     const absoluteY = offsetY + rect.y;
@@ -249,7 +277,12 @@ export default class D3TreeRenderer extends BaseRenderer {
       textContent = rect.label;
     } else {
       // Apply styling based on personStyle
-      const { fillColor: styleFill, strokeColor: styleStroke, strokeWidth: styleStrokeWidth, textColor: styleTextColor } = this.getPersonStyleColors(personStyle, rect.gender, isFocusPerson);
+      const {
+        fillColor: styleFill,
+        strokeColor: styleStroke,
+        strokeWidth: styleStrokeWidth,
+        textColor: styleTextColor,
+      } = this.getPersonStyleColors(personStyle, rect.gender, isFocusPerson);
       fillColor = styleFill;
       strokeColor = styleStroke;
       strokeWidth = styleStrokeWidth;

@@ -1,46 +1,157 @@
 import Service from '@ember/service';
+import { inject as service } from '@ember/service';
 import invariant from 'tiny-invariant';
 
 export default class GeneaService extends Service {
+  @service auth;
+
   #roots = null;
   #people = {};
   #partnerships = {};
+  #populatePromise = null;
 
   isPopulated() {
     return this.#roots !== null;
   }
 
   async populate() {
+    // Ensure we only populate once even if called multiple times
+    if (this.#populatePromise) {
+      return this.#populatePromise;
+    }
+
     if (this.#roots === null) {
-      let rootsFetch = await fetch('/api/v1/roots.json');
-      let { data, included } = await rootsFetch.json();
+      this.#populatePromise = this._doPopulate();
+      return this.#populatePromise;
+    }
+  }
 
-      this.#roots = new Roots(this, data.attributes, data.relationships);
-      for (let object of included) {
-        switch (object.type) {
-          case 'person':
-            this.#people[object.id] = new Person(
-              this,
-              object.id,
-              object.attributes,
-              object.relationships,
-            );
-            break;
+  resetPopulateState() {
+    // Clear the cached promise so we can try again with new password
+    this.#populatePromise = null;
+  }
 
-          case 'partnership':
-            this.#partnerships[object.id] = new Partnership(
-              this,
-              object.id,
-              object.attributes,
-              object.relationships,
-            );
-            break;
+  async _doPopulate() {
+    let { data, included } = await this._fetchAndDecryptData();
 
-          default:
-            throw new Error(`unexpected type of object ${object.type}`);
-        }
+    this.#roots = new Roots(this, data.attributes, data.relationships);
+    for (let object of included) {
+      switch (object.type) {
+        case 'person':
+          this.#people[object.id] = new Person(
+            this,
+            object.id,
+            object.attributes,
+            object.relationships,
+          );
+          break;
+
+        case 'partnership':
+          this.#partnerships[object.id] = new Partnership(
+            this,
+            object.id,
+            object.attributes,
+            object.relationships,
+          );
+          break;
+
+        default:
+          throw new Error(`unexpected type of object ${object.type}`);
       }
     }
+  }
+
+  async _fetchAndDecryptData() {
+    // Try encrypted version first
+    const encryptedResponse = await fetch('/api/v1/roots.json.enc');
+    if (encryptedResponse.ok) {
+      // Encrypted file exists - check if we have a password
+      const password = localStorage.getItem('familyTreePassword');
+      if (!password) {
+        // No password yet - signal auth service and throw
+        this.auth.requirePassword();
+        throw new Error('Password required - redirecting to authentication');
+      }
+
+      // We have a password - try to decrypt
+      try {
+        const encryptedData = await encryptedResponse.text();
+        const decryptedData = await this._decryptData(encryptedData);
+        // Success! Mark as authenticated
+        this.auth.isAuthenticated = true;
+        this.auth.needsPassword = false;
+        return decryptedData;
+      } catch (error) {
+        // Decryption failed (wrong password?)
+        console.error('Decryption failed:', error);
+        this.auth.clearPassword(); // Clear invalid password
+        this.auth.requirePassword();
+        throw new Error('Invalid password - please try again');
+      }
+    }
+
+    // Fall back to unencrypted version only if encrypted doesn't exist
+    const response = await fetch('/api/v1/roots.json');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch data: ${response.statusText}`);
+    }
+    return await response.json();
+  }
+
+  async _decryptData(encryptedText) {
+    const password = localStorage.getItem('familyTreePassword');
+
+    try {
+      const { salt, iv, data } = JSON.parse(encryptedText);
+
+      // Convert base64 to ArrayBuffer
+      const saltBuffer = this._base64ToArrayBuffer(salt);
+      const ivBuffer = this._base64ToArrayBuffer(iv);
+      const dataBuffer = this._base64ToArrayBuffer(data);
+
+      // Derive key from password
+      const keyMaterial = await window.crypto.subtle.importKey(
+        'raw',
+        new TextEncoder().encode(password),
+        'PBKDF2',
+        false,
+        ['deriveKey'],
+      );
+
+      const key = await window.crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt: saltBuffer,
+          iterations: 100000,
+          hash: 'SHA-256',
+        },
+        keyMaterial,
+        { name: 'AES-CBC', length: 256 },
+        false,
+        ['decrypt'],
+      );
+
+      // Decrypt data
+      const decryptedBuffer = await window.crypto.subtle.decrypt(
+        { name: 'AES-CBC', iv: ivBuffer },
+        key,
+        dataBuffer,
+      );
+
+      const decryptedText = new TextDecoder().decode(decryptedBuffer);
+      return JSON.parse(decryptedText);
+    } catch (error) {
+      throw new Error(`Decryption failed: ${error.message}`);
+    }
+  }
+
+  _base64ToArrayBuffer(base64) {
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
   }
 
   populatedPersonById(id) {

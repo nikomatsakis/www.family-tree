@@ -4,8 +4,8 @@ import { service } from '@ember/service';
 export default class IndexRoute extends Route {
   @service genea;
 
-  async model() {
-    await this.genea.populate();
+  model() {
+    // Data should already be loaded by application route
     return this.genea.roots();
   }
 }
