@@ -13,6 +13,14 @@
 
 ### ✅ Completed Issues  
 - **Search results formatting**: Fixed - search results now show names + parents like main page (changed `@showDetails={{true}}` in person.gjs:39)
+
+### 🐛 Known Bugs
+- **Gender mismatch in sibling relationships**: Spock shows as Michael Burnham's "sister" instead of "brother" 
+  - **URL**: `person/1-1-1-2?referencePersonId=1-1-1-3`
+  - **Expected**: "brother" (Spock is male)
+  - **Actual**: "sister" 
+  - **Location**: Likely in `genea.js:850` `siblingName()` function or related relationship naming logic
+  - **Impact**: Affects relationship accuracy display
 **Created**: June 21, 2025
 **Priority**: LOW - Feature enhancement and accuracy review
 

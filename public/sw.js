@@ -1,9 +1,9 @@
 // Family Tree PWA Service Worker
 // Optimized for Greece travel - aggressive caching, offline-first
 
-const CACHE_VERSION = 'family-tree-v1';
-const FAMILY_DATA_CACHE = 'family-data-v1';
-const APP_CACHE = 'app-cache-v1';
+const CACHE_VERSION = 'family-tree-v2';
+const FAMILY_DATA_CACHE = 'family-data-v2';
+const APP_CACHE = 'app-cache-v2';
 
 // Resources to cache immediately (app shell)
 const APP_SHELL = [
@@ -17,8 +17,8 @@ const APP_SHELL = [
   '/sw-registration.js',
 ];
 
-// Family data API patterns
-const FAMILY_API_PATTERNS = [/\/api\/v1\//, /\.json$/];
+// Family data API patterns - handle both encrypted and unencrypted files
+const FAMILY_API_PATTERNS = [/\/api\/v1\//, /\.json$/, /\.json\.enc$/];
 
 // Install event - cache app shell
 self.addEventListener('install', (event) => {
@@ -49,7 +49,9 @@ self.addEventListener('activate', (event) => {
         const deletePromises = cacheNames
           .filter(
             (cacheName) =>
-              cacheName.startsWith('family-tree-') &&
+              (cacheName.startsWith('family-tree-') || 
+               cacheName.startsWith('family-data-') || 
+               cacheName.startsWith('app-cache-')) &&
               cacheName !== CACHE_VERSION &&
               cacheName !== FAMILY_DATA_CACHE &&
               cacheName !== APP_CACHE,
@@ -95,6 +97,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 // Handle family data with aggressive caching + ETag validation
+// Note: Encrypted .json.enc files are cached as-is. Decryption happens in the app.
 async function handleFamilyDataRequest(request) {
   const cache = await caches.open(FAMILY_DATA_CACHE);
   const cachedResponse = await cache.match(request);
