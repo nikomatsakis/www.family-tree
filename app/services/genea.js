@@ -308,6 +308,8 @@ export class Person {
   }
 
   /// Returns an array of `Relationship` objects between `this` and `thatPerson`.
+  /// The result "X" should fulfill the sentence "this person is that person's X",
+  /// e.g., brother.
   relationshipsTo(thatPerson) {
     // Handle self-relationship case
     if (this === thatPerson) {
@@ -699,29 +701,27 @@ export class Relationship {
 
     // For direct aunt/uncle or niece/nephew relationships, don't include "via" information
     if (thisGenerations == 2 && thatGenerations == 1) {
-      // From child's perspective, that person is the aunt/uncle
-      return piblingName(thatPerson);
+      // This person is the nibling
+      return niblingName(thisPerson);
     }
 
     if (thisGenerations == 1 && thatGenerations == 2) {
-      // From aunt/uncle's perspective, that person is the niece/nephew
-      return niblingName(thatPerson);
+      // This person is the pibling (parent's sibling)
+      return piblingName(thisPerson);
     }
 
-    let sides = `via ${via(this.#thisPath)} and ${via(this.#thatPath)}`;
-
     if (thisGenerations == 1) {
-      return `${piblingModifiers(thatGenerations - 1, piblingName(thisPerson))} ${sides}`;
+      return `${lineageModifiers(thatGenerations - 1, niblingName(thisPerson))}`;
     }
 
     if (thatGenerations == 1) {
-      return `${lineageModifiers(thisGenerations - 1, niblingName(thatPerson))} ${sides}`;
+      return `${piblingModifiers(thisGenerations - 1, piblingName(thisPerson))}`;
     }
 
     let minGeneration = Math.min(thisGenerations, thatGenerations);
     let maxGeneration = Math.max(thisGenerations, thatGenerations);
     let removed = maxGeneration - minGeneration;
-    return `${ordinal(minGeneration)} cousin ${times(removed)} removed ${sides}`;
+    return `${ordinal(minGeneration)} cousin ${times(removed)} removed`;
   }
 }
 

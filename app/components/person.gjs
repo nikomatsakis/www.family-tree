@@ -44,13 +44,6 @@ export default class Person extends Component {
 
           {{#if this.referencePerson}}
             <div class='relationship-display'>
-              <h3>
-                {{@model.name}}
-                and
-                {{this.referencePerson.name}}
-                relationship:
-              </h3>
-
               {{#if this.selectedRelationships.length}}
                 {{#each this.selectedRelationships as |r|}}
                   <div class='relationship-info'>
