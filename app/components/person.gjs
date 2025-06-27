@@ -10,6 +10,7 @@ import { on } from '@ember/modifier';
 import Component from '@glimmer/component';
 import { action } from '@ember/object';
 import { tracked } from '@glimmer/tracking';
+import { DEFAULT_RENDERER_TYPE } from '../utils/family-tree-renderers';
 
 export default class Person extends Component {
   @service genea;
@@ -100,6 +101,15 @@ export default class Person extends Component {
       <div class='navigation-section'>
         <div class='nav-links'>
           <MaintainerLink @person={{@model}} class='edit-link' />
+          {{#if this.isNonDefaultRenderer}}
+            <button
+              type='button'
+              class='nav-link renderer-switch'
+              {{on 'click' this.returnToDefaultRenderer}}
+            >
+              Return to default view
+            </button>
+          {{/if}}
           <IndexLink @referencePerson={{this.referencePerson}} class='nav-link'>
             Return to the root listing
             {{#if this.referencePerson}}for {{this.referencePerson.name}}{{/if}}
@@ -178,7 +188,23 @@ export default class Person extends Component {
     person.generationsFromAncestralPartnership(partnership);
 
   get rendererType() {
-    return this.args.renderer || 'd3-tree';
+    return this.args.renderer || DEFAULT_RENDERER_TYPE;
+  }
+
+  get isNonDefaultRenderer() {
+    return this.rendererType !== DEFAULT_RENDERER_TYPE;
+  }
+
+  @action
+  returnToDefaultRenderer() {
+    this.router.transitionTo('person', this.args.model.id, {
+      queryParams: {
+        referencePersonId: this.referencePerson?.id,
+        renderer: null, // Clear renderer to use default
+        expandedPartnerships: null,
+        expandedPersons: null,
+      },
+    });
   }
 
   @action

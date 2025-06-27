@@ -71,31 +71,34 @@ During horizontal layout removal, we converted 3 flawed manual unit tests into p
 
 ## Ongoing Work Tracking
 
-Track ongoing development work and progress in the `.ongoing/` directory:
+This project uses GitHub tracking issues with the `tracking-issue` label for ongoing work.
 
-- Create `.md` files for each major feature or investigation
-- Include status, progress summary, next steps, and debugging context
-- Update files as work progresses to maintain context across sessions
-- Use descriptive filenames like `feature-name.md` or `bug-investigation.md`
-- When ongoing files describe phased development, wait for active confirmation before beginning the next phase.
+### How to check current work:
+```bash
+gh issue list --label tracking-issue
+```
 
-### Content Guidelines for `.ongoing/` Files
+### When user says "checkpoint our work":
+1. Find the relevant tracking issue (or create one if needed)
+2. Draft a comment with:
+   - What we did this session
+   - Any discoveries or problems encountered  
+   - Progress on tasks
+3. Show draft to user for approval before posting
+4. If the Original Post (OP) needs updating:
+   - Draft updates to reflect current understanding
+   - Show draft for approval before editing
 
-**INCLUDE** (essential for resuming work):
-- High-level status and completion percentage
-- Priority-ordered next steps with specific file/line references
-- Key design decisions with pointers to detailed explanations in code
-- Integration points (which files/services connect to this work)
-- Known blockers or dependencies
+### Creating new tracking issues:
+- Get user approval before creating
+- Use labels: `tracking-issue`, `ai-managed`, plus relevant type (`feature`, `bug`, etc.)
+- Title should describe the user-facing feature
 
-**EXCLUDE** (belongs elsewhere):
-- Detailed algorithms or mathematical foundations (put in code comments or architecture docs)
-- Complete implementation history or session-by-session changes (git handles this)
-- Code examples or debugging snippets (put in actual code files)
-- ASCII diagrams or visual mockups (put in architecture documentation)
-- Detailed bug-fixing narratives (git commit messages capture this)
-
-The goal is concise context for continuation, not comprehensive documentation.
+### Important:
+- Only update issues labeled `ai-managed`
+- Always get explicit approval before posting/editing
+- The OP should always reflect current state
+- Comments preserve the journey/history
 
 ## Project Overview
 
