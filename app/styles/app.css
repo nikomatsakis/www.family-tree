@@ -1091,3 +1091,69 @@
   font-size: 1.2rem;
   color: #666;
 }
+
+/* Connection Footer */
+.connection-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(5px);
+  border-top: 1px solid #e0e0e0;
+  padding: 0.5rem 1rem;
+  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.status-indicator {
+  font-size: 1rem;
+}
+
+.status-text {
+  font-weight: 500;
+  color: #666;
+}
+
+.status-text.online {
+  color: #28a745;
+}
+
+.status-text.offline {
+  color: #dc3545;
+}
+
+.refresh-button {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.refresh-button:hover {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.refresh-button:active {
+  transform: translateY(1px);
+}
+
+/* Add bottom padding to body to account for fixed footer */
+body {
+  padding-bottom: 3rem;
+}
