@@ -241,9 +241,9 @@ module('Unit | Service | genea - Relationship Calculations', function (hooks) {
       'Should find relationship between child and aunt',
     );
 
-    // p2 is female and is c1's parent's sibling, so should be "aunt"
+    // c1 is male and is p2's sibling's child, so c1 is p2's "nephew"
     const relationshipName = relationships[0].name;
-    assert.strictEqual(relationshipName, 'aunt', 'Should be aunt relationship');
+    assert.strictEqual(relationshipName, 'nephew', 'c1 is the nephew of p2');
   });
 
   test('calculates second cousin relationships', function (assert) {
@@ -463,12 +463,12 @@ module('Unit | Service | genea - Relationship Calculations', function (hooks) {
       'Should find relationship between half-siblings',
     );
 
-    // Half-siblings share one parent, so they should still be identified as siblings
+    // Half-siblings share one parent, so they should be identified as half-siblings
     const relationshipName = relationships[0].name;
     assert.strictEqual(
       relationshipName,
-      'sister',
-      'Half-siblings should still be identified as siblings',
+      'half-sister',
+      'Half-siblings should be identified as half-siblings',
     );
   });
 

@@ -692,10 +692,15 @@ export class Relationship {
         if (sharedParents.length === 0) {
           // No shared biological parents - must be step-siblings
           return 'step-' + siblingName(thatPerson);
+        } else if (sharedParents.length === 1) {
+          // Exactly one shared biological parent - half-siblings
+          return halfSiblingName(thatPerson);
+        } else {
+          // Two or more shared biological parents - full siblings
+          return siblingName(thatPerson);
         }
-        return siblingName(thatPerson);
       } else {
-        return `${ordinal(thatGenerations - 1)} cousin ${via(this.#thisPath)}`;
+        return `${ordinal(thatGenerations - 1)} cousin`;
       }
     }
 
@@ -723,26 +728,6 @@ export class Relationship {
     let removed = maxGeneration - minGeneration;
     return `${ordinal(minGeneration)} cousin ${times(removed)} removed`;
   }
-}
-
-function via(path) {
-  for (let link of path.links) {
-    if (link.relation === 'parent') {
-      let { fromPerson: child, toPerson: parent } = link;
-      if (
-        child.parents.every((p) => p == parent || p.gender != parent.gender)
-      ) {
-        return `${possessive(child)} ${parentName(parent)}`;
-      } else {
-        return `${parent.name}`;
-      }
-    }
-  }
-  invariant(false);
-}
-
-function possessive(person) {
-  return `${person.firstName}'s`;
 }
 
 function lineageModifiers(generations, relationship) {
@@ -864,6 +849,17 @@ function siblingName(person) {
       return 'sister';
     default:
       return 'sibling';
+  }
+}
+
+function halfSiblingName(person) {
+  switch (person.gender) {
+    case 'male':
+      return 'half-brother';
+    case 'female':
+      return 'half-sister';
+    default:
+      return 'half-sibling';
   }
 }
 
