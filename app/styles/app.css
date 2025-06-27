@@ -180,6 +180,40 @@
   line-height: 1.6;
 }
 
+.floating-search-button {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 3rem;
+  height: 3rem;
+  background: #3b82f6;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -1px rgb(0 0 0 / 6%);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.floating-search-button:hover {
+  background: #2563eb;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%), 0 4px 6px -2px rgb(0 0 0 / 5%);
+  transform: translateY(-1px);
+}
+
+.floating-search-button:focus {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+.floating-search-button:active {
+  transform: translateY(0);
+}
+
 .section-divider {
   border: none;
   height: 1px;
