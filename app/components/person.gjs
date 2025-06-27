@@ -230,6 +230,8 @@ export default class Person extends Component {
       queryParams: {
         referencePersonId: null,
         renderer: this.rendererType,
+        expandedPartnerships: null,
+        expandedPersons: null,
       },
     });
   }

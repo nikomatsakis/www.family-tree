@@ -182,9 +182,7 @@ export default class FamilyTreeVisual extends Component {
     );
 
     return {
-      hasData:
-        queryParams.expandedPartnerships !== undefined ||
-        queryParams.expandedPersons !== undefined,
+      hasData: !!queryParams.expandedPartnerships || !!queryParams.expandedPersons,
       expandedPartnerships,
       expandedPersons,
     };
