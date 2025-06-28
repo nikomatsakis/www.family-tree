@@ -4,6 +4,7 @@ import { tracked } from '@glimmer/tracking';
 import { on } from '@ember/modifier';
 import { inject as service } from '@ember/service';
 import PersonLink from './person-link';
+import Fuse from 'fuse.js';
 
 export default class UnifiedSearch extends Component {
   @service genea;
@@ -142,18 +143,32 @@ export default class UnifiedSearch extends Component {
 
     try {
       await this.genea.populate();
-      const searchLower = this.searchTerm.toLowerCase();
-      const allPeople = this.genea.allPeople();
+      let allPeople = this.genea.allPeople();
 
       // Filter out the excluded person if provided
       const excludeId = this.args.excludePerson?.id;
+      if (excludeId) {
+        allPeople = allPeople.filter((person) => person.id !== excludeId);
+      }
 
-      this.searchResults = allPeople.filter((person) => {
-        if (excludeId && person.id === excludeId) {
-          return false;
-        }
-        return person.name.toLowerCase().includes(searchLower);
-      });
+      // Configure Fuse.js for fuzzy searching
+      const fuseOptions = {
+        keys: [
+          { name: 'name', weight: 0.8 },
+          { name: 'comments', weight: 0.2 },
+        ],
+        threshold: 0.4, // 0=exact match, 1=match anything
+        includeScore: true,
+        minMatchCharLength: 2,
+        ignoreLocation: true, // Search entire string, not just location
+        findAllMatches: true,
+      };
+
+      const fuse = new Fuse(allPeople, fuseOptions);
+      const fuseResults = fuse.search(this.searchTerm);
+
+      // Extract the person objects from Fuse results
+      this.searchResults = fuseResults.map((result) => result.item);
     } catch (error) {
       console.error('Search error:', error);
       this.searchResults = [];

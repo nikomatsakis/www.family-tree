@@ -14,6 +14,9 @@ importers:
       ember-async-data:
         specifier: ^1.0.3
         version: 1.0.3(ember-source@5.11.1(@glimmer/component@1.1.2(@babel/core@7.27.4))(rsvp@4.8.5)(webpack@5.99.9))
+      fuse.js:
+        specifier: ^7.1.0
+        version: 7.1.0
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
