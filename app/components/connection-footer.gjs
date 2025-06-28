@@ -39,10 +39,10 @@ export default class ConnectionFooter extends Component {
     <footer class='connection-footer'>
       <div class='connection-status'>
         <span class='status-indicator {{if this.isOnline "online" "offline"}}'>
-          {{if this.isOnline "🟢" "🔴"}}
+          {{if this.isOnline '🟢' '🔴'}}
         </span>
         <span class='status-text'>
-          {{if this.isOnline "Online" "Offline"}}
+          {{if this.isOnline 'Online' 'Offline'}}
         </span>
         <button
           type='button'

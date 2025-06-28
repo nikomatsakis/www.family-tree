@@ -49,9 +49,9 @@ self.addEventListener('activate', (event) => {
         const deletePromises = cacheNames
           .filter(
             (cacheName) =>
-              (cacheName.startsWith('family-tree-') || 
-               cacheName.startsWith('family-data-') || 
-               cacheName.startsWith('app-cache-')) &&
+              (cacheName.startsWith('family-tree-') ||
+                cacheName.startsWith('family-data-') ||
+                cacheName.startsWith('app-cache-')) &&
               cacheName !== CACHE_VERSION &&
               cacheName !== FAMILY_DATA_CACHE &&
               cacheName !== APP_CACHE,
