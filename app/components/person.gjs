@@ -1,15 +1,11 @@
 import { service } from '@ember/service';
 import IndexLink from './index-link';
 import MaintainerLink from './maintainer-link';
-import { LinkTo } from '@ember/routing';
-import PersonLink from './person-link';
-import PersonSearch from './person-search';
+import UnifiedSearch from './unified-search';
 import FamilyTreeVisual from './family-tree-visual';
-import { hash } from '@ember/helper';
 import { on } from '@ember/modifier';
 import Component from '@glimmer/component';
 import { action } from '@ember/object';
-import { tracked } from '@glimmer/tracking';
 import { DEFAULT_RENDERER_TYPE } from '../utils/family-tree-renderers';
 
 export default class Person extends Component {
@@ -23,12 +19,21 @@ export default class Person extends Component {
       {{on 'click' this.navigateToSearch}}
       title='Search for someone'
     >
-      <svg width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>
+      <svg
+        width='24'
+        height='24'
+        viewBox='0 0 24 24'
+        fill='none'
+        stroke='currentColor'
+        stroke-width='2'
+        stroke-linecap='round'
+        stroke-linejoin='round'
+      >
         <circle cx='11' cy='11' r='8'></circle>
         <path d='m21 21-4.35-4.35'></path>
       </svg>
     </button>
-    
+
     <div class='person-detail'>
       <div class='person-header'>
         <h1 class='person-name'>{{@model.name}}</h1>
@@ -44,12 +49,10 @@ export default class Person extends Component {
           <h2>Parents, partners, and children</h2>
 
           <div class='relationship-search'>
-            <PersonSearch
-              @label='See how {{@model.name}} is related to:'
-              @placeholder='Search for someone...'
+            <UnifiedSearch
+              @placeholder='See how {{@model.name}} is related to...'
               @onSelectPerson={{this.selectPersonForComparison}}
               @excludePerson={{@model}}
-              @showDetails={{true}}
               @inputClass='relationship-search-input'
               @inputId='relationship-search'
             />

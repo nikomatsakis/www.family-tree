@@ -13,21 +13,19 @@
 }
 
 .search-container {
-  display: flex;
-  justify-content: center;
   margin-bottom: 3rem;
   position: relative;
 }
 
 .search-box {
   width: 100%;
-  max-width: 500px;
   padding: 0.75rem 1rem;
   font-size: 1rem;
   border: 2px solid #ccc;
   border-radius: 4px;
   outline: none;
   transition: border-color 0.3s;
+  box-sizing: border-box;
 }
 
 .search-box:focus {
@@ -99,10 +97,8 @@
 .search-results {
   position: absolute;
   top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
   width: 100%;
-  max-width: 500px;
   margin-top: 5px;
   background: white;
   border: 1px solid #ddd;
@@ -919,6 +915,19 @@
 }
 
 @media (max-width: 768px) {
+  .landing-page {
+    padding: 1rem;
+  }
+  
+  .search-container {
+    margin-bottom: 2rem;
+  }
+  
+  .search-box {
+    padding: 0.6rem 0.8rem;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
   .install-instructions {
     margin: 1rem 0;
     padding: 20px;
