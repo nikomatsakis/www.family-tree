@@ -8,6 +8,7 @@ import {
   createMockFamily,
   createComplexMockFamily,
 } from '../../helpers/mock-genea-data';
+import { loadGeneaFixture } from '../../helpers/genea-fixtures';
 
 // Mock GeneaService that provides test data
 class MockGeneaService extends Service {
@@ -886,6 +887,146 @@ module('Unit | Service | genea - Relationship Calculations', function (hooks) {
       relationshipNames[0],
       'sister',
       'Should identify as sister',
+    );
+  });
+
+  test('calculates granduncle relationships correctly (both directions)', async function (assert) {
+    // Load the granduncle fixture with real genea data
+    const { allPeople } = await loadGeneaFixture('granduncle');
+
+    // Find the people by their names
+    const child = allPeople.find((p) => p.name === 'Child Test');
+    const granduncle = allPeople.find((p) => p.name === 'Uncle Pete');
+
+    assert.ok(child, 'Should find Child Test in fixture');
+    assert.ok(granduncle, 'Should find Uncle Pete in fixture');
+
+    // Test Child → Granduncle relationship
+    const childToGranduncle = child.relationshipsTo(granduncle);
+    assert.ok(
+      childToGranduncle.length >= 1,
+      'Should find relationship from child to granduncle',
+    );
+
+    const childRelationshipName = childToGranduncle[0].name;
+    assert.strictEqual(
+      childRelationshipName,
+      'grandnephew',
+      `Child Test is Uncle Pete's grandnephew, got "${childRelationshipName}"`,
+    );
+
+    // Test Granduncle → Child relationship
+    const granduncleToChild = granduncle.relationshipsTo(child);
+    assert.ok(
+      granduncleToChild.length >= 1,
+      'Should find relationship from granduncle to child',
+    );
+
+    const granduncleRelationshipName = granduncleToChild[0].name;
+    assert.strictEqual(
+      granduncleRelationshipName,
+      'granduncle',
+      `Uncle Pete is Child Test's granduncle, got "${granduncleRelationshipName}"`,
+    );
+  });
+
+  test('calculates comprehensive uncle/nephew relationships (all generations)', async function (assert) {
+    const { allPeople } = await loadGeneaFixture('comprehensive-relationships');
+
+    const nephew = allPeople.find((p) => p.name === 'Nephew Tom');
+    const uncle = allPeople.find((p) => p.name === 'Uncle Jim');
+    const granduncle = allPeople.find((p) => p.name === 'Granduncle Pete');
+    const greatGranduncle = allPeople.find((p) => p.name === 'Great-Granduncle Fred');
+
+    assert.ok(nephew, 'Should find Nephew Tom');
+    assert.ok(uncle, 'Should find Uncle Jim');
+    assert.ok(granduncle, 'Should find Granduncle Pete');
+    assert.ok(greatGranduncle, 'Should find Great-Granduncle Fred');
+
+    // Uncle/Nephew relationships
+    assert.strictEqual(
+      nephew.relationshipsTo(uncle)[0].name,
+      'nephew',
+      'Nephew Tom is Uncle Jim\'s nephew',
+    );
+    assert.strictEqual(
+      uncle.relationshipsTo(nephew)[0].name,
+      'uncle',
+      'Uncle Jim is Nephew Tom\'s uncle',
+    );
+
+    // Granduncle/Grandnephew relationships  
+    assert.strictEqual(
+      nephew.relationshipsTo(granduncle)[0].name,
+      'grandnephew',
+      "Nephew Tom is Granduncle Pete's grandnephew",
+    );
+    assert.strictEqual(
+      granduncle.relationshipsTo(nephew)[0].name,
+      'granduncle',
+      "Granduncle Pete is Nephew Tom's granduncle",
+    );
+
+    // Great-granduncle/Great-grandnephew relationships
+    assert.strictEqual(
+      nephew.relationshipsTo(greatGranduncle)[0].name,
+      'great grandnephew',
+      "Nephew Tom is Great-Granduncle Fred's great grandnephew",
+    );
+    assert.strictEqual(
+      greatGranduncle.relationshipsTo(nephew)[0].name,
+      'great granduncle',
+      "Great-Granduncle Fred is Nephew Tom's great granduncle",
+    );
+  });
+
+  test('calculates comprehensive aunt/niece relationships (all generations)', async function (assert) {
+    const { allPeople } = await loadGeneaFixture('comprehensive-relationships');
+
+    const niece = allPeople.find((p) => p.name === 'Niece Emma');
+    const aunt = allPeople.find((p) => p.name === 'Aunt Lisa');
+    const grandaunt = allPeople.find((p) => p.name === 'Grandaunt Sue');
+    const greatGrandaunt = allPeople.find((p) => p.name === 'Great-Grandma Smith');
+
+    assert.ok(niece, 'Should find Niece Emma');
+    assert.ok(aunt, 'Should find Aunt Lisa');
+    assert.ok(grandaunt, 'Should find Grandaunt Sue');
+    assert.ok(greatGrandaunt, 'Should find Great-Grandma Smith');
+
+    // Aunt/Niece relationships
+    assert.strictEqual(
+      niece.relationshipsTo(aunt)[0].name,
+      'niece',
+      'Niece Emma is Aunt Lisa\'s niece',
+    );
+    assert.strictEqual(
+      aunt.relationshipsTo(niece)[0].name,
+      'aunt',
+      'Aunt Lisa is Niece Emma\'s aunt',
+    );
+
+    // Grandaunt/Grandniece relationships
+    assert.strictEqual(
+      niece.relationshipsTo(grandaunt)[0].name,
+      'grandniece',
+      "Niece Emma is Grandaunt Sue's grandniece",
+    );
+    assert.strictEqual(
+      grandaunt.relationshipsTo(niece)[0].name,
+      'grandaunt',
+      "Grandaunt Sue is Niece Emma's grandaunt",
+    );
+
+    // Great-grandaunt/Great-grandniece relationships (using great-grandma)
+    assert.strictEqual(
+      niece.relationshipsTo(greatGrandaunt)[0].name,
+      'great great granddaughter',
+      "Niece Emma is Great-Grandma Smith's great great granddaughter",
+    );
+    assert.strictEqual(
+      greatGrandaunt.relationshipsTo(niece)[0].name,
+      'great great grandmother',
+      "Great-Grandma Smith is Niece Emma's great great grandmother",
     );
   });
 });

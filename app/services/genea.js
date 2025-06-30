@@ -704,23 +704,14 @@ export class Relationship {
       }
     }
 
-    // For direct aunt/uncle or niece/nephew relationships, don't include "via" information
-    if (thisGenerations == 2 && thatGenerations == 1) {
-      // This person is the nibling
-      return niblingName(thisPerson);
+    // Let the extended logic handle all aunt/uncle and niece/nephew relationships
+
+    if (thisGenerations >= 1 && thatGenerations == 1) {
+      return `${piblingModifiers(thisGenerations, niblingName(thisPerson))}`;
     }
 
-    if (thisGenerations == 1 && thatGenerations == 2) {
-      // This person is the pibling (parent's sibling)
-      return piblingName(thisPerson);
-    }
-
-    if (thisGenerations == 1) {
-      return `${lineageModifiers(thatGenerations - 1, niblingName(thisPerson))}`;
-    }
-
-    if (thatGenerations == 1) {
-      return `${piblingModifiers(thisGenerations - 1, piblingName(thisPerson))}`;
+    if (thisGenerations == 1 && thatGenerations >= 1) {
+      return `${piblingModifiers(thatGenerations, piblingName(thisPerson))}`;
     }
 
     let minGeneration = Math.min(thisGenerations, thatGenerations);
@@ -746,20 +737,44 @@ function lineageModifiers(generations, relationship) {
   }
 }
 
+/**
+ * Modifies uncle/aunt and nephew/niece relationships based on generation distance.
+ * 
+ * The generations parameter represents how many generations up from the common ancestor.
+ * For example, in this family tree:
+ * 
+ *     Grandparent
+ *         |
+ *     +---+---+
+ *     |       |
+ *   Parent  Uncle    (Uncle: 1 gen up from Parent, Parent: 1 gen up from Child)
+ *     |
+ *   Child
+ * 
+ * Child → Uncle: thisGen=2 (Child→Parent→Grandparent), thatGen=1 (Uncle→Grandparent)
+ * So we call piblingModifiers(2, "uncle") → "uncle" (regular uncle)
+ * 
+ * @param {number} generations - Number of generations from person to common ancestor
+ * @param {string} relationship - Base relationship (uncle/aunt or nephew/niece)
+ */
 function piblingModifiers(generations, relationship) {
   console.log('pniblingModifiers', generations, relationship);
   switch (generations) {
-    case 0:
+    case 1:
+      // This shouldn't happen in practice
       return 'self';
 
-    case 1:
+    case 2:
+      // Common ancestor is grandparent → regular uncle/aunt
       return relationship;
 
-    case 2:
-      return 'great';
+    case 3:
+      // Common ancestor is great-grandparent → granduncle/grandaunt
+      return `grand${relationship}`;
 
-    case 3: {
-      let greats = 'great '.repeat(generations - 2);
+    default: {
+      // Common ancestor is 2+ greats grandparent → great granduncle, great great granduncle, etc.
+      let greats = 'great '.repeat(generations - 3);
       return `${greats}grand${relationship}`;
     }
   }

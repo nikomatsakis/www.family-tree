@@ -1,0 +1,9 @@
+# Granduncle relationship test family
+# Format: 10 henry numbers, gender, num_kids, num_spouses, spouse_index, name [\comment]
+
+ 1 0 0 0 0 0 0 0 0 0 M 2 1 0         Grandpa Wilson\The grandfather
+ 1 0 0 0 0 0 0 0 0 0 F 2 0 1         Grandma Wilson\The grandmother
+ 1 1 0 0 0 0 0 0 0 0 M 1 1 0         Dad Wilson\The father (son of grandparents)
+ 1 1 0 0 0 0 0 0 0 0 F 1 0 1         Mom Wilson\The mother
+ 1 1 1 0 0 0 0 0 0 0 M 0 0 0         Child Test\The grandnephew
+ 1 2 0 0 0 0 0 0 0 0 M 0 0 0         Uncle Pete\Granduncle (brother of dad)
