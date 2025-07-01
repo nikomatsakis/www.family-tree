@@ -658,6 +658,7 @@ export class Relationship {
     let thisGenerations = this.#thisPath.generations;
     let thatGenerations = this.#thatPath.generations;
 
+
     /// thisPerson and thatPerson are partners
     if (thisGenerations === 0 && thatGenerations === 0) {
       return partnerName(thatPerson);
@@ -718,6 +719,12 @@ export class Relationship {
     let maxGeneration = Math.max(thisGenerations, thatGenerations);
     let removed = maxGeneration - minGeneration;
     return `${ordinal(minGeneration)} cousin ${times(removed)} removed`;
+  }
+
+  get sentence() {
+    let thisPerson = this.#thisPath.startPerson;
+    let thatPerson = this.#thatPath.startPerson;
+    return `${thisPerson.name} is ${thatPerson.name}'s ${this.name}`;
   }
 }
 

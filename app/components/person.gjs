@@ -63,15 +63,7 @@ export default class Person extends Component {
               {{#if this.selectedRelationships.length}}
                 {{#each this.selectedRelationships as |r|}}
                   <div class='relationship-info'>
-                    {{@model.name}}
-                    is
-                    {{this.referencePerson.name}}'s
-                    <a
-                      href='/family-tree-explainer.png'
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      class='relationship-link'
-                    ><strong>{{this.relationshipName r}}</strong></a>
+                    <span>{{this.relationshipSentence r}}</span>
                     <button
                       type='button'
                       class='clear-comparison'
@@ -134,7 +126,7 @@ export default class Person extends Component {
     </div>
   </template>
 
-  relationshipName = (r) => r.name;
+  relationshipSentence = (r) => r.sentence;
 
   get showSiblings() {
     return true; // Always show the new search interface
