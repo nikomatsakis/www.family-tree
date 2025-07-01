@@ -54,6 +54,15 @@ export default class UnifiedSearch extends Component {
                         }}{{parent.firstName}}{{/each}}
                     </div>
                   {{/if}}
+                  {{#if person.partners.length}}
+                    <div class='person-partners'>
+                      Partners:
+                      {{#each person.partners as |partner index|}}{{if
+                          index
+                          ', '
+                        }}{{partner.firstName}}{{/each}}
+                    </div>
+                  {{/if}}
                   {{#if person.parentIn.length}}
                     <div class='person-children'>
                       Children:
