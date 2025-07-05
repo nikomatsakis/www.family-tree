@@ -85,60 +85,8 @@ module('Unit | Service | genea', function (hooks) {
       };
     });
 
-    test('calculates sibling relationships correctly', function (assert) {
-      // Create parents
-      this.createPerson('dad', 'John Smith', 'male');
-      this.createPerson('mom', 'Jane Smith', 'female');
-
-      // Create children
-      this.createPerson('brother', 'Bob Smith', 'male');
-      this.createPerson('sister', 'Alice Smith', 'female');
-
-      // Create parent partnership
-      this.createPartnership('parents', ['dad', 'mom'], ['brother', 'sister']);
-
-      // Update relationships for parents
-      this.updatePersonRelationships('dad', {
-        childIn: { data: null },
-        parentIn: { data: [{ type: 'partnership', id: 'parents' }] },
-      });
-      this.updatePersonRelationships('mom', {
-        childIn: { data: null },
-        parentIn: { data: [{ type: 'partnership', id: 'parents' }] },
-      });
-
-      // Update relationships for children
-      const brotherUpdated = this.updatePersonRelationships('brother', {
-        childIn: { data: { type: 'partnership', id: 'parents' } },
-        parentIn: { data: [] },
-      });
-      const sisterUpdated = this.updatePersonRelationships('sister', {
-        childIn: { data: { type: 'partnership', id: 'parents' } },
-        parentIn: { data: [] },
-      });
-
-      // Calculate relationships
-      const relationships = brotherUpdated.relationshipsTo(sisterUpdated);
-
-      // Basic assertions
-      assert.ok(relationships, 'Should return relationships array');
-      assert.strictEqual(
-        relationships.length,
-        1,
-        'Should find exactly one relationship path',
-      );
-
-      const relationship = relationships[0];
-      assert.ok(relationship, 'Should have a relationship object');
-
-      // Check the relationship name
-      const relationshipName = relationship.name;
-      assert.strictEqual(
-        relationshipName,
-        'sister',
-        'Brother to sister should be "sister"',
-      );
-    });
+    // 💡: Deleted old manual sibling test - now covered by vector-based tests
+    // The old test was using broken logic (wrong gender) and complex manual mocks
 
     test('detects when people are not related', function (assert) {
       // Create two separate families

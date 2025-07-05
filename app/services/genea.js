@@ -652,16 +652,22 @@ export class Relationship {
     return `${thisGen}-${thatGen}-${this.commonAncestor.id}`;
   }
 
-  get name() {
+
+  asymmetricRelationship(relationshipName) {
+    let thisPerson = this.#thisPath.startPerson;
+    let thatPerson = this.#thatPath.startPerson;
+    return `${thisPerson.name} is ${thatPerson.name}'s ${relationshipName}`;
+  }
+
+  get sentence() {
     let thisPerson = this.#thisPath.startPerson;
     let thatPerson = this.#thatPath.startPerson;
     let thisGenerations = this.#thisPath.generations;
     let thatGenerations = this.#thatPath.generations;
 
-
     /// thisPerson and thatPerson are partners
     if (thisGenerations === 0 && thatGenerations === 0) {
-      return partnerName(thatPerson);
+      return this.asymmetricRelationship(partnerName(thatPerson));
     }
 
     /// thisPerson is an ancestor of thatPerson
@@ -669,7 +675,7 @@ export class Relationship {
       let path = this.#thatPath.reversed();
       invariant(path.startPerson === thisPerson);
       invariant(path.endPerson === thatPerson);
-      return ancestorName(path);
+      return this.asymmetricRelationship(ancestorName(path));
     }
 
     /// thisPerson is a descendant of thatPerson
@@ -677,7 +683,7 @@ export class Relationship {
       let path = this.#thisPath;
       invariant(path.startPerson == thisPerson);
       invariant(path.endPerson == thatPerson);
-      return descendantName(path);
+      return this.asymmetricRelationship(descendantName(path));
     }
 
     /// thisPerson and thatPerson are siblings or (first, second, third) cousins
@@ -692,39 +698,34 @@ export class Relationship {
 
         if (sharedParents.length === 0) {
           // No shared biological parents - must be step-siblings
-          return 'step-' + siblingName(thatPerson);
+          // 💡: Using thisPerson's gender since sentence is "thisPerson is thatPerson's [relationship]"
+          return this.asymmetricRelationship('step-' + siblingName(thisPerson));
         } else if (sharedParents.length === 1) {
           // Exactly one shared biological parent - half-siblings
-          return halfSiblingName(thatPerson);
+          return this.asymmetricRelationship(halfSiblingName(thisPerson));
         } else {
           // Two or more shared biological parents - full siblings
-          return siblingName(thatPerson);
+          return this.asymmetricRelationship(siblingName(thisPerson));
         }
       } else {
-        return `${ordinal(thatGenerations - 1)} cousin`;
+        return this.asymmetricRelationship(`${ordinal(thatGenerations - 1)} cousin`);
       }
     }
 
     // Let the extended logic handle all aunt/uncle and niece/nephew relationships
 
     if (thisGenerations >= 1 && thatGenerations == 1) {
-      return `${piblingModifiers(thisGenerations, niblingName(thisPerson))}`;
+      return this.asymmetricRelationship(`${piblingModifiers(thisGenerations, niblingName(thisPerson))}`);
     }
 
     if (thisGenerations == 1 && thatGenerations >= 1) {
-      return `${piblingModifiers(thatGenerations, piblingName(thisPerson))}`;
+      return this.asymmetricRelationship(`${piblingModifiers(thatGenerations, piblingName(thisPerson))}`);
     }
 
     let minGeneration = Math.min(thisGenerations, thatGenerations);
     let maxGeneration = Math.max(thisGenerations, thatGenerations);
     let removed = maxGeneration - minGeneration;
-    return `${ordinal(minGeneration)} cousin ${times(removed)} removed`;
-  }
-
-  get sentence() {
-    let thisPerson = this.#thisPath.startPerson;
-    let thatPerson = this.#thatPath.startPerson;
-    return `${thisPerson.name} is ${thatPerson.name}'s ${this.name}`;
+    return this.asymmetricRelationship(`${ordinal(minGeneration)} cousin ${times(removed)} removed`);
   }
 }
 

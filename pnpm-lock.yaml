@@ -3267,8 +3267,8 @@ packages:
   electron-to-chromium@1.5.161:
     resolution: {integrity: sha512-hwtetwfKNZo/UlwHIVBlKZVdy7o8bIZxxKs0Mv/ROPiQQQmDgdm5a+KvKtBsxM8ZjFzTaCeLoodZ8jiBE3o9rA==}
 
-  electron-to-chromium@1.5.177:
-    resolution: {integrity: sha512-7EH2G59nLsEMj97fpDuvVcYi6lwTcM1xuWw3PssD8xzboAW7zj7iB3COEEEATUfjLHrs5uKBLQT03V/8URx06g==}
+  electron-to-chromium@1.5.179:
+    resolution: {integrity: sha512-UWKi/EbBopgfFsc5k61wFpV7WrnnSlSzW/e2XcBmS6qKYTivZlLtoll5/rdqRTxGglGHkmkW0j0pFNJG10EUIQ==}
 
   ember-async-data@1.0.3:
     resolution: {integrity: sha512-54OtoQwNi+/ZvPOVuT4t8fcHR9xL8N7kBydzcZSo6BIEsLYeXPi3+jUR8niWjfjXXhKlJ8EWXR0lTeHleTrxbw==}
@@ -10381,7 +10381,7 @@ snapshots:
   browserslist@3.2.8:
     dependencies:
       caniuse-lite: 1.0.30001726
-      electron-to-chromium: 1.5.177
+      electron-to-chromium: 1.5.179
 
   browserslist@4.25.0:
     dependencies:
@@ -11148,7 +11148,7 @@ snapshots:
 
   electron-to-chromium@1.5.161: {}
 
-  electron-to-chromium@1.5.177: {}
+  electron-to-chromium@1.5.179: {}
 
   ember-async-data@1.0.3(ember-source@5.11.1(@glimmer/component@1.1.2(@babel/core@7.27.4))(rsvp@4.8.5)(webpack@5.99.9)):
     dependencies:

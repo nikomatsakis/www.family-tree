@@ -96,6 +96,12 @@ impl Parser {
             return Ok(());
         }
 
+        // 💡: Skip comment lines starting with # to allow documentation within genea files
+        // This enables better fixture documentation without affecting parsing logic
+        if line_trim.starts_with('#') {
+            return Ok(());
+        }
+
         if !PERSON_LINE.is_match(line) {
             if self.preamble {
                 if let Some(m) = MAINTAINER_LINE.captures(line) {

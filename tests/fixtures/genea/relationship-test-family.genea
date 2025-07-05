@@ -1,0 +1,26 @@
+# Comprehensive relationship testing family with noun names for clarity
+# 💡: Using noun names (Sponge, Broom, etc.) instead of family names to eliminate cognitive overhead
+# 💡: Organizing in depth-first order as required by parser (complete each family line before siblings)
+# Format: 10 henry numbers, gender, num_kids, num_spouses, spouse_index, name [\comment]
+
+# Root ancestors
+ 1 0 0 0 0 0 0 0 0 0 M 2 1 0         Root\Root ancestor for main family line
+ 1 0 0 0 0 0 0 0 0 0 F 2 0 1         Leaf\Root ancestor spouse
+
+# First family line (Tree's descendants) - complete depth-first
+ 1 1 0 0 0 0 0 0 0 0 M 2 1 0         Tree\Great-grandparent
+ 1 1 0 0 0 0 0 0 0 0 F 2 0 1         River\Great-grandparent spouse
+ 1 1 1 0 0 0 0 0 0 0 M 2 1 0         Sky\Grandparent
+ 1 1 1 0 0 0 0 0 0 0 F 2 0 1         Moon\Grandparent spouse
+ 1 1 1 1 0 0 0 0 0 0 M 2 1 0         Book\Parent
+ 1 1 1 1 0 0 0 0 0 0 F 2 0 1         Pen\Parent spouse
+ 1 1 1 1 1 0 0 0 0 0 M 0 0 0         Sponge\Child for testing
+ 1 1 1 1 2 0 0 0 0 0 F 0 0 0         Broom\Sibling of Sponge
+ 1 1 1 2 0 0 0 0 0 0 M 2 1 0         Table\Uncle (brother of Book)
+ 1 1 1 2 0 0 0 0 0 0 F 2 0 1         Chair\Aunt (spouse of Table)
+ 1 1 1 2 1 0 0 0 0 0 M 0 0 0         Cup\Cousin (son of Table)
+ 1 1 1 2 2 0 0 0 0 0 F 0 0 0         Plate\Cousin (daughter of Table)
+ 1 1 2 0 0 0 0 0 0 0 M 0 0 0         Sun\Granduncle (brother of Sky)
+
+# Second family line (Mountain as great-granduncle)
+ 1 2 0 0 0 0 0 0 0 0 M 0 0 0         Mountain\Great-granduncle (brother of Tree)
