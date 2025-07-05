@@ -2,11 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Important
+## Project Overview
 
-Always create and propose plans before making edits or taking action. **Never make code edits without explicit approval of the plan first.** Discuss what you intend to change and get confirmation before using Edit, MultiEdit, or Write tools.
+This is a family tree application that:
+1. Parses genealogy data from a custom `genea.doc` format using Rust
+2. Generates JSON API data in `public/api/v1/`
+3. Serves the data through an Ember.js web application
 
-### Test Driven Development for Layout Algorithms
+### Data Flow
+1. Rust parser reads `genea.doc`
+2. Generates JSON files in `public/api/v1/`
+3. Ember app fetches JSON via genea service
+4. Components render family tree visualization
+
+## Test Driven Development for Layout Algorithms
 
 When implementing layout algorithm changes or new rendering features:
 
@@ -23,95 +32,12 @@ When implementing layout algorithm changes or new rendering features:
 
 This codebase values visual validation and real data flows over isolated unit testing for layout functionality.
 
-## Integration-First Testing Philosophy
-
-**Core Principle**: Always prefer integration tests starting with genea data over manual unit tests.
-
-### Why Integration Tests Are Superior
-
-1. **Real Data Flow**: Tests the complete pipeline: genea parsing → JSON generation → service loading → renderer processing
-2. **Automatic Setup**: Properties like `hasChildren`, `isExpanded`, `rightFamilyRIndices` are set correctly by the real system
-3. **Realistic Scenarios**: Tests actual family tree structures that users encounter
-4. **Fewer Assumptions**: No need to manually construct complex RenderTree objects with correct relationships
-5. **Catch Real Bugs**: Integration tests revealed expansion button issues that unit tests missed
-
-### When to Use Each Approach
-
-**✅ PREFERRED: Integration Tests with Genea Fixtures**
-- Any family tree rendering scenarios
-- Testing layout algorithms with multiple generations
-- Validating expansion states and buttons
-- Testing complex family structures (single parents, multiple marriages, etc.)
-- End-to-end workflow validation
-
-**⚠️ AVOID: Manual Unit Tests with RenderTree**
-- Manually constructing RenderTree objects is error-prone
-- Easy to miss required properties (hasChildren, isExpanded, etc.)
-- Creates brittle tests that break when data structures evolve
-- Doesn't test the real user experience
-
-**✅ ACCEPTABLE: Unit Tests for Pure Functions**
-- Testing individual utility functions (spacing calculations, etc.)
-- Testing rendering components in isolation (TextCanvas, Rectangle positioning)
-- Testing pure data transformations without complex object relationships
-
 ### Implementation Strategy
 
 1. **Create Genea Fixtures**: For new scenarios, create `.genea` files in `tests/fixtures/genea/`
 2. **Generate JSON**: Use `cargo run -- json fixture.genea output/` to create test data
 3. **Write Integration Tests**: Use `loadGeneaFixture()` and test the complete rendering pipeline
 4. **Update Expected Output**: Match the vertical layout output, not legacy horizontal layout
-
-### Success Story
-
-During horizontal layout removal, we converted 3 flawed manual unit tests into proper integration tests:
-- **Before**: 115/125 tests passing, complex manual RenderTree construction
-- **After**: 123/123 tests passing, clean genea-based integration tests
-- **Result**: 100% test coverage with more maintainable and realistic test scenarios
-
-## Ongoing Work Tracking
-
-This project uses GitHub tracking issues with the `tracking-issue` label for ongoing work.
-
-### How to check current work:
-```bash
-gh issue list --label tracking-issue
-```
-
-### When user says "checkpoint our work":
-1. Find the relevant tracking issue (or create one if needed)
-2. Draft a comment with:
-   - What we did this session
-   - Any discoveries or problems encountered  
-   - Progress on tasks
-3. Show draft to user for approval before posting
-4. If the Original Post (OP) needs updating:
-   - Draft updates to reflect current understanding
-   - Show draft for approval before editing
-
-### Creating new tracking issues:
-- Get user approval before creating
-- Use labels: `tracking-issue`, `ai-managed`, plus relevant type (`feature`, `bug`, etc.)
-- Title should describe the user-facing feature
-
-### Important:
-- Only update issues labeled `ai-managed`
-- Always get explicit approval before posting/editing
-- The OP should always reflect current state
-- Comments preserve the journey/history
-
-## Project Overview
-
-This is a family tree application that:
-1. Parses genealogy data from a custom `genea.doc` format using Rust
-2. Generates JSON API data in `public/api/v1/`
-3. Serves the data through an Ember.js web application
-
-### Data Flow
-1. Rust parser reads `genea.doc`
-2. Generates JSON files in `public/api/v1/`
-3. Ember app fetches JSON via genea service
-4. Components render family tree visualization
 
 ## Ember Development Philosophy
 
@@ -168,33 +94,6 @@ test('my integration test', async function (assert) {
 
 **Benefits**: Real data structures, production code paths, simple setup, easy scenarios.
 
-## AI Memory Comments System
-
-This codebase uses structured emoji comments to provide persistent memory for both AI and human developers:
-
-- `❓ QUESTION:` - Open questions or unclear areas that need investigation
-- `💡 ANSWER:` - Answers to previous questions or explanations of confusing code  
-- `⚠️ IMPORTANT:` - Critical things not to change/break, warnings about side effects
-- `🎯 PURPOSE:` - Why this code exists, design decisions, architectural reasoning
-
-### Rules for AI
-1. **NEVER remove or contradict** existing emoji comments
-2. **ALWAYS preserve** these comments when editing code - copy them to new locations if code moves
-3. **When user says** "We've made this mistake before, can you add an AI note to remember it?":
-   - Analyze the context and type of issue
-   - Choose appropriate emoji comment type
-   - Add concise, specific comment addressing the root problem
-   - Place strategically (inline for specific lines, block for functions/sections)
-
-### Comment Placement Guidelines
-- **ALWAYS precede** the code being explained - never inline at end of lines
-- **Above functions/classes** for high-level context and design decisions
-- **Immediately before specific lines** for detailed explanations or warnings
-- **Before complex logic blocks** for questions and answers about confusing code
-- **Above fragile code** for important warnings about side effects
-
-These comments travel with the code and reduce repeated explanations across development sessions.
-
 ## Important Notes
 
 - The genea.doc file must be sorted by henry number
@@ -202,3 +101,6 @@ These comments travel with the code and reduce repeated explanations across deve
 - Ember uses tracked properties and async data patterns
 - All styling in `app/styles/app.css`
 - Use Ember Inspector to debug component state
+
+@.socratic-shell/ai-insights.md
+@.socratic-shell/github-tracking-issues.md
