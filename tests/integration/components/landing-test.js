@@ -74,19 +74,19 @@ module('Integration | Component | landing', function (hooks) {
     // TODO: Fix failing test - see issue #13
     await render(hbs`<Landing />`);
 
-    assert.dom('input#search-box').exists();
-    assert.dom('input#search-box').hasAttribute('type', 'text');
+    assert.dom('input#unified-search-box').exists();
+    assert.dom('input#unified-search-box').hasAttribute('type', 'text');
     assert
-      .dom('input#search-box')
+      .dom('input#unified-search-box')
       .hasAttribute('placeholder', 'Search for a person...');
-    assert.dom('label[for="search-box"]').hasText('Search for a person');
+    assert.dom('label[for="unified-search-box"]').hasText('Search for a person');
   });
 
   test('it updates search term on input', async function (assert) {
     await render(hbs`<Landing />`);
 
-    await fillIn('#search-box', 'John Doe');
-    assert.dom('#search-box').hasValue('John Doe');
+    await fillIn('#unified-search-box', 'John Doe');
+    assert.dom('#unified-search-box').hasValue('John Doe');
   });
 
   skip('it displays root ancestors', async function (assert) {
@@ -126,7 +126,7 @@ module('Integration | Component | landing', function (hooks) {
       await render(hbs`<Landing />`);
 
       // Search for "John"
-      await fillIn('#search-box', 'John');
+      await fillIn('#unified-search-box', 'John');
       await waitFor('.search-results');
 
       assert.dom('.search-results').exists();
@@ -139,7 +139,7 @@ module('Integration | Component | landing', function (hooks) {
       await render(hbs`<Landing />`);
 
       // Search for "Jane"
-      await fillIn('#search-box', 'Jane');
+      await fillIn('#unified-search-box', 'Jane');
       await waitFor('.search-results');
 
       // Should find Jane Smith (grandma) and Jane Doe (mom)
@@ -151,7 +151,7 @@ module('Integration | Component | landing', function (hooks) {
       await render(hbs`<Landing />`);
 
       // Type only one character
-      await fillIn('#search-box', 'J');
+      await fillIn('#unified-search-box', 'J');
 
       // Should not show results
       assert.dom('.search-results').doesNotExist();
@@ -161,19 +161,19 @@ module('Integration | Component | landing', function (hooks) {
       await render(hbs`<Landing />`);
 
       // First search for something
-      await fillIn('#search-box', 'John');
+      await fillIn('#unified-search-box', 'John');
       await waitFor('.search-results');
       assert.dom('.search-results').exists();
 
       // Clear the search
-      await fillIn('#search-box', '');
+      await fillIn('#unified-search-box', '');
       assert.dom('.search-results').doesNotExist();
     });
 
     test('it displays person details in search results', async function (assert) {
       await render(hbs`<Landing />`);
 
-      await fillIn('#search-box', 'John Smith');
+      await fillIn('#unified-search-box', 'John Smith');
       await waitFor('.search-results');
 
       assert.dom('.search-result-item').exists({ count: 1 });
@@ -186,7 +186,7 @@ module('Integration | Component | landing', function (hooks) {
     test('it shows no results when search matches nothing', async function (assert) {
       await render(hbs`<Landing />`);
 
-      await fillIn('#search-box', 'Nobody');
+      await fillIn('#unified-search-box', 'Nobody');
 
       // Should not show results dropdown
       assert.dom('.search-results').doesNotExist();
@@ -195,7 +195,7 @@ module('Integration | Component | landing', function (hooks) {
     test('search results contain clickable person links', async function (assert) {
       await render(hbs`<Landing />`);
 
-      await fillIn('#search-box', 'John');
+      await fillIn('#unified-search-box', 'John');
       await waitFor('.search-results');
 
       assert.dom('.search-result-item a').exists();
@@ -206,11 +206,11 @@ module('Integration | Component | landing', function (hooks) {
       await render(hbs`<Landing />`);
 
       // Search with different cases
-      await fillIn('#search-box', 'JOHN');
+      await fillIn('#unified-search-box', 'JOHN');
       await waitFor('.search-results');
       assert.dom('.search-result-item').exists({ count: 2 });
 
-      await fillIn('#search-box', 'john');
+      await fillIn('#unified-search-box', 'john');
       await waitFor('.search-results');
       assert.dom('.search-result-item').exists({ count: 2 });
     });
