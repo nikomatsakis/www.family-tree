@@ -1,0 +1,15 @@
+# Test case for multi-digit henry numbers (10+)
+# Format: 10 henry numbers, gender, num_kids, num_spouses, spouse_index, name [\comment]
+
+ 1 0 0 0 0 0 0 0 0 0 M10 1 0         Parent\The parent
+ 1 0 0 0 0 0 0 0 0 0 F10 0 1         Spouse\The spouse  
+ 1 1 0 0 0 0 0 0 0 0 M 0 0 0         Child One\First child
+ 1 2 0 0 0 0 0 0 0 0 F 0 0 0         Child Two\Second child
+ 1 3 0 0 0 0 0 0 0 0 M 0 0 0         Child Three\Third child
+ 1 4 0 0 0 0 0 0 0 0 F 0 0 0         Child Four\Fourth child
+ 1 5 0 0 0 0 0 0 0 0 M 0 0 0         Child Five\Fifth child
+ 1 6 0 0 0 0 0 0 0 0 F 0 0 0         Child Six\Sixth child
+ 1 7 0 0 0 0 0 0 0 0 M 0 0 0         Child Seven\Seventh child
+ 1 8 0 0 0 0 0 0 0 0 F 0 0 0         Child Eight\Eighth child
+ 1 9 0 0 0 0 0 0 0 0 M 0 0 0         Child Nine\Ninth child
+ 110 0 0 0 0 0 0 0 0 F 0 0 0         Child Ten\Tenth child

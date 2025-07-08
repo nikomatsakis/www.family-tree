@@ -471,23 +471,36 @@ impl FromStr for HenryNumber {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> anyhow::Result<Self> {
-        // Expect: a whitespace separated sequence of non-zero numbers
-        // with some number of trailing zeros.
+        // 💡: Parse henry numbers from fixed-width 2-character fields instead of whitespace-separated
+        // Each henry number position uses exactly 2 characters, allowing values 1-99
         let mut ancestry: Vec<usize> = vec![];
 
-        let mut words = s.split_whitespace();
-        while let Some(s) = words.next() {
-            let u = usize::from_str(s)?;
+        // Henry number section is exactly 20 characters (10 positions × 2 chars each)
+        if s.len() < 20 {
+            anyhow::bail!("henry number string too short: expected at least 20 characters");
+        }
+
+        let henry_section = &s[..20];
+        
+        // Parse each 2-character field
+        for i in 0..10 {
+            let start = i * 2;
+            let field = &henry_section[start..start + 2];
+            let u = usize::from_str(field.trim())?;
             if u == 0 {
                 break;
             }
             ancestry.push(u);
         }
 
-        for s in words {
-            let u = usize::from_str(s)?;
+        // Verify remaining positions are all zero
+        let non_zero_start = ancestry.len();
+        for i in non_zero_start..10 {
+            let start = i * 2;
+            let field = &henry_section[start..start + 2];
+            let u = usize::from_str(field.trim())?;
             if u != 0 {
-                anyhow::bail!("henry number with non-trailing zero");
+                anyhow::bail!("henry number with non-trailing zero at position {}", i + 1);
             }
         }
 
