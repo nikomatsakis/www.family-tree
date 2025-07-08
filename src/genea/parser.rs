@@ -471,22 +471,22 @@ impl FromStr for HenryNumber {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> anyhow::Result<Self> {
-        // 💡: Parse henry numbers from fixed-width 2-character fields instead of whitespace-separated
-        // Each henry number position uses exactly 2 characters, allowing values 1-99
+        // 💡: The regex PERSON_LINE captures just the henry number portion (e.g. " 1 1 2 3 1 3 0 0 0 0")
+        // We need to parse this as fixed-width 2-character fields
         let mut ancestry: Vec<usize> = vec![];
 
-        // Henry number section is exactly 20 characters (10 positions × 2 chars each)
-        if s.len() < 20 {
-            anyhow::bail!("henry number string too short: expected at least 20 characters");
-        }
-
-        let henry_section = &s[..20];
+        // Pad the string to ensure it's at least 20 characters for parsing
+        let padded = format!("{:20}", s);
         
         // Parse each 2-character field
         for i in 0..10 {
             let start = i * 2;
-            let field = &henry_section[start..start + 2];
-            let u = usize::from_str(field.trim())?;
+            let field = &padded[start..start + 2];
+            let trimmed = field.trim();
+            if trimmed.is_empty() {
+                break;
+            }
+            let u = usize::from_str(trimmed)?;
             if u == 0 {
                 break;
             }
@@ -497,10 +497,13 @@ impl FromStr for HenryNumber {
         let non_zero_start = ancestry.len();
         for i in non_zero_start..10 {
             let start = i * 2;
-            let field = &henry_section[start..start + 2];
-            let u = usize::from_str(field.trim())?;
-            if u != 0 {
-                anyhow::bail!("henry number with non-trailing zero at position {}", i + 1);
+            let field = &padded[start..start + 2];
+            let trimmed = field.trim();
+            if !trimmed.is_empty() {
+                let u = usize::from_str(trimmed)?;
+                if u != 0 {
+                    anyhow::bail!("henry number with non-trailing zero at position {}", i + 1);
+                }
             }
         }
 
