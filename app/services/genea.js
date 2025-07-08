@@ -652,7 +652,6 @@ export class Relationship {
     return `${thisGen}-${thatGen}-${this.commonAncestor.id}`;
   }
 
-
   asymmetricRelationship(relationshipName) {
     let thisPerson = this.#thisPath.startPerson;
     let thatPerson = this.#thatPath.startPerson;
@@ -708,24 +707,32 @@ export class Relationship {
           return this.asymmetricRelationship(siblingName(thisPerson));
         }
       } else {
-        return this.asymmetricRelationship(`${ordinal(thatGenerations - 1)} cousin`);
+        return this.asymmetricRelationship(
+          `${ordinal(thatGenerations - 1)} cousin`,
+        );
       }
     }
 
     // Let the extended logic handle all aunt/uncle and niece/nephew relationships
 
     if (thisGenerations >= 1 && thatGenerations == 1) {
-      return this.asymmetricRelationship(`${piblingModifiers(thisGenerations, niblingName(thisPerson))}`);
+      return this.asymmetricRelationship(
+        `${piblingModifiers(thisGenerations, niblingName(thisPerson))}`,
+      );
     }
 
     if (thisGenerations == 1 && thatGenerations >= 1) {
-      return this.asymmetricRelationship(`${piblingModifiers(thatGenerations, piblingName(thisPerson))}`);
+      return this.asymmetricRelationship(
+        `${piblingModifiers(thatGenerations, piblingName(thisPerson))}`,
+      );
     }
 
     let minGeneration = Math.min(thisGenerations, thatGenerations);
     let maxGeneration = Math.max(thisGenerations, thatGenerations);
     let removed = maxGeneration - minGeneration;
-    return this.asymmetricRelationship(`${ordinal(minGeneration)} cousin ${times(removed)} removed`);
+    return this.asymmetricRelationship(
+      `${ordinal(minGeneration)} cousin ${times(removed)} removed`,
+    );
   }
 }
 
@@ -747,10 +754,10 @@ function lineageModifiers(generations, relationship) {
 
 /**
  * Modifies uncle/aunt and nephew/niece relationships based on generation distance.
- * 
+ *
  * The generations parameter represents how many generations up from the common ancestor.
  * For example, in this family tree:
- * 
+ *
  *     Grandparent
  *         |
  *     +---+---+
@@ -758,10 +765,10 @@ function lineageModifiers(generations, relationship) {
  *   Parent  Uncle    (Uncle: 1 gen up from Parent, Parent: 1 gen up from Child)
  *     |
  *   Child
- * 
+ *
  * Child → Uncle: thisGen=2 (Child→Parent→Grandparent), thatGen=1 (Uncle→Grandparent)
  * So we call piblingModifiers(2, "uncle") → "uncle" (regular uncle)
- * 
+ *
  * @param {number} generations - Number of generations from person to common ancestor
  * @param {string} relationship - Base relationship (uncle/aunt or nephew/niece)
  */

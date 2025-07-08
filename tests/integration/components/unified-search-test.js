@@ -17,7 +17,7 @@ module('Integration | Component | unified-search', function (hooks) {
         parentIn: [],
       },
       {
-        id: '2', 
+        id: '2',
         name: 'Jonathan Michael Doe',
         comments: 'Another test person',
         parents: [],
@@ -36,7 +36,7 @@ module('Integration | Component | unified-search', function (hooks) {
         comments: 'Person with W middle initial',
         parents: [],
         parentIn: [],
-      }
+      },
     ];
 
     this.mockGeneaService = {
@@ -84,7 +84,7 @@ module('Integration | Component | unified-search', function (hooks) {
     test('it finds person by partial first and middle name parts', async function (assert) {
       await render(hbs`<UnifiedSearch />`);
 
-      // Search for "Jane Mar" should find "Jane Marie Smith"  
+      // Search for "Jane Mar" should find "Jane Marie Smith"
       await fillIn('.search-box', 'Jane Mar');
       await waitFor('.search-results');
 
@@ -133,12 +133,14 @@ module('Integration | Component | unified-search', function (hooks) {
   module('Search Exclusion', function () {
     test('it excludes specified person from results', async function (assert) {
       this.set('excludePerson', { id: '1' });
-      
-      await render(hbs`<UnifiedSearch @excludePerson={{this.excludePerson}} />`);
+
+      await render(
+        hbs`<UnifiedSearch @excludePerson={{this.excludePerson}} />`,
+      );
 
       // Search for "Elliot" should not find "Elliot Beecher Stowe" since it's excluded
       await fillIn('.search-box', 'Elliot');
-      
+
       // Should not show results since the only match is excluded
       assert.dom('.search-results').doesNotExist();
     });

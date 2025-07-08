@@ -161,7 +161,10 @@ export default class UnifiedSearch extends Component {
       }
 
       // Split search term into individual words for better matching
-      const searchWords = this.searchTerm.trim().split(/\s+/).filter(word => word.length > 0);
+      const searchWords = this.searchTerm
+        .trim()
+        .split(/\s+/)
+        .filter((word) => word.length > 0);
 
       if (searchWords.length === 1) {
         // Single word search - use standard Fuse.js
@@ -192,15 +195,12 @@ export default class UnifiedSearch extends Component {
         };
 
         const fuse = new Fuse(allPeople, fuseOptions);
-        
+
         // Create $and query where each word must match somewhere in the name or comments
         const andQuery = {
-          $and: searchWords.map(word => ({
-            $or: [
-              { name: word },
-              { comments: word }
-            ]
-          }))
+          $and: searchWords.map((word) => ({
+            $or: [{ name: word }, { comments: word }],
+          })),
         };
 
         const fuseResults = fuse.search(andQuery);

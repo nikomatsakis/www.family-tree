@@ -79,7 +79,9 @@ module('Integration | Component | landing', function (hooks) {
     assert
       .dom('input#unified-search-box')
       .hasAttribute('placeholder', 'Search for a person...');
-    assert.dom('label[for="unified-search-box"]').hasText('Search for a person');
+    assert
+      .dom('label[for="unified-search-box"]')
+      .hasText('Search for a person');
   });
 
   test('it updates search term on input', async function (assert) {
