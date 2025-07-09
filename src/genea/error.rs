@@ -105,6 +105,30 @@ pub enum ParseErrorKind {
         existing_name_spans: Vec<Span>,
     },
 
+    #[error("{name} links to {target_hn} but no reverse link found")]
+    OneWayLink {
+        name: String,
+        name_span: Span,
+        target_hn: HenryNumber,
+        target_hn_span: Span,
+    },
+
+    #[error("{parent_name} has multiple children named '{child_name}'")]
+    DuplicateChild {
+        parent_name: String,
+        parent_span: Span,
+        child_name: String,
+        child_spans: Vec<Span>,
+    },
+
+    #[error("{person_name} has multiple spouses named '{spouse_name}'")]
+    DuplicateSpouse {
+        person_name: String,
+        person_span: Span,
+        spouse_name: String,
+        spouse_spans: Vec<Span>,
+    },
+
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }

@@ -1,3 +1,41 @@
+//! # Genea Parser
+//!
+//! This module parses the genea.doc format into a structured family tree.
+//!
+//! ## Linking People (altid behavior)
+//!
+//! When a person appears in multiple places in the family tree, they should be linked
+//! using altid numbers. **The expectation is that links are bidirectional:**
+//!
+//! - If person A at location X has altid pointing to location Y, then
+//! - Person at location Y should have altid pointing back to location X
+//!
+//! ### Children placement
+//! 
+//! When a person appears in multiple locations, their children should only be listed
+//! in ONE of the locations (it doesn't matter which). The other locations should
+//! have `num_kids: 0` to indicate they don't list children there.
+//!
+//! ### Example
+//! ```
+//! # Person appears at two locations:
+//! 8 1 2 7 1 2 0 0 0 0 F 2 0 1 9450000 Cynthia Anderson\therapist
+//! 9 4 5 0 0 0 0 0 0 0 F 2 1 0 8127000 Cynthia Anderson\therapist
+//! 
+//! # Her spouse should also be linked:
+//! 8 1 2 7 1 2 0 0 0 0 M 2 1 0         Demetrios Matsakis\astronomer
+//! 9 4 5 0 0 0 0 0 0 0 M 2 0 1 8127120 Demetrios Matsakis\astronomer
+//! 
+//! # Children listed under one location only:
+//! 8 1 2 7 1 2 1 0 0 0 M 1 1 0         Nicholas Matsakis\computer scientist
+//! 8 1 2 7 1 2 2 0 0 0 F 0 0 0         Kalliroi Matsakis\social worker
+//! ```
+//!
+//! The parser will validate that:
+//! - All altid links are bidirectional
+//! - No person has duplicate children with the same name
+//! - No person has duplicate spouses with the same name
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::Path,
@@ -86,6 +124,10 @@ impl Parser {
                     kind: source,
                 })?;
         }
+
+        // 💡: Validate after all parsing is complete to catch missing reverse links and duplicates
+        self.validate_links(path)?;
+        self.validate_duplicates(path)?;
 
         Ok(self.genea)
     }
@@ -368,6 +410,132 @@ impl Parser {
             }
         }
 
+        Ok(())
+    }
+
+    /// Validate that all altid links are bidirectional
+    fn validate_links(&self, path: &Path) -> Result<(), ParseError> {
+        // For each person with a secondary henry number, check if reverse link exists
+        for person_id in self.genea.people() {
+            let person_data = &self.genea[person_id];
+            
+            // Find entries in by_secondary_henry_number where this person appears
+            for (secondary_hn, people_set) in &self.by_secondary_henry_number {
+                if people_set.contains(&person_id) {
+                    // This person has an altid pointing to secondary_hn
+                    // Check if there's a reverse link
+                    if let Some(target_people) = self.by_primary_henry_number.get(secondary_hn) {
+                        let mut found_reverse = false;
+                        for &target_person in target_people {
+                            let target_data = &self.genea[target_person];
+                            if target_data.name == person_data.name {
+                                // Check if target_person has a reverse link back to this person
+                                if let Some(primary_hn) = &person_data.henry_number {
+                                    for (reverse_hn, reverse_people) in &self.by_secondary_henry_number {
+                                        if reverse_hn == primary_hn && reverse_people.contains(&target_person) {
+                                            found_reverse = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        
+                        if !found_reverse {
+                            return Err(ParseError {
+                                path: path.to_path_buf(),
+                                line_num: person_data.span.line_num,
+                                kind: ParseErrorKind::OneWayLink {
+                                    name: person_data.name.clone(),
+                                    name_span: person_data.span,
+                                    target_hn: secondary_hn.clone(),
+                                    target_hn_span: person_data.span, // approximation
+                                },
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Validate that there are no duplicate children or spouses
+    fn validate_duplicates(&self, path: &Path) -> Result<(), ParseError> {
+        use std::collections::HashMap;
+        
+        // Check for duplicate children in each partnership
+        for partnership_id in self.genea.partnerships() {
+            let partnership_data = &self.genea[partnership_id];
+            let mut child_names: HashMap<String, Vec<Person>> = HashMap::new();
+            
+            for &child_id in &partnership_data.children {
+                let child_data = &self.genea[child_id];
+                child_names.entry(child_data.name.clone()).or_default().push(child_id);
+            }
+            
+            for (child_name, children) in child_names {
+                if children.len() > 1 {
+                    // Get parent name for error message
+                    let parent_name = if let Some(&parent_id) = partnership_data.parents.first() {
+                        self.genea[parent_id].name.clone()
+                    } else {
+                        "Unknown".to_string()
+                    };
+                    
+                    let parent_span = if let Some(&parent_id) = partnership_data.parents.first() {
+                        self.genea[parent_id].span
+                    } else {
+                        self.genea[children[0]].span // fallback
+                    };
+                    
+                    return Err(ParseError {
+                        path: path.to_path_buf(),
+                        line_num: parent_span.line_num,
+                        kind: ParseErrorKind::DuplicateChild {
+                            parent_name,
+                            parent_span,
+                            child_name,
+                            child_spans: children.iter().map(|&c| self.genea[c].span).collect(),
+                        },
+                    });
+                }
+            }
+        }
+        
+        // Check for duplicate spouses for each person
+        for person_id in self.genea.people() {
+            let person_data = &self.genea[person_id];
+            let mut spouse_names: HashMap<String, Vec<Person>> = HashMap::new();
+            
+            for &partnership_id in &person_data.parent_in {
+                let partnership_data = &self.genea[partnership_id];
+                for &spouse_id in &partnership_data.parents {
+                    if spouse_id != person_id {
+                        let spouse_data = &self.genea[spouse_id];
+                        spouse_names.entry(spouse_data.name.clone()).or_default().push(spouse_id);
+                    }
+                }
+            }
+            
+            for (spouse_name, spouses) in spouse_names {
+                if spouses.len() > 1 {
+                    return Err(ParseError {
+                        path: path.to_path_buf(),
+                        line_num: person_data.span.line_num,
+                        kind: ParseErrorKind::DuplicateSpouse {
+                            person_name: person_data.name.clone(),
+                            person_span: person_data.span,
+                            spouse_name,
+                            spouse_spans: spouses.iter().map(|&s| self.genea[s].span).collect(),
+                        },
+                    });
+                }
+            }
+        }
+        
         Ok(())
     }
 }
