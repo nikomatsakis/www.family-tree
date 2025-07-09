@@ -443,6 +443,21 @@ impl Parser {
                         }
                         
                         if !found_reverse {
+                            // Check if this is a spouse linking issue
+                            if let Some(primary_hn) = &person_data.henry_number {
+                                if let Some(spouse_error) = self.check_spouse_linking_issue(person_id, secondary_hn, primary_hn) {
+                                    let line_num = match &spouse_error {
+                                        ParseErrorKind::SpouseMissingReverseLink { spouse_span, .. } => spouse_span.line_num,
+                                        _ => person_data.span.line_num,
+                                    };
+                                    return Err(ParseError {
+                                        path: path.to_path_buf(),
+                                        line_num,
+                                        kind: spouse_error,
+                                    });
+                                }
+                            }
+                            
                             return Err(ParseError {
                                 path: path.to_path_buf(),
                                 line_num: person_data.span.line_num,
@@ -460,6 +475,66 @@ impl Parser {
         }
         
         Ok(())
+    }
+
+    /// Check if a linking issue is actually about a spouse missing a reverse link
+    fn check_spouse_linking_issue(&self, person_id: Person, target_hn: &HenryNumber, person_hn: &HenryNumber) -> Option<ParseErrorKind> {
+        let person_data = &self.genea[person_id];
+        
+        // Find this person's spouses
+        for &partnership_id in &person_data.parent_in {
+            let partnership_data = &self.genea[partnership_id];
+            for &spouse_id in &partnership_data.parents {
+                if spouse_id != person_id {
+                    let spouse_data = &self.genea[spouse_id];
+                    
+                    // Check if the spouse should have a reverse link but doesn't
+                    // First, check if there's a corresponding spouse at the target location
+                    if let Some(target_people) = self.by_primary_henry_number.get(target_hn) {
+                        for &target_person in target_people {
+                            let target_person_data = &self.genea[target_person];
+                            
+                            // If this target person is the linked version of our person
+                            if target_person_data.name == person_data.name {
+                                // Find target person's spouses
+                                for &target_partnership_id in &target_person_data.parent_in {
+                                    let target_partnership_data = &self.genea[target_partnership_id];
+                                    for &target_spouse_id in &target_partnership_data.parents {
+                                        if target_spouse_id != target_person {
+                                            let target_spouse_data = &self.genea[target_spouse_id];
+                                            
+                                            // If names match, check if the original spouse has reverse link
+                                            if spouse_data.name == target_spouse_data.name {
+                                                // Check if the original spouse has a reverse link
+                                                let mut spouse_has_reverse_link = false;
+                                                for (reverse_hn, reverse_people) in &self.by_secondary_henry_number {
+                                                    if reverse_people.contains(&spouse_id) {
+                                                        spouse_has_reverse_link = true;
+                                                        break;
+                                                    }
+                                                }
+                                                
+                                                if !spouse_has_reverse_link {
+                                                    return Some(ParseErrorKind::SpouseMissingReverseLink {
+                                                        person_name: person_data.name.clone(),
+                                                        person_span: person_data.span,
+                                                        spouse_name: spouse_data.name.clone(),
+                                                        spouse_span: spouse_data.span,
+                                                        target_hn: target_hn.clone(),
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        None
     }
 
     /// Validate that there are no duplicate children or spouses

@@ -113,6 +113,15 @@ pub enum ParseErrorKind {
         target_hn_span: Span,
     },
 
+    #[error("{spouse_name} appears as spouse of {person_name} who is linked, but {spouse_name} has no corresponding reverse link")]
+    SpouseMissingReverseLink {
+        person_name: String,
+        person_span: Span,
+        spouse_name: String,
+        spouse_span: Span,
+        target_hn: HenryNumber,
+    },
+
     #[error("{parent_name} has multiple children named '{child_name}'")]
     DuplicateChild {
         parent_name: String,
