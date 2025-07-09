@@ -426,15 +426,18 @@ impl Parser {
                     // Check if there's a reverse link
                     if let Some(target_people) = self.by_primary_henry_number.get(secondary_hn) {
                         let mut found_reverse = false;
+                        let mut found_links = Vec::new();
                         for &target_person in target_people {
                             let target_data = &self.genea[target_person];
                             if target_data.name == person_data.name {
                                 // Check if target_person has a reverse link back to this person
                                 if let Some(primary_hn) = &person_data.henry_number {
                                     for (reverse_hn, reverse_people) in &self.by_secondary_henry_number {
-                                        if reverse_hn == primary_hn && reverse_people.contains(&target_person) {
-                                            found_reverse = true;
-                                            break;
+                                        if reverse_people.contains(&target_person) {
+                                            found_links.push(reverse_hn.clone());
+                                            if reverse_hn == primary_hn {
+                                                found_reverse = true;
+                                            }
                                         }
                                     }
                                 }
@@ -466,6 +469,7 @@ impl Parser {
                                     name_span: person_data.span,
                                     target_hn: secondary_hn.clone(),
                                     target_hn_span: person_data.span, // approximation
+                                    found_links,
                                 },
                             });
                         }
