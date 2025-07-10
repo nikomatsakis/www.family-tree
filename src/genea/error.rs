@@ -79,7 +79,9 @@ pub enum ParseErrorKind {
     #[error("name does not match, expected {expected_name} found {found_name}")]
     MismatchedName {
         expected_name: String,
+        expected_name_span: Span,
         found_name: String,
+        found_name_span: Span,
     },
 
     #[error("{name} already has a primary henry number, {hn}")]
@@ -328,6 +330,18 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
 
             annotation1 = format!("{name} has different comments on this line");
             snippet = snippet.annotation(Level::Error.span(span(*name_span)).label(&annotation1));
+        }
+        ParseErrorKind::MismatchedName {
+            expected_name,
+            expected_name_span,
+            found_name,
+            found_name_span,
+        } => {
+            annotation1 = format!("Found {found_name} here");
+            snippet = snippet.annotation(Level::Error.span(span(*found_name_span)).label(&annotation1));
+
+            annotation2 = format!("Expected {expected_name} based on this reference");
+            snippet = snippet.annotation(Level::Info.span(span(*expected_name_span)).label(&annotation2));
         }
         _ => {
             snippet = snippet.annotation(

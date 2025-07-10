@@ -421,7 +421,12 @@ impl Parser {
         if existing_data.name != line_data.name {
             return Err(ParseErrorKind::MismatchedName {
                 expected_name: existing_data.name.clone(),
+                expected_name_span: existing_data.span,
                 found_name: line_data.name.clone(),
+                found_name_span: Span {
+                    line_num,
+                    chars: Some((line_data.name_range.start, line_data.name_range.end)),
+                },
             });
         }
 
@@ -701,19 +706,23 @@ impl Parser {
 mod tests {
     use super::*;
     use std::path::Path;
+    use expect_test::{expect, Expect};
+
+    fn check_parse_error(genea_text: &str, expected: Expect) {
+        let path = Path::new("test.genea");
+        let result = parse_text(path, genea_text);
+        assert!(result.is_err());
+        let error = result.unwrap_err();
+        let error_string = error.to_string();
+        expected.assert_eq(&error_string);
+    }
 
     #[test]
     fn test_primary_spouse_cannot_have_altid() {
         // Test that primary spouse (spousal index 0) with altid throws error
         let genea_text = " 1 0 0 0 0 0 0 0 0 0 M 1 1 0 2000000 John Doe\\test comment";
-        let path = Path::new("test.genea");
         
-        let result = parse_text(path, genea_text);
-        
-        assert!(result.is_err());
-        let error = result.unwrap_err();
-        let parse_error = error.downcast_ref::<ParseError>().expect("Should be ParseError");
-        assert!(matches!(parse_error.kind, ParseErrorKind::PrimarySpouseWithAltid { .. }));
+        check_parse_error(genea_text, expect!["test.genea:1: primary spouse John Doe at henry number 1 cannot have an altid"]);
     }
 
     #[test]
@@ -807,6 +816,17 @@ mod tests {
         let error = result.unwrap_err();
         let parse_error = error.downcast_ref::<ParseError>().expect("Should be ParseError");
         assert!(matches!(parse_error.kind, ParseErrorKind::NoMatchingPerson { .. }));
+    }
+
+    #[test]
+    fn test_mismatched_name_error_shows_both_locations() {
+        // Test that name mismatch error shows both the expected and found locations
+        // Create a scenario where secondary spouse creates placeholder, then primary has different name
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 1 1 0         John Doe\primary spouse first
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe\secondary spouse with altid
+ 2 0 0 0 0 0 0 0 0 0 F 1 1 0         Wrong Name\primary spouse with different name"#;
+        
+        check_parse_error(genea_text, expect!["test.genea:3: name does not match, expected Jane Doe found Wrong Name"]);
     }
 }
 
