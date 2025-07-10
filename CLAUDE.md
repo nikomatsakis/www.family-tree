@@ -45,7 +45,7 @@ This codebase values visual validation and real data flows over isolated unit te
 
 **When something feels hard in Ember:**
 1. Look for existing patterns in the codebase first
-2. Ask "How can this be computed from tracked properties?"
+2. Ask "How can this be computed from tracked properties?" and "What would Yehuda Katz think of this?"
 3. Trust Ember's reactivity instead of manual updates
 
 ## Key Commands
@@ -102,5 +102,19 @@ test('my integration test', async function (assert) {
 - All styling in `app/styles/app.css`
 - Use Ember Inspector to debug component state
 
-@.socratic-shell/ai-insights.md
+## Tracking work and checkpoinging
+
+We track our work in github tracking issues:
+
 @.socratic-shell/github-tracking-issues.md
+
+When checkpointing:
+
+* Commit all relevant changes in the working directory; if there are other changes, ask for guidance
+* Leave a comment on the github tracking issue
+* If necessary (pivot in direction, etc), update the OP of the tracking issue
+
+## AI-insight comments
+
+@.socratic-shell/ai-insights.md
+
