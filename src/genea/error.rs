@@ -1,9 +1,9 @@
 use annotate_snippets::{Level, Renderer, Snippet};
+use std::collections::HashMap;
 use std::fmt::{Display, Write};
 use std::path::{Path, PathBuf};
-use thiserror::Error;
-use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
+use thiserror::Error;
 
 use super::{HenryNumber, Span};
 
@@ -186,11 +186,11 @@ pub enum ParseErrorKind {
 static TEST_FILES: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
 
 /// Create a test file for use in tests. Returns a path that can be used with ParseError.
-/// 
+///
 /// # Arguments
 /// * `test_name` - Unique name for this test (usually the test function name)
 /// * `content` - File content to associate with this test
-/// 
+///
 /// # Returns
 /// * `Ok(path)` if test_name hasn't been used before
 /// * `Err` if test_name has already been used (to prevent accidental reuse)
@@ -198,11 +198,14 @@ static TEST_FILES: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
 pub fn create_test_file(test_name: &str, content: &str) -> anyhow::Result<PathBuf> {
     let test_files = TEST_FILES.get_or_init(|| Mutex::new(HashMap::new()));
     let mut map = test_files.lock().unwrap();
-    
+
     if map.contains_key(test_name) {
-        anyhow::bail!("Test file '{}' already exists. Use a unique test name.", test_name);
+        anyhow::bail!(
+            "Test file '{}' already exists. Use a unique test name.",
+            test_name
+        );
     }
-    
+
     map.insert(test_name.to_string(), content.to_string());
     Ok(PathBuf::from(format!("test-{}.genea", test_name)))
 }
@@ -212,7 +215,7 @@ fn get_file_content(path: &Path) -> anyhow::Result<String> {
     if let Some(test_files) = TEST_FILES.get() {
         let map = test_files.lock().unwrap();
         let path_str = path.to_string_lossy();
-        
+
         // Look for a test file that matches this path
         for (test_name, content) in map.iter() {
             let expected_path = format!("test-{}.genea", test_name);
@@ -221,7 +224,7 @@ fn get_file_content(path: &Path) -> anyhow::Result<String> {
             }
         }
     }
-    
+
     // Fall back to reading from disk
     std::fs::read_to_string(path).map_err(|e| e.into())
 }
@@ -393,21 +396,30 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
 
             // Add suggestions if any
             if !suggestions.is_empty() {
-                let suggestions_str = suggestions.iter()
+                let suggestions_str = suggestions
+                    .iter()
                     .map(|(hn, _span)| hn.to_string())
                     .collect::<Vec<_>>()
                     .join(", ");
-                annotation2 = format!("Did you mean one of these henry numbers: {suggestions_str}?");
+                annotation2 =
+                    format!("Did you mean one of these henry numbers: {suggestions_str}?");
                 snippet = snippet.annotation(Level::Help.span(span(*hn_span)).label(&annotation2));
-                
+
                 // Show where each suggested person is found
                 annotation3 = format!("Found {name} at henry number");
-                suggestion_annotations = suggestions.iter()
+                suggestion_annotations = suggestions
+                    .iter()
                     .map(|(suggestion_hn, _span)| format!("{annotation3} {suggestion_hn}"))
                     .collect();
-                
-                for ((_, suggestion_span), suggestion_label) in suggestions.iter().zip(suggestion_annotations.iter()) {
-                    snippet = snippet.annotation(Level::Info.span(span(*suggestion_span)).label(suggestion_label));
+
+                for ((_, suggestion_span), suggestion_label) in
+                    suggestions.iter().zip(suggestion_annotations.iter())
+                {
+                    snippet = snippet.annotation(
+                        Level::Info
+                            .span(span(*suggestion_span))
+                            .label(suggestion_label),
+                    );
                 }
             }
         }
@@ -434,10 +446,18 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
             found_name_span,
         } => {
             annotation1 = format!("Found {found_name} here");
-            snippet = snippet.annotation(Level::Error.span(span(*found_name_span)).label(&annotation1));
+            snippet = snippet.annotation(
+                Level::Error
+                    .span(span(*found_name_span))
+                    .label(&annotation1),
+            );
 
             annotation2 = format!("Expected {expected_name} based on this reference");
-            snippet = snippet.annotation(Level::Info.span(span(*expected_name_span)).label(&annotation2));
+            snippet = snippet.annotation(
+                Level::Info
+                    .span(span(*expected_name_span))
+                    .label(&annotation2),
+            );
         }
         ParseErrorKind::ConflictingPrimarySpouses {
             first_name,
@@ -447,10 +467,15 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
             henry_number,
         } => {
             annotation1 = format!("{second_name} cannot have the same henry number as {first_name} (they are not partners)");
-            snippet = snippet.annotation(Level::Error.span(span(*second_name_span)).label(&annotation1));
+            snippet = snippet.annotation(
+                Level::Error
+                    .span(span(*second_name_span))
+                    .label(&annotation1),
+            );
 
             annotation2 = format!("{first_name} already has henry number {henry_number}");
-            snippet = snippet.annotation(Level::Info.span(span(*first_name_span)).label(&annotation2));
+            snippet =
+                snippet.annotation(Level::Info.span(span(*first_name_span)).label(&annotation2));
         }
         ParseErrorKind::SecondarySpouseWithDataAndAltid {
             name,
@@ -459,10 +484,13 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
             field_span,
             altid,
         } => {
-            annotation1 = format!("{name} has {field_name} but should only have name (altid points to {altid})");
+            annotation1 = format!(
+                "{name} has {field_name} but should only have name (altid points to {altid})"
+            );
             snippet = snippet.annotation(Level::Error.span(span(*field_span)).label(&annotation1));
 
-            annotation2 = format!("Put all data on the primary person at henry number {altid}, not here");
+            annotation2 =
+                format!("Put all data on the primary person at henry number {altid}, not here");
             snippet = snippet.annotation(Level::Help.span(span(*name_span)).label(&annotation2));
         }
         ParseErrorKind::UnresolvedAltid {
@@ -472,31 +500,146 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
             altid_spans,
             suggestions,
         } => {
-            annotation1 = format!("{name} references altid {altid} but no person exists at that henry number");
+            annotation1 = format!(
+                "{name} references altid {altid} but no person exists at that henry number"
+            );
             snippet = snippet.annotation(Level::Error.span(span(*name_span)).label(&annotation1));
 
             annotation2 = format!("altid {altid} points to non-existent person");
             for altid_span in altid_spans {
-                snippet = snippet.annotation(Level::Error.span(span(*altid_span)).label(&annotation2));
+                snippet =
+                    snippet.annotation(Level::Error.span(span(*altid_span)).label(&annotation2));
             }
 
             // Add suggestions if any
             if !suggestions.is_empty() {
-                let suggestions_str = suggestions.iter()
+                let suggestions_str = suggestions
+                    .iter()
                     .map(|(hn, _span)| hn.to_string())
                     .collect::<Vec<_>>()
                     .join(", ");
-                help_annotation = format!("Did you mean one of these henry numbers: {suggestions_str}?");
-                snippet = snippet.annotation(Level::Help.span(span(*name_span)).label(&help_annotation));
-                
+                help_annotation =
+                    format!("Did you mean one of these henry numbers: {suggestions_str}?");
+                snippet =
+                    snippet.annotation(Level::Help.span(span(*name_span)).label(&help_annotation));
+
                 // Collect suggestion labels with static annotation text
-                annotations = suggestions.iter()
-                    .map(|(suggestion_hn, _span)| format!("Found {name} at henry number {suggestion_hn}"))
+                annotations = suggestions
+                    .iter()
+                    .map(|(suggestion_hn, _span)| {
+                        format!("Found {name} at henry number {suggestion_hn}")
+                    })
                     .collect();
-                
+
                 // Add annotations for each suggestion showing where they are found
-                for ((_, suggestion_span), suggestion_label) in suggestions.iter().zip(annotations.iter()) {
-                    snippet = snippet.annotation(Level::Info.span(span(*suggestion_span)).label(suggestion_label));
+                for ((_, suggestion_span), suggestion_label) in
+                    suggestions.iter().zip(annotations.iter())
+                {
+                    snippet = snippet.annotation(
+                        Level::Info
+                            .span(span(*suggestion_span))
+                            .label(suggestion_label),
+                    );
+                }
+            }
+        }
+        ParseErrorKind::DuplicateChild {
+            parent_name,
+            parent_span,
+            child_name,
+            child_spans,
+        } => {
+            // Show second child (and any others) with error annotation, using last one as primary error location
+            annotation3 =
+                format!("Second {child_name} declared here (duplicate of {parent_name}'s child)");
+
+            // Collect all additional annotation strings
+            annotations = child_spans
+                .iter()
+                .enumerate()
+                .skip(1)
+                .map(|(i, _)| {
+                    if i == child_spans.len() - 1 {
+                        annotation3.clone()
+                    } else {
+                        format!("Another {child_name} declared here")
+                    }
+                })
+                .collect();
+
+            for ((i, child_span), annotation_text) in child_spans
+                .iter()
+                .enumerate()
+                .skip(1)
+                .zip(annotations.iter())
+            {
+                if i == child_spans.len() - 1 {
+                    // Last duplicate gets the main error annotation
+                    snippet = snippet
+                        .annotation(Level::Error.span(span(*child_span)).label(annotation_text));
+                } else {
+                    // Earlier duplicates get info annotations
+                    snippet = snippet
+                        .annotation(Level::Info.span(span(*child_span)).label(annotation_text));
+                }
+            }
+
+            // Show parent with info annotation
+            annotation1 = format!("{parent_name} is the parent with duplicate children");
+            snippet = snippet.annotation(Level::Info.span(span(*parent_span)).label(&annotation1));
+
+            // Show first child with info annotation
+            annotation2 = format!("First {child_name} declared here");
+            snippet =
+                snippet.annotation(Level::Info.span(span(child_spans[0])).label(&annotation2));
+        }
+        ParseErrorKind::DuplicateSpouse {
+            person_name,
+            person_span,
+            spouse_name,
+            spouse_spans,
+        } => {
+            // Show person with info annotation
+            annotation1 = format!("{person_name} is the person with duplicate spouses");
+            snippet = snippet.annotation(Level::Info.span(span(*person_span)).label(&annotation1));
+
+            // Show first spouse with info annotation
+            annotation2 = format!("First {spouse_name} declared here");
+            snippet =
+                snippet.annotation(Level::Info.span(span(spouse_spans[0])).label(&annotation2));
+
+            // Show second spouse (and any others) with error annotation, using last one as primary error location
+            annotation3 =
+                format!("Second {spouse_name} declared here (duplicate spouse of {person_name})");
+
+            // Collect all additional annotation strings
+            suggestion_annotations = spouse_spans
+                .iter()
+                .enumerate()
+                .skip(1)
+                .map(|(i, _)| {
+                    if i == spouse_spans.len() - 1 {
+                        annotation3.clone()
+                    } else {
+                        format!("Another {spouse_name} declared here")
+                    }
+                })
+                .collect();
+
+            for ((i, spouse_span), annotation_text) in spouse_spans
+                .iter()
+                .enumerate()
+                .skip(1)
+                .zip(suggestion_annotations.iter())
+            {
+                if i == spouse_spans.len() - 1 {
+                    // Last duplicate gets the main error annotation
+                    snippet = snippet
+                        .annotation(Level::Error.span(span(*spouse_span)).label(annotation_text));
+                } else {
+                    // Earlier duplicates get info annotations
+                    snippet = snippet
+                        .annotation(Level::Info.span(span(*spouse_span)).label(annotation_text));
                 }
             }
         }

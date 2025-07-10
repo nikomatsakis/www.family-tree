@@ -17,7 +17,7 @@
 //! have `num_kids: 0` to indicate they don't list children there.
 //!
 //! ### Example
-//! ```
+//! ```text
 //! # Person appears at two locations:
 //! 8 1 2 7 1 2 0 0 0 0 F 2 0 1 9450000 Cynthia Anderson\therapist
 //! 9 4 5 0 0 0 0 0 0 0 F 2 1 0 8127000 Cynthia Anderson\therapist
@@ -145,7 +145,7 @@ impl Parser {
         self.validate_unresolved_altids(path)?;
         self.validate_mismatched_altids(path)?;
         // self.validate_links(path)?;
-        // self.validate_duplicates(path)?;
+        self.validate_duplicates(path)?;
 
         Ok(self.genea)
     }
@@ -615,16 +615,96 @@ impl Parser {
     }
     
     /// Validate that no person has multiple spouses or children with the same name
-    /// TODO: Reimplement for new one-way altid system
-    #[allow(dead_code)]
-    fn validate_duplicates(&self, _path: &Path) -> Result<(), ParseError> {
-        // TODO: Implement new validation for one-way altid system
+    fn validate_duplicates(&self, path: &Path) -> Result<(), ParseError> {
+        use std::collections::HashMap;
+
+        // Check for duplicate children in each partnership
+        for partnership_id in self.genea.partnerships() {
+            let partnership_data = &self.genea[partnership_id];
+            let mut child_names: HashMap<String, Vec<Person>> = HashMap::new();
+
+            for &child_id in &partnership_data.children {
+                let child_data = &self.genea[child_id];
+                child_names
+                    .entry(child_data.name.clone())
+                    .or_default()
+                    .push(child_id);
+            }
+
+            for (child_name, children) in child_names {
+                if children.len() > 1 {
+                    // Get parent name for error message
+                    let parent_name = if let Some(&parent_id) = partnership_data.parents.first() {
+                        self.genea[parent_id].name.clone()
+                    } else {
+                        "Unknown".to_string()
+                    };
+
+                    let parent_span = if let Some(&parent_id) = partnership_data.parents.first() {
+                        self.genea[parent_id].span
+                    } else {
+                        self.genea[children[0]].span // fallback
+                    };
+
+                    let child_spans: Vec<Span> = children.iter().map(|&c| self.genea[c].span).collect();
+                    let duplicate_child_line = child_spans.last().unwrap().line_num;
+
+                    return Err(ParseError {
+                        path: path.to_path_buf(),
+                        line_num: duplicate_child_line,
+                        kind: ParseErrorKind::DuplicateChild {
+                            parent_name,
+                            parent_span,
+                            child_name,
+                            child_spans,
+                        },
+                    });
+                }
+            }
+        }
+
+        // Check for duplicate spouses for each person
+        for person_id in self.genea.people() {
+            let person_data = &self.genea[person_id];
+            let mut spouse_names: HashMap<String, Vec<Person>> = HashMap::new();
+
+            for &partnership_id in &person_data.parent_in {
+                let partnership_data = &self.genea[partnership_id];
+                for &spouse_id in &partnership_data.parents {
+                    if spouse_id != person_id {
+                        let spouse_data = &self.genea[spouse_id];
+                        spouse_names
+                            .entry(spouse_data.name.clone())
+                            .or_default()
+                            .push(spouse_id);
+                    }
+                }
+            }
+
+            for (spouse_name, spouses) in spouse_names {
+                if spouses.len() > 1 {
+                    let spouse_spans: Vec<Span> = spouses.iter().map(|&s| self.genea[s].span).collect();
+                    let duplicate_spouse_line = spouse_spans.last().unwrap().line_num;
+                    
+                    return Err(ParseError {
+                        path: path.to_path_buf(),
+                        line_num: duplicate_spouse_line,
+                        kind: ParseErrorKind::DuplicateSpouse {
+                            person_name: person_data.name.clone(),
+                            person_span: person_data.span,
+                            spouse_name,
+                            spouse_spans,
+                        },
+                    });
+                }
+            }
+        }
+
         Ok(())
     }
     
-    /// TODO: Remove this function after refactoring
-    #[allow(dead_code)]
-    fn old_validate_duplicates(&self, _path: &Path) -> Result<(), ParseError> {
+    /// Internal implementation of duplicate validation
+    fn old_validate_duplicates(&self, path: &Path) -> Result<(), ParseError> {
         /* OLD VALIDATION CODE - KEPT FOR REFERENCE
                 if people_set.contains(&person_id) {
                     // This person has an altid pointing to secondary_hn
@@ -831,14 +911,17 @@ impl Parser {
 
             for (spouse_name, spouses) in spouse_names {
                 if spouses.len() > 1 {
+                    let spouse_spans: Vec<Span> = spouses.iter().map(|&s| self.genea[s].span).collect();
+                    let duplicate_spouse_line = spouse_spans.last().unwrap().line_num;
+                    
                     return Err(ParseError {
                         path: path.to_path_buf(),
-                        line_num: person_data.span.line_num,
+                        line_num: duplicate_spouse_line,
                         kind: ParseErrorKind::DuplicateSpouse {
                             person_name: person_data.name.clone(),
                             person_span: person_data.span,
                             spouse_name,
-                            spouse_spans: spouses.iter().map(|&s| self.genea[s].span).collect(),
+                            spouse_spans,
                         },
                     });
                 }
@@ -1019,6 +1102,47 @@ mod tests {
               |                                      -------- info: Expected Jane Doe based on this reference
             3 |  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Wrong Name\primary spouse with different name
               |                                      ^^^^^^^^^^ Found Wrong Name here
+              |"#]]);
+    }
+
+    #[test]
+    fn test_duplicate_children_error() {
+        // Test that parents cannot have multiple children with the same name
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 2 1 0         John Doe
+ 1 1 0 0 0 0 0 0 0 0 F 0 0 0         Mary Smith
+ 1 2 0 0 0 0 0 0 0 0 F 0 0 0         Mary Smith"#;
+        
+        check_parse_error("test_duplicate_children_error", genea_text, expect![[r#"
+            error: John Doe has multiple children named 'Mary Smith'
+             --> test-test_duplicate_children_error.genea:1:38
+              |
+            1 |  1 0 0 0 0 0 0 0 0 0 M 2 1 0         John Doe
+              |                                      -------- info: John Doe is the parent with duplicate children
+            2 |  1 1 0 0 0 0 0 0 0 0 F 0 0 0         Mary Smith
+              |                                      ---------- info: First Mary Smith declared here
+            3 |  1 2 0 0 0 0 0 0 0 0 F 0 0 0         Mary Smith
+              |                                      ^^^^^^^^^^ Second Mary Smith declared here (duplicate of John Doe's child)
+              |"#]]);
+    }
+
+    #[test]
+    fn test_duplicate_spouses_error() {
+        // Test that a person cannot have multiple spouses with the same name
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 2 2 0         John Doe
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1         Jane Smith
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 2         Jane Smith
+ 1 1 0 0 0 0 0 0 0 0 M 0 0 0         Child One"#;
+        
+        check_parse_error("test_duplicate_spouses_error", genea_text, expect![[r#"
+            error: John Doe has multiple spouses named 'Jane Smith'
+             --> test-test_duplicate_spouses_error.genea:1:38
+              |
+            1 |  1 0 0 0 0 0 0 0 0 0 M 2 2 0         John Doe
+              |                                      -------- info: John Doe is the person with duplicate spouses
+            2 |  1 0 0 0 0 0 0 0 0 0 F 0 0 1         Jane Smith
+              |                                      ---------- info: First Jane Smith declared here
+            3 |  1 0 0 0 0 0 0 0 0 0 F 0 0 2         Jane Smith
+              |                                      ^^^^^^^^^^ Second Jane Smith declared here (duplicate spouse of John Doe)
               |"#]]);
     }
 
