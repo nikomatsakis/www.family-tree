@@ -237,26 +237,35 @@ pub struct PersonData {
     pub henry_number: Option<HenryNumber>,
 
     pub gender: Gender,
+
+    /// If `Some`, the partnership id that contains this person's parents.
     pub child_in: Option<Partnership>,
+
+    /// List of partnership ids that
     pub parent_in: Vec<Partnership>,
+
+    /// Person's name
     pub name: String,
+
+    /// Comments from the file
     pub comments: String,
+
+    /// Private comments not to be exposed publicly
+    #[expect(dead_code)]
     pub private_comments: String,
+
+    /// Number of spouses
+    #[expect(dead_code)]
     pub num_spouses: usize,
+
+    /// Number of kids
+    #[expect(dead_code)]
     pub num_kids: usize,
 }
 
 impl PersonData {
     pub fn henry_number(&self) -> Option<&HenryNumber> {
         self.henry_number.as_ref()
-    }
-
-    pub fn is_root_ancestor(&self) -> bool {
-        let Some(hn) = &self.henry_number else {
-            return false;
-        };
-
-        hn.is_root_ancestor()
     }
 }
 

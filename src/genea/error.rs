@@ -139,6 +139,14 @@ pub enum ParseErrorKind {
         spouse_spans: Vec<Span>,
     },
 
+    #[error("primary spouse {name} at henry number {henry_number} cannot have an altid")]
+    PrimarySpouseWithAltid {
+        name: String,
+        henry_number: HenryNumber,
+        altid_span: Span,
+    },
+
+
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
