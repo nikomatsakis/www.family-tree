@@ -228,6 +228,26 @@ impl Parser {
             // Secondary spouse - check if they have an altid
             match &line_data.secondary_henry_number {
                 Some(altid) => {
+                    // Validate that secondary spouse with altid only has name, no other data
+                    if !line_data.comments.is_empty() {
+                        return Err(ParseErrorKind::SecondarySpouseWithDataAndAltid {
+                            name: line_data.name.clone(),
+                            name_span: make_span(&line_data.name_range),
+                            field_name: "comments".to_string(),
+                            field_span: make_span(&line_data.comments_range),
+                            altid: altid.clone(),
+                        });
+                    }
+                    if !line_data.private_comments.is_empty() {
+                        return Err(ParseErrorKind::SecondarySpouseWithDataAndAltid {
+                            name: line_data.name.clone(),
+                            name_span: make_span(&line_data.name_range),
+                            field_name: "private comments".to_string(),
+                            field_span: make_span(&line_data.comments_range), // Note: private comments share the same span as comments
+                            altid: altid.clone(),
+                        });
+                    }
+
                     // They have an altid - look up the primary person
                     if let Some(&primary_person) = self.by_henry_number.get(altid) {
                         // Verify name matches
@@ -419,15 +439,31 @@ impl Parser {
         line_data: &LineData,
     ) -> Result<(), ParseErrorKind> {
         if existing_data.name != line_data.name {
-            return Err(ParseErrorKind::MismatchedName {
-                expected_name: existing_data.name.clone(),
-                expected_name_span: existing_data.span,
-                found_name: line_data.name.clone(),
-                found_name_span: Span {
-                    line_num,
-                    chars: Some((line_data.name_range.start, line_data.name_range.end)),
-                },
-            });
+            // Check if both are primary spouses (both have henry numbers)
+            if existing_data.henry_number.is_some() && line_data.spousal_index.is_primary() {
+                // Two different people claiming the same henry number as primary spouses
+                return Err(ParseErrorKind::ConflictingPrimarySpouses {
+                    first_name: existing_data.name.clone(),
+                    first_name_span: existing_data.span,
+                    second_name: line_data.name.clone(),
+                    second_name_span: Span {
+                        line_num,
+                        chars: Some((line_data.name_range.start, line_data.name_range.end)),
+                    },
+                    henry_number: line_data.primary_henry_number.clone(),
+                });
+            } else {
+                // Altid merging case - secondary spouse being merged with primary
+                return Err(ParseErrorKind::MismatchedName {
+                    expected_name: existing_data.name.clone(),
+                    expected_name_span: existing_data.span,
+                    found_name: line_data.name.clone(),
+                    found_name_span: Span {
+                        line_num,
+                        chars: Some((line_data.name_range.start, line_data.name_range.end)),
+                    },
+                });
+            }
         }
 
         if line_data.spousal_index.is_primary() {
@@ -755,7 +791,7 @@ mod tests {
     fn test_secondary_spouse_with_altid_creates_placeholder() {
         // Test that secondary spouse with altid creates placeholder when altid doesn't exist
         let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 1 1 0         John Doe\primary spouse
- 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe\secondary spouse with altid"#;
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe"#;
         let path = Path::new("test.genea");
         
         let result = parse_text(path, genea_text);
@@ -793,7 +829,7 @@ mod tests {
     fn test_altid_linking_and_merging() {
         // Test the full cycle: secondary spouse creates placeholder, then primary spouse merges
         let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 1 1 0         John Doe\primary spouse first
- 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe\test person
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe
  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Jane Doe\test person"#;
         let path = Path::new("test.genea");
         
@@ -814,7 +850,7 @@ mod tests {
     fn test_secondary_spouse_with_altid_name_mismatch() {
         // Test that secondary spouse with altid but different name from existing primary fails
         let genea_text = r#" 2 0 0 0 0 0 0 0 0 0 F 1 1 0         Jane Doe\primary spouse
- 1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe\secondary spouse with wrong name"#;
+ 1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe"#;
         
         check_parse_error("test_secondary_spouse_with_altid_name_mismatch", genea_text, expect![[r#"
             error: no person named John Doe found with henry number 2, found names Jane Doe
@@ -822,7 +858,7 @@ mod tests {
               |
             1 |  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Jane Doe\primary spouse
               |                                      -------- info: Jane Doe declared here
-            2 |  1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe\secondary spouse with wrong name
+            2 |  1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe
               |                              ^^^^^^^ John Doe must match somebody with henry number 2
               |"#]]);
     }
@@ -832,17 +868,54 @@ mod tests {
         // Test that name mismatch error shows both the expected and found locations
         // Create a scenario where secondary spouse creates placeholder, then primary has different name
         let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 1 1 0         John Doe\primary spouse first
- 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe\secondary spouse with altid
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe
  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Wrong Name\primary spouse with different name"#;
         
         check_parse_error("test_mismatched_name_error_shows_both_locations", genea_text, expect![[r#"
             error: name does not match, expected Jane Doe found Wrong Name
              --> test-test_mismatched_name_error_shows_both_locations.genea:3:38
               |
-            2 |  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe\secondary spouse with altid
+            2 |  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe
               |                                      -------- info: Expected Jane Doe based on this reference
             3 |  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Wrong Name\primary spouse with different name
               |                                      ^^^^^^^^^^ Found Wrong Name here
+              |"#]]);
+    }
+
+    #[test]
+    fn test_conflicting_primary_spouses_error() {
+        // Test the specific case where two different people claim the same henry number as primary spouses
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 2 1 0         Root Ancestor\setup for hierarchy
+ 1 0 0 0 0 0 0 0 0 0 F 2 0 1         Root Spouse\spouse of root
+ 1 1 0 0 0 0 0 0 0 0 F 2 2 0         Maria Karavasilis\first primary spouse
+ 1 1 0 0 0 0 0 0 0 0 F 0 1 0         Tassoula Vazanis\second primary spouse, same henry number"#;
+        
+        check_parse_error("test_conflicting_primary_spouses_error", genea_text, expect![[r#"
+            error: two different people with same henry number that are not partners: Maria Karavasilis and Tassoula Vazanis
+             --> test-test_conflicting_primary_spouses_error.genea:4:38
+              |
+            3 |  1 1 0 0 0 0 0 0 0 0 F 2 2 0         Maria Karavasilis\first primary spouse
+              |                                      ----------------- info: Maria Karavasilis already has henry number 1-1
+            4 |  1 1 0 0 0 0 0 0 0 0 F 0 1 0         Tassoula Vazanis\second primary spouse, same henry number
+              |                                      ^^^^^^^^^^^^^^^^ Tassoula Vazanis cannot have the same henry number as Maria Karavasilis (they are not partners)
+              |"#]]);
+    }
+
+    #[test]
+    fn test_secondary_spouse_with_altid_and_comments() {
+        // Test that secondary spouse with altid cannot have comments
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 2 1 0         Primary Person\primary person with data
+ 1 0 0 0 0 0 0 0 0 0 F 2 0 1         Primary Spouse\spouse data
+ 2 0 0 0 0 0 0 0 0 0 F 1 1 0         Real Person\real person data
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Real Person\secondary spouse should not have comments"#;
+        
+        check_parse_error("test_secondary_spouse_with_altid_and_comments", genea_text, expect![[r#"
+            error: secondary spouse with altid should only have name, but Real Person has comments
+             --> test-test_secondary_spouse_with_altid_and_comments.genea:4:50
+              |
+            4 |  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Real Person\secondary spouse should not have comments
+              |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Real Person has comments but should only have name (altid points to 2)
+              |                                      ----------- help: Put all data on the primary person at henry number 2, not here
               |"#]]);
     }
 }

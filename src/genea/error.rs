@@ -150,6 +150,23 @@ pub enum ParseErrorKind {
         altid_span: Span,
     },
 
+    #[error("two different people with same henry number that are not partners: {first_name} and {second_name}")]
+    ConflictingPrimarySpouses {
+        first_name: String,
+        first_name_span: Span,
+        second_name: String,
+        second_name_span: Span,
+        henry_number: HenryNumber,
+    },
+
+    #[error("secondary spouse with altid should only have name, but {name} has {field_name}")]
+    SecondarySpouseWithDataAndAltid {
+        name: String,
+        name_span: Span,
+        field_name: String,
+        field_span: Span,
+        altid: HenryNumber,
+    },
 
     #[error(transparent)]
     Other(#[from] anyhow::Error),
@@ -388,6 +405,32 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
 
             annotation2 = format!("Expected {expected_name} based on this reference");
             snippet = snippet.annotation(Level::Info.span(span(*expected_name_span)).label(&annotation2));
+        }
+        ParseErrorKind::ConflictingPrimarySpouses {
+            first_name,
+            first_name_span,
+            second_name,
+            second_name_span,
+            henry_number,
+        } => {
+            annotation1 = format!("{second_name} cannot have the same henry number as {first_name} (they are not partners)");
+            snippet = snippet.annotation(Level::Error.span(span(*second_name_span)).label(&annotation1));
+
+            annotation2 = format!("{first_name} already has henry number {henry_number}");
+            snippet = snippet.annotation(Level::Info.span(span(*first_name_span)).label(&annotation2));
+        }
+        ParseErrorKind::SecondarySpouseWithDataAndAltid {
+            name,
+            name_span,
+            field_name,
+            field_span,
+            altid,
+        } => {
+            annotation1 = format!("{name} has {field_name} but should only have name (altid points to {altid})");
+            snippet = snippet.annotation(Level::Error.span(span(*field_span)).label(&annotation1));
+
+            annotation2 = format!("Put all data on the primary person at henry number {altid}, not here");
+            snippet = snippet.annotation(Level::Help.span(span(*name_span)).label(&annotation2));
         }
         _ => {
             snippet = snippet.annotation(
