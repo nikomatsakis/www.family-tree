@@ -1,7 +1,9 @@
 use annotate_snippets::{Level, Renderer, Snippet};
 use std::fmt::{Display, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use thiserror::Error;
+use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
 
 use super::{HenryNumber, Span};
 
@@ -153,6 +155,50 @@ pub enum ParseErrorKind {
     Other(#[from] anyhow::Error),
 }
 
+// Global storage for test files to enable testing of pretty formatting
+static TEST_FILES: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
+
+/// Create a test file for use in tests. Returns a path that can be used with ParseError.
+/// 
+/// # Arguments
+/// * `test_name` - Unique name for this test (usually the test function name)
+/// * `content` - File content to associate with this test
+/// 
+/// # Returns
+/// * `Ok(path)` if test_name hasn't been used before
+/// * `Err` if test_name has already been used (to prevent accidental reuse)
+#[cfg(test)]
+pub fn create_test_file(test_name: &str, content: &str) -> anyhow::Result<PathBuf> {
+    let test_files = TEST_FILES.get_or_init(|| Mutex::new(HashMap::new()));
+    let mut map = test_files.lock().unwrap();
+    
+    if map.contains_key(test_name) {
+        anyhow::bail!("Test file '{}' already exists. Use a unique test name.", test_name);
+    }
+    
+    map.insert(test_name.to_string(), content.to_string());
+    Ok(PathBuf::from(format!("test-{}.genea", test_name)))
+}
+
+fn get_file_content(path: &Path) -> anyhow::Result<String> {
+    // Check test files first (only if TEST_FILES has been initialized)
+    if let Some(test_files) = TEST_FILES.get() {
+        let map = test_files.lock().unwrap();
+        let path_str = path.to_string_lossy();
+        
+        // Look for a test file that matches this path
+        for (test_name, content) in map.iter() {
+            let expected_path = format!("test-{}.genea", test_name);
+            if path_str == expected_path {
+                return Ok(content.clone());
+            }
+        }
+    }
+    
+    // Fall back to reading from disk
+    std::fs::read_to_string(path).map_err(|e| e.into())
+}
+
 fn comma(v: impl Iterator<Item: Display>) -> String {
     let mut output = format!("");
     let mut sep = "";
@@ -181,7 +227,7 @@ impl std::fmt::Display for ParseError {
 }
 
 fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
-    let source = &std::fs::read_to_string(&parse_error.path)?;
+    let source = &get_file_content(&parse_error.path)?;
     let message = &parse_error.kind.to_string();
     let path_str = &parse_error.path.display().to_string();
 

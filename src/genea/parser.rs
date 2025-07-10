@@ -707,10 +707,11 @@ mod tests {
     use super::*;
     use std::path::Path;
     use expect_test::{expect, Expect};
+    use crate::genea::error::create_test_file;
 
-    fn check_parse_error(genea_text: &str, expected: Expect) {
-        let path = Path::new("test.genea");
-        let result = parse_text(path, genea_text);
+    fn check_parse_error(test_name: &str, genea_text: &str, expected: Expect) {
+        let path = create_test_file(test_name, genea_text).unwrap();
+        let result = parse_text(&path, genea_text);
         assert!(result.is_err());
         let error = result.unwrap_err();
         let error_string = error.to_string();
@@ -722,7 +723,13 @@ mod tests {
         // Test that primary spouse (spousal index 0) with altid throws error
         let genea_text = " 1 0 0 0 0 0 0 0 0 0 M 1 1 0 2000000 John Doe\\test comment";
         
-        check_parse_error(genea_text, expect!["test.genea:1: primary spouse John Doe at henry number 1 cannot have an altid"]);
+        check_parse_error("test_primary_spouse_cannot_have_altid", genea_text, expect![[r#"
+            error: primary spouse John Doe at henry number 1 cannot have an altid
+             --> test-test_primary_spouse_cannot_have_altid.genea:1:1
+              |
+            1 |  1 0 0 0 0 0 0 0 0 0 M 1 1 0 2000000 John Doe\test comment
+              | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+              |"#]]);
     }
 
     #[test]
@@ -808,14 +815,16 @@ mod tests {
         // Test that secondary spouse with altid but different name from existing primary fails
         let genea_text = r#" 2 0 0 0 0 0 0 0 0 0 F 1 1 0         Jane Doe\primary spouse
  1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe\secondary spouse with wrong name"#;
-        let path = Path::new("test.genea");
         
-        let result = parse_text(path, genea_text);
-        
-        assert!(result.is_err());
-        let error = result.unwrap_err();
-        let parse_error = error.downcast_ref::<ParseError>().expect("Should be ParseError");
-        assert!(matches!(parse_error.kind, ParseErrorKind::NoMatchingPerson { .. }));
+        check_parse_error("test_secondary_spouse_with_altid_name_mismatch", genea_text, expect![[r#"
+            error: no person named John Doe found with henry number 2, found names Jane Doe
+             --> test-test_secondary_spouse_with_altid_name_mismatch.genea:2:30
+              |
+            1 |  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Jane Doe\primary spouse
+              |                                      -------- info: Jane Doe declared here
+            2 |  1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe\secondary spouse with wrong name
+              |                              ^^^^^^^ John Doe must match somebody with henry number 2
+              |"#]]);
     }
 
     #[test]
@@ -826,7 +835,15 @@ mod tests {
  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe\secondary spouse with altid
  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Wrong Name\primary spouse with different name"#;
         
-        check_parse_error(genea_text, expect!["test.genea:3: name does not match, expected Jane Doe found Wrong Name"]);
+        check_parse_error("test_mismatched_name_error_shows_both_locations", genea_text, expect![[r#"
+            error: name does not match, expected Jane Doe found Wrong Name
+             --> test-test_mismatched_name_error_shows_both_locations.genea:3:38
+              |
+            2 |  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe\secondary spouse with altid
+              |                                      -------- info: Expected Jane Doe based on this reference
+            3 |  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Wrong Name\primary spouse with different name
+              |                                      ^^^^^^^^^^ Found Wrong Name here
+              |"#]]);
     }
 }
 
