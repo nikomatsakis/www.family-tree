@@ -107,6 +107,7 @@ pub enum ParseErrorKind {
         hn_span: Span,
         existing_names: Vec<String>,
         existing_name_spans: Vec<Span>,
+        suggestions: Vec<(HenryNumber, Span)>,
     },
 
     #[error("{name} links to {target_hn} but no matching reverse link found (found links to {found_links:?} instead)")]
@@ -166,6 +167,15 @@ pub enum ParseErrorKind {
         field_name: String,
         field_span: Span,
         altid: HenryNumber,
+    },
+
+    #[error("altid {altid} points to non-existent person")]
+    UnresolvedAltid {
+        name: String,
+        name_span: Span,
+        altid: HenryNumber,
+        altid_spans: Vec<Span>,
+        suggestions: Vec<(HenryNumber, Span)>,
     },
 
     #[error(transparent)]
@@ -280,7 +290,9 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
     let annotation1;
     let annotation2;
     let annotation3;
+    let help_annotation;
     let annotations: Vec<String>;
+    let suggestion_annotations: Vec<String>;
     let mut snippet = Snippet::source(source).origin(path_str).fold(true);
 
     match &parse_error.kind {
@@ -359,6 +371,7 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
             hn_span,
             existing_names,
             existing_name_spans,
+            suggestions,
         } => {
             annotation1 = format!("{name} must match somebody with henry number {hn}",);
             snippet = snippet.annotation(Level::Error.span(span(*hn_span)).label(&annotation1));
@@ -376,6 +389,26 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
                         .span(span(*existing_name_span))
                         .label(&existing_name_annotation),
                 );
+            }
+
+            // Add suggestions if any
+            if !suggestions.is_empty() {
+                let suggestions_str = suggestions.iter()
+                    .map(|(hn, _span)| hn.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                annotation2 = format!("Did you mean one of these henry numbers: {suggestions_str}?");
+                snippet = snippet.annotation(Level::Help.span(span(*hn_span)).label(&annotation2));
+                
+                // Show where each suggested person is found
+                annotation3 = format!("Found {name} at henry number");
+                suggestion_annotations = suggestions.iter()
+                    .map(|(suggestion_hn, _span)| format!("{annotation3} {suggestion_hn}"))
+                    .collect();
+                
+                for ((_, suggestion_span), suggestion_label) in suggestions.iter().zip(suggestion_annotations.iter()) {
+                    snippet = snippet.annotation(Level::Info.span(span(*suggestion_span)).label(suggestion_label));
+                }
             }
         }
         ParseErrorKind::DifferentComments {
@@ -431,6 +464,41 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
 
             annotation2 = format!("Put all data on the primary person at henry number {altid}, not here");
             snippet = snippet.annotation(Level::Help.span(span(*name_span)).label(&annotation2));
+        }
+        ParseErrorKind::UnresolvedAltid {
+            name,
+            name_span,
+            altid,
+            altid_spans,
+            suggestions,
+        } => {
+            annotation1 = format!("{name} references altid {altid} but no person exists at that henry number");
+            snippet = snippet.annotation(Level::Error.span(span(*name_span)).label(&annotation1));
+
+            annotation2 = format!("altid {altid} points to non-existent person");
+            for altid_span in altid_spans {
+                snippet = snippet.annotation(Level::Error.span(span(*altid_span)).label(&annotation2));
+            }
+
+            // Add suggestions if any
+            if !suggestions.is_empty() {
+                let suggestions_str = suggestions.iter()
+                    .map(|(hn, _span)| hn.to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                help_annotation = format!("Did you mean one of these henry numbers: {suggestions_str}?");
+                snippet = snippet.annotation(Level::Help.span(span(*name_span)).label(&help_annotation));
+                
+                // Collect suggestion labels with static annotation text
+                annotations = suggestions.iter()
+                    .map(|(suggestion_hn, _span)| format!("Found {name} at henry number {suggestion_hn}"))
+                    .collect();
+                
+                // Add annotations for each suggestion showing where they are found
+                for ((_, suggestion_span), suggestion_label) in suggestions.iter().zip(annotations.iter()) {
+                    snippet = snippet.annotation(Level::Info.span(span(*suggestion_span)).label(suggestion_label));
+                }
+            }
         }
         _ => {
             snippet = snippet.annotation(

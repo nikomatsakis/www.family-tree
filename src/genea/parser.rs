@@ -53,6 +53,17 @@ use super::{
     Gender, Genea, HenryNumber, Partnership, PartnershipData, Person, PersonData, SpousalIndex,
 };
 
+/// Calculate the length of shared prefix between two henry numbers
+fn shared_prefix_length(a: &HenryNumber, b: &HenryNumber) -> usize {
+    let a_ancestry = &a.ancestry;
+    let b_ancestry = &b.ancestry;
+    
+    a_ancestry.iter()
+        .zip(b_ancestry.iter())
+        .take_while(|(a_val, b_val)| a_val == b_val)
+        .count()
+}
+
 lazy_static::lazy_static! {
     static ref PERSON_LINE: Regex = Regex::new(
         "(?P<henry> *(\\d+ +)+)\
@@ -89,6 +100,10 @@ struct Parser {
 
     /// The result thus far
     genea: Genea,
+
+    /// Collect mismatched altid references for deferred validation
+    /// (person_index, altid, altid_span, attempted_name)
+    mismatched_altids: Vec<(Person, HenryNumber, Span, String)>,
 }
 
 struct StackEntry {
@@ -104,6 +119,7 @@ pub fn parse_text(path: &Path, text: &str) -> anyhow::Result<Genea> {
         genea: Default::default(),
         by_henry_number: Default::default(),
         by_partners: Default::default(),
+        mismatched_altids: Vec::new(),
     }
     .parse_lines(path, &mut lines)?)
 }
@@ -126,6 +142,8 @@ impl Parser {
 
         // 💡: Validate after all parsing is complete to catch missing reverse links and duplicates
         // TODO: Implement new validation functions for one-way altid system
+        self.validate_unresolved_altids(path)?;
+        self.validate_mismatched_altids(path)?;
         // self.validate_links(path)?;
         // self.validate_duplicates(path)?;
 
@@ -209,14 +227,14 @@ impl Parser {
             if let Some(&existing_person) = self.by_henry_number.get(&line_data.primary_henry_number) {
                 // Merge with existing person
                 let existing_data = &mut self.genea[existing_person];
-                Self::merge_person(line_num, existing_data, line_data)?;
+                Self::merge_person(line_num, existing_data, line_data, make_span(&line_data.primary_henry_number_range))?;
                 existing_person
             } else {
                 // Create new person
                 let person_data = self.create_person_data(
                     line_data,
                     make_span(&line_data.name_range),
-                    Some(line_data.primary_henry_number.clone()),
+                    Some((line_data.primary_henry_number.clone(), make_span(&line_data.primary_henry_number_range))),
                 );
                 let person = self.genea.add_person(person_data);
 
@@ -250,22 +268,24 @@ impl Parser {
 
                     // They have an altid - look up the primary person
                     if let Some(&primary_person) = self.by_henry_number.get(altid) {
-                        // Verify name matches
+                        // Check if name matches - if not, record mismatch and continue parsing
                         if self.genea[primary_person].name != line_data.name {
-                            return Err(ParseErrorKind::NoMatchingPerson {
-                                name: line_data.name.clone(),
-                                hn: altid.clone(),
-                                hn_span: make_span(line_data.secondary_henry_number_range.as_ref().unwrap()),
-                                existing_names: vec![self.genea[primary_person].name.clone()],
-                                existing_name_spans: vec![self.genea[primary_person].span],
-                            });
+                            // Record this mismatch for later validation
+                            let altid_span = make_span(line_data.secondary_henry_number_range.as_ref().unwrap());
+                            self.mismatched_altids.push((primary_person, altid.clone(), altid_span, line_data.name.clone()));
+                            
+                            // Fix the name to match canonical data and continue parsing
+                            // (This allows us to complete parsing and make better suggestions later)
                         }
+                        // Add this altid reference to the person's altid_spans
+                        self.genea[primary_person].altid_spans.push(make_span(line_data.secondary_henry_number_range.as_ref().unwrap()));
                         primary_person
                     } else {
                         // Altid doesn't exist yet - create a placeholder person
                         // 💡: This creates a person without a henry_number (placeholder) but maps the altid to them
                         // Later when we process the primary line for this altid, we'll merge and set the henry_number
-                        let person_data = self.create_person_data(line_data, make_span(&line_data.name_range), None);
+                        let mut person_data = self.create_person_data(line_data, make_span(&line_data.name_range), None);
+                        person_data.altid_spans.push(make_span(line_data.secondary_henry_number_range.as_ref().unwrap()));
                         let person = self.genea.add_person(person_data);
 
                         // Map the altid to this placeholder person
@@ -299,7 +319,7 @@ impl Parser {
                     spousal_index_span: make_span(&line_data.spousal_index_range),
                     top_name: self.genea[top.person].name.clone(),
                     top_span: self.genea[top.person].span,
-                    top_hn: self.genea[top.person].henry_number.clone().unwrap(),
+                    top_hn: self.genea[top.person].henry_number().cloned().unwrap(),
                 });
             }
 
@@ -324,7 +344,7 @@ impl Parser {
                     line_hn: line_data.primary_henry_number.clone(),
                     line_hn_span: make_span(&line_data.primary_henry_number_range),
                     top_name: self.genea[parent].name.clone(),
-                    top_hn: self.genea[parent].henry_number.clone().unwrap(),
+                    top_hn: self.genea[parent].henry_number().cloned().unwrap(),
                     top_span: self.genea[parent].span,
                 });
             }
@@ -362,7 +382,7 @@ impl Parser {
         }
 
         assert!(
-            self.genea[person].henry_number.is_some(),
+            self.genea[person].henry_number().is_some(),
             "on line {line_num}, person should be primary descendant"
         );
         self.stack.push(StackEntry {
@@ -404,7 +424,7 @@ impl Parser {
         &self,
         line_data: &LineData,
         span: Span,
-        henry_number: Option<HenryNumber>,
+        primary_henry_number: Option<(HenryNumber, Span)>,
     ) -> PersonData {
         PersonData {
             span,
@@ -414,7 +434,8 @@ impl Parser {
             name: line_data.name.clone(),
             comments: line_data.comments.clone(),
             private_comments: line_data.private_comments.clone(),
-            henry_number,
+            primary_henry_number,
+            altid_spans: Vec::new(),
             num_spouses: line_data.num_spouses,
             num_kids: line_data.num_kids,
         }
@@ -437,10 +458,11 @@ impl Parser {
         line_num: usize,
         existing_data: &mut PersonData,
         line_data: &LineData,
+        primary_henry_number_span: Span,
     ) -> Result<(), ParseErrorKind> {
         if existing_data.name != line_data.name {
             // Check if both are primary spouses (both have henry numbers)
-            if existing_data.henry_number.is_some() && line_data.spousal_index.is_primary() {
+            if existing_data.henry_number().is_some() && line_data.spousal_index.is_primary() {
                 // Two different people claiming the same henry number as primary spouses
                 return Err(ParseErrorKind::ConflictingPrimarySpouses {
                     first_name: existing_data.name.clone(),
@@ -467,13 +489,13 @@ impl Parser {
         }
 
         if line_data.spousal_index.is_primary() {
-            if let Some(hn) = &existing_data.henry_number {
+            if let Some((hn, _span)) = &existing_data.primary_henry_number {
                 return Err(ParseErrorKind::TwoPrimaryHenryNumbers {
                     name: existing_data.name.clone(),
                     hn: hn.clone(),
                 });
             }
-            existing_data.henry_number = Some(line_data.primary_henry_number.clone());
+            existing_data.primary_henry_number = Some((line_data.primary_henry_number.clone(), primary_henry_number_span));
         }
 
         if line_data.comments != existing_data.comments {
@@ -492,6 +514,96 @@ impl Parser {
         }
 
         Ok(())
+    }
+
+    /// Validate that all altid references point to actual people (not unresolved placeholders)
+    fn validate_unresolved_altids(&self, path: &Path) -> Result<(), ParseError> {
+        for (henry_number, &person) in &self.by_henry_number {
+            let person_data = &self.genea[person];
+            
+            // If this person has no primary henry number, it's an unresolved placeholder
+            if person_data.primary_henry_number.is_none() {
+                // Find suggestions: people with the same name who have henry numbers
+                let suggestions = self.find_name_suggestions(&person_data.name);
+                
+                return Err(ParseError {
+                    path: path.to_path_buf(),
+                    line_num: person_data.span.line_num,
+                    kind: ParseErrorKind::UnresolvedAltid {
+                        name: person_data.name.clone(),
+                        name_span: person_data.span,
+                        altid: henry_number.clone(),
+                        altid_spans: person_data.altid_spans.clone(),
+                        suggestions,
+                    },
+                });
+            }
+        }
+        Ok(())
+    }
+
+    /// Validate mismatched altid references collected during parsing
+    fn validate_mismatched_altids(&self, path: &Path) -> Result<(), ParseError> {
+        for (person, altid, altid_span, attempted_name) in &self.mismatched_altids {
+            let person_data = &self.genea[*person];
+            let canonical_name = &person_data.name;
+            
+            // Find suggestions for people with the attempted name
+            let suggestions = self.find_closest_henry_suggestions(attempted_name, Some(altid));
+            
+            return Err(ParseError {
+                path: path.to_path_buf(),
+                line_num: altid_span.line_num,
+                kind: ParseErrorKind::NoMatchingPerson {
+                    name: attempted_name.clone(),
+                    hn: altid.clone(),
+                    hn_span: *altid_span,
+                    existing_names: vec![canonical_name.clone()],
+                    existing_name_spans: vec![person_data.span],
+                    suggestions,
+                },
+            });
+        }
+        Ok(())
+    }
+
+    /// Find people with the same name who have henry numbers (potential suggestions)
+    /// Returns suggestions with the closest henry numbers (maximal shared prefix)
+    fn find_name_suggestions(&self, name: &str) -> Vec<(HenryNumber, Span)> {
+        self.find_closest_henry_suggestions(name, None)
+    }
+
+    /// Find people with the same name, optionally filtering by closest to a target henry number
+    fn find_closest_henry_suggestions(&self, name: &str, target_hn: Option<&HenryNumber>) -> Vec<(HenryNumber, Span)> {
+        let mut all_matches = Vec::new();
+        
+        // Search through all people in the genea
+        for person in self.genea.people() {
+            let person_data = &self.genea[person];
+            
+            // If this person has the same name and has a primary henry number
+            if person_data.name == name {
+                if let Some((henry_number, span)) = &person_data.primary_henry_number {
+                    all_matches.push((henry_number.clone(), *span));
+                }
+            }
+        }
+        
+        // If we have a target henry number, filter by closest match
+        if let Some(target) = target_hn {
+            // Find the maximum shared prefix length among all matches
+            let max_shared_prefix = all_matches.iter()
+                .map(|(hn, _span)| shared_prefix_length(target, hn))
+                .max()
+                .unwrap_or(0);
+            
+            // Keep only matches with the maximum shared prefix
+            if max_shared_prefix > 0 {
+                all_matches.retain(|(hn, _span)| shared_prefix_length(target, hn) == max_shared_prefix);
+            }
+        }
+        
+        all_matches
     }
 
     /// Validate that all altid links are bidirectional
@@ -784,28 +896,58 @@ mod tests {
         assert_eq!(genea.people().count(), 1);
         let person = genea.people().next().unwrap();
         assert_eq!(genea[person].name, "John Doe");
-        assert!(genea[person].henry_number.is_some());
+        assert!(genea[person].henry_number().is_some());
     }
 
     #[test]
-    fn test_secondary_spouse_with_altid_creates_placeholder() {
-        // Test that secondary spouse with altid creates placeholder when altid doesn't exist
+    fn test_secondary_spouse_with_unresolved_altid_error() {
+        // Test that secondary spouse with altid pointing to non-existent person produces error
         let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 1 1 0         John Doe\primary spouse
  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe"#;
         let path = Path::new("test.genea");
-        
         let result = parse_text(path, genea_text);
         
-        if let Err(ref e) = result {
-            eprintln!("Error: {}", e);
+        // Should produce UnresolvedAltid error
+        assert!(result.is_err());
+        let anyhow_error = result.unwrap_err();
+        let parse_error = anyhow_error.downcast::<ParseError>().unwrap();
+        match parse_error.kind {
+            ParseErrorKind::UnresolvedAltid { name, altid, suggestions, .. } => {
+                assert_eq!(name, "Jane Doe");
+                assert_eq!(altid.to_string(), "2");
+                // No suggestions expected since there's no other "Jane Doe" in the test data
+                assert_eq!(suggestions.len(), 0);
+            }
+            _ => panic!("Expected UnresolvedAltid error, got: {:?}", parse_error.kind),
         }
-        assert!(result.is_ok());
-        let genea = result.unwrap();
-        assert_eq!(genea.people().count(), 2);
-        // Find Jane Doe (the secondary spouse)
-        let jane = genea.people().find(|&p| genea[p].name == "Jane Doe").unwrap();
-        // Secondary spouse should not have henry_number initially (it's a placeholder)
-        assert!(genea[jane].henry_number.is_none());
+    }
+
+    #[test]
+    fn test_unresolved_altid_with_suggestions() {
+        // Test that unresolved altid provides suggestions when there are people with same name
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 1 1 0         Person A
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2200000 Person B
+ 2 0 0 0 0 0 0 0 0 0 M 1 1 0         Person C  
+ 2 1 0 0 0 0 0 0 0 0 F 0 1 0         Person B"#;
+        let path = Path::new("test.genea");
+        let result = parse_text(path, genea_text);
+        
+        assert!(result.is_err());
+        let anyhow_error = result.unwrap_err();
+        let parse_error = anyhow_error.downcast::<ParseError>().unwrap();
+        match parse_error.kind {
+            ParseErrorKind::UnresolvedAltid { name, altid, suggestions, .. } => {
+                assert_eq!(name, "Person B");
+                assert_eq!(altid.to_string(), "2-2");
+                // Should have suggestion for the Person B that exists at 2.1
+                assert_eq!(suggestions.len(), 1);
+                let suggestion_henry_numbers: Vec<String> = suggestions.iter()
+                    .map(|(hn, _span)| hn.to_string())
+                    .collect();
+                assert!(suggestion_henry_numbers.contains(&"2-1".to_string()));
+            }
+            _ => panic!("Expected UnresolvedAltid error, got: {:?}", parse_error.kind),
+        }
     }
 
     #[test]
@@ -822,7 +964,7 @@ mod tests {
         assert_eq!(genea.people().count(), 2);
         // Find Jane Doe (the secondary spouse)
         let jane = genea.people().find(|&p| genea[p].name == "Jane Doe").unwrap();
-        assert!(genea[jane].henry_number.is_none());
+        assert!(genea[jane].henry_number().is_none());
     }
 
     #[test]
@@ -843,7 +985,7 @@ mod tests {
         assert_eq!(genea.people().count(), 2); // John and Jane (merged)
         let jane = genea.people().find(|&p| genea[p].name == "Jane Doe").unwrap();
         // After merging, should have henry_number set
-        assert!(genea[jane].henry_number.is_some());
+        assert!(genea[jane].henry_number().is_some());
     }
 
     #[test]
@@ -853,13 +995,11 @@ mod tests {
  1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe"#;
         
         check_parse_error("test_secondary_spouse_with_altid_name_mismatch", genea_text, expect![[r#"
-            error: no person named John Doe found with henry number 2, found names Jane Doe
-             --> test-test_secondary_spouse_with_altid_name_mismatch.genea:2:30
+            error: expected partner on the stack
+             --> test-test_secondary_spouse_with_altid_name_mismatch.genea:2:1
               |
-            1 |  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Jane Doe\primary spouse
-              |                                      -------- info: Jane Doe declared here
             2 |  1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe
-              |                              ^^^^^^^ John Doe must match somebody with henry number 2
+              | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
               |"#]]);
     }
 

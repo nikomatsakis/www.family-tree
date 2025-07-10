@@ -46,7 +46,7 @@ impl Genea {
     pub fn root_people(&self) -> impl Iterator<Item = Person> + '_ {
         self.people().filter(|&person| {
             self[person]
-                .henry_number
+                .henry_number()
                 .as_ref()
                 .map(|h| h.is_root_ancestor())
                 .unwrap_or(false)
@@ -234,7 +234,12 @@ pub struct PersonData {
     /// If `Some`, this person is the canonical person with the
     /// henry number (i.e., the 0th spouse). If `None`, then this is
     /// a spouse for whom we do not have ancestral information.
-    pub henry_number: Option<HenryNumber>,
+    /// The span tracks where the primary henry number appears in the source.
+    pub primary_henry_number: Option<(HenryNumber, Span)>,
+
+    /// Spans of all altid references to this person in the source file.
+    /// Used for comprehensive error reporting and validation.
+    pub altid_spans: Vec<Span>,
 
     pub gender: Gender,
 
@@ -265,7 +270,7 @@ pub struct PersonData {
 
 impl PersonData {
     pub fn henry_number(&self) -> Option<&HenryNumber> {
-        self.henry_number.as_ref()
+        self.primary_henry_number.as_ref().map(|(hn, _span)| hn)
     }
 }
 

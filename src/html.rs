@@ -154,7 +154,7 @@ impl<'a> HtmlGen<'a> {
 
     fn id(&self, person: Person) -> String {
         let person_data = &self.genea[person];
-        match &person_data.henry_number {
+        match person_data.henry_number() {
             Some(hn) => hn.to_string(),
             None => {
                 assert_eq!(person_data.parent_in.len(), 1);
