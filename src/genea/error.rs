@@ -549,6 +549,10 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
             child_name,
             child_spans,
         } => {
+            // 💡: We add the duplicate child annotation first (as Error level) so annotate-snippets
+            // uses its line number in the error header. This ensures clicking the error takes users
+            // directly to the duplicate that needs to be fixed, not the parent or first occurrence.
+
             // Show second child (and any others) with error annotation, using last one as primary error location
             annotation3 =
                 format!("Second {child_name} declared here (duplicate of {parent_name}'s child)");

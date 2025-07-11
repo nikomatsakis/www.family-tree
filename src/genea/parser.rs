@@ -1114,7 +1114,7 @@ mod tests {
         
         check_parse_error("test_duplicate_children_error", genea_text, expect![[r#"
             error: John Doe has multiple children named 'Mary Smith'
-             --> test-test_duplicate_children_error.genea:1:38
+             --> test-test_duplicate_children_error.genea:3:38
               |
             1 |  1 0 0 0 0 0 0 0 0 0 M 2 1 0         John Doe
               |                                      -------- info: John Doe is the parent with duplicate children
@@ -1178,8 +1178,9 @@ mod tests {
              --> test-test_secondary_spouse_with_altid_and_comments.genea:4:50
               |
             4 |  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Real Person\secondary spouse should not have comments
-              |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Real Person has comments but should only have name (altid points to 2)
-              |                                      ----------- help: Put all data on the primary person at henry number 2, not here
+              |                                      ----------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Real Person has comments but should only have name (altid points to 2)
+              |                                      |
+              |                                      help: Put all data on the primary person at henry number 2, not here
               |"#]]);
     }
 }
