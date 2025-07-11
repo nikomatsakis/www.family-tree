@@ -78,7 +78,7 @@ impl<'a> HtmlGen<'a> {
         if Some(person) == self.page_person && person_data.child_in.is_some() {
             let child_in = person_data.child_in.unwrap();
             let parents = &self.genea[child_in].parents;
-            self.outline_parents(wr, person, &parents)?;
+            self.outline_parents(wr, person, parents)?;
         } else {
             self.outline_line_items(wr, person)?;
         }
@@ -127,7 +127,7 @@ impl<'a> HtmlGen<'a> {
                     partner_link = self.person_link(partner)
                 )?;
             }
-            writeln!(wr, "")?;
+            writeln!(wr)?;
 
             if !partnership_data.children.is_empty() {
                 writeln!(wr, "<ul>")?;

@@ -73,13 +73,6 @@ impl<'a> JsonGen<'a> {
         Response::new(self.root_datum()).include(self.all_datums())
     }
 
-    fn person_response(&self, person: Person) -> Response {
-        Response::new(self.person_datum(person))
-    }
-
-    fn partnership_response(&self, partnership: Partnership) -> Response {
-        Response::new(self.partnership_datum(partnership))
-    }
 
     fn root_datum(&self) -> Datum {
         Datum::new(

@@ -190,12 +190,12 @@ impl Parser {
         self.preamble = false;
 
         let line_data =
-            &LineData::from_str(line).with_context(|| format!("expected person data"))?;
+            &LineData::from_str(line).with_context(|| "expected person data".to_string())?;
 
         let make_span = |r: &std::ops::Range<usize>| range_to_span(line_num, r);
 
         // Remove people from the stack unless they are either an ancestor or partner.
-        self.pop_stack(&line_data);
+        self.pop_stack(line_data);
 
         // XXX:
         // * Rough idea is-- let's check first if this is a "primary spouse":
@@ -555,19 +555,17 @@ impl Parser {
             ));
         }
 
-        if line_data.comments != existing_data.comments {
-            if !line_data.comments.is_empty() {
-                if !existing_data.comments.is_empty() {
-                    return Err(ParseErrorKind::DifferentComments {
-                        name: line_data.name.clone(),
-                        name_span: range_to_span(line_num, &line_data.name_range),
-                        comments_span: range_to_span(line_num, &line_data.comments_range),
-                        other_span: existing_data.span,
-                    });
-                }
-
-                existing_data.comments = line_data.comments.clone();
+        if line_data.comments != existing_data.comments && !line_data.comments.is_empty() {
+            if !existing_data.comments.is_empty() {
+                return Err(ParseErrorKind::DifferentComments {
+                    name: line_data.name.clone(),
+                    name_span: range_to_span(line_num, &line_data.name_range),
+                    comments_span: range_to_span(line_num, &line_data.comments_range),
+                    other_span: existing_data.span,
+                });
             }
+
+            existing_data.comments = line_data.comments.clone();
         }
 
         Ok(())
@@ -601,7 +599,7 @@ impl Parser {
 
     /// Validate mismatched altid references collected during parsing
     fn validate_mismatched_altids(&self, path: &Path) -> Result<(), ParseError> {
-        if let Some((person, altid, altid_span, attempted_name)) = self.mismatched_altids.iter().next() {
+        if let Some((person, altid, altid_span, attempted_name)) = self.mismatched_altids.first() {
             let person_data = &self.genea[*person];
             let canonical_name = &person_data.name;
 

@@ -213,7 +213,7 @@ fn get_file_content(path: &Path) -> anyhow::Result<String> {
 }
 
 fn comma(v: impl Iterator<Item: Display>) -> String {
-    let mut output = format!("");
+    let mut output = String::new();
     let mut sep = "";
 
     for e in v {
@@ -348,7 +348,7 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
             annotation2 = format!("Sibling {sibling_name} also has henry number {line_hn}");
             snippet = snippet.annotation(Level::Info.span(span(*sibling_span)).label(&annotation2));
 
-            annotation3 = format!("Most likely fix is to change henry number here");
+            annotation3 = "Most likely fix is to change henry number here".to_string();
             snippet = snippet.annotation(Level::Help.span(span(*line_hn_span)).label(&annotation3));
         }
         ParseErrorKind::NoMatchingPerson {
@@ -373,7 +373,7 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
                 snippet = snippet.annotation(
                     Level::Info
                         .span(span(*existing_name_span))
-                        .label(&existing_name_annotation),
+                        .label(existing_name_annotation),
                 );
             }
 
@@ -412,10 +412,10 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
             comments_span,
             other_span,
         } => {
-            annotation2 = format!("Other comments found on this line");
+            annotation2 = "Other comments found on this line".to_string();
             snippet = snippet.annotation(Level::Info.span(span(*other_span)).label(&annotation2));
 
-            annotation3 = format!("Comment that is different");
+            annotation3 = "Comment that is different".to_string();
             snippet =
                 snippet.annotation(Level::Info.span(span(*comments_span)).label(&annotation3));
 
