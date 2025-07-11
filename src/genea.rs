@@ -258,14 +258,6 @@ pub struct PersonData {
     /// Private comments not to be exposed publicly
     #[expect(dead_code)]
     pub private_comments: String,
-
-    /// Number of spouses
-    #[expect(dead_code)]
-    pub num_spouses: usize,
-
-    /// Number of kids
-    #[expect(dead_code)]
-    pub num_kids: usize,
 }
 
 impl PersonData {

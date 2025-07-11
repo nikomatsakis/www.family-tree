@@ -57,8 +57,9 @@ use super::{
 fn shared_prefix_length(a: &HenryNumber, b: &HenryNumber) -> usize {
     let a_ancestry = &a.ancestry;
     let b_ancestry = &b.ancestry;
-    
-    a_ancestry.iter()
+
+    a_ancestry
+        .iter()
         .zip(b_ancestry.iter())
         .take_while(|(a_val, b_val)| a_val == b_val)
         .count()
@@ -84,6 +85,13 @@ lazy_static::lazy_static! {
     ).unwrap();
 }
 
+/// Count information from genea file for validation purposes only
+#[derive(Debug, Clone)]
+struct PersonCounts {
+    num_spouses: usize,
+    num_kids: usize,
+}
+
 struct Parser {
     /// Initially true, becomes false once we see the first person's data
     preamble: bool,
@@ -97,6 +105,10 @@ struct Parser {
     /// 💡: Using single Person instead of BTreeSet because only 0th spouse can have henry number
     by_henry_number: BTreeMap<HenryNumber, Person>,
     by_partners: BTreeMap<BTreeSet<Person>, Partnership>,
+
+    /// Count information for validation (not part of final data model)
+    /// Maps person IDs to their declared spouse/child counts from the genea file
+    person_counts: BTreeMap<Person, PersonCounts>,
 
     /// The result thus far
     genea: Genea,
@@ -119,6 +131,7 @@ pub fn parse_text(path: &Path, text: &str) -> anyhow::Result<Genea> {
         genea: Default::default(),
         by_henry_number: Default::default(),
         by_partners: Default::default(),
+        person_counts: BTreeMap::new(),
         mismatched_altids: Vec::new(),
     }
     .parse_lines(path, &mut lines)?)
@@ -146,6 +159,7 @@ impl Parser {
         self.validate_mismatched_altids(path)?;
         // self.validate_links(path)?;
         self.validate_duplicates(path)?;
+        self.validate_counts(path)?;
 
         Ok(self.genea)
     }
@@ -224,22 +238,36 @@ impl Parser {
             // For example: Person A at 1-2-3 marries Person B (spouse index 1) but Person B has altid 5-6-7.
             // When we process Person B as secondary spouse, we create Person B and map 5-6-7 → Person B.
             // Later when we process Person B's primary line at 5-6-7 (spouse index 0), we find Person B already exists there and merge.
-            if let Some(&existing_person) = self.by_henry_number.get(&line_data.primary_henry_number) {
+            if let Some(&existing_person) =
+                self.by_henry_number.get(&line_data.primary_henry_number)
+            {
                 // Merge with existing person
                 let existing_data = &mut self.genea[existing_person];
-                Self::merge_person(line_num, existing_data, line_data, make_span(&line_data.primary_henry_number_range))?;
+                Self::merge_person(
+                    line_num,
+                    existing_data,
+                    line_data,
+                    make_span(&line_data.primary_henry_number_range),
+                )?;
+                // Update stored counts with primary spouse's counts
+                self.store_person_counts(existing_person, line_data);
                 existing_person
             } else {
                 // Create new person
                 let person_data = self.create_person_data(
                     line_data,
                     make_span(&line_data.name_range),
-                    Some((line_data.primary_henry_number.clone(), make_span(&line_data.primary_henry_number_range))),
+                    Some((
+                        line_data.primary_henry_number.clone(),
+                        make_span(&line_data.primary_henry_number_range),
+                    )),
                 );
                 let person = self.genea.add_person(person_data);
+                self.store_person_counts(person, line_data);
 
                 // Map henry number to this person
-                self.by_henry_number.insert(line_data.primary_henry_number.clone(), person);
+                self.by_henry_number
+                    .insert(line_data.primary_henry_number.clone(), person);
                 person
             }
         } else {
@@ -271,22 +299,37 @@ impl Parser {
                         // Check if name matches - if not, record mismatch and continue parsing
                         if self.genea[primary_person].name != line_data.name {
                             // Record this mismatch for later validation
-                            let altid_span = make_span(line_data.secondary_henry_number_range.as_ref().unwrap());
-                            self.mismatched_altids.push((primary_person, altid.clone(), altid_span, line_data.name.clone()));
-                            
+                            let altid_span =
+                                make_span(line_data.secondary_henry_number_range.as_ref().unwrap());
+                            self.mismatched_altids.push((
+                                primary_person,
+                                altid.clone(),
+                                altid_span,
+                                line_data.name.clone(),
+                            ));
+
                             // Fix the name to match canonical data and continue parsing
                             // (This allows us to complete parsing and make better suggestions later)
                         }
                         // Add this altid reference to the person's altid_spans
-                        self.genea[primary_person].altid_spans.push(make_span(line_data.secondary_henry_number_range.as_ref().unwrap()));
+                        self.genea[primary_person].altid_spans.push(make_span(
+                            line_data.secondary_henry_number_range.as_ref().unwrap(),
+                        ));
                         primary_person
                     } else {
                         // Altid doesn't exist yet - create a placeholder person
                         // 💡: This creates a person without a henry_number (placeholder) but maps the altid to them
                         // Later when we process the primary line for this altid, we'll merge and set the henry_number
-                        let mut person_data = self.create_person_data(line_data, make_span(&line_data.name_range), None);
-                        person_data.altid_spans.push(make_span(line_data.secondary_henry_number_range.as_ref().unwrap()));
+                        let mut person_data = self.create_person_data(
+                            line_data,
+                            make_span(&line_data.name_range),
+                            None,
+                        );
+                        person_data.altid_spans.push(make_span(
+                            line_data.secondary_henry_number_range.as_ref().unwrap(),
+                        ));
                         let person = self.genea.add_person(person_data);
+                        self.store_person_counts(person, line_data);
 
                         // Map the altid to this placeholder person
                         self.by_henry_number.insert(altid.clone(), person);
@@ -295,8 +338,11 @@ impl Parser {
                 }
                 None => {
                     // No altid - create a new person without a henry number
-                    let person_data = self.create_person_data(line_data, make_span(&line_data.name_range), None);
-                    self.genea.add_person(person_data)
+                    let person_data =
+                        self.create_person_data(line_data, make_span(&line_data.name_range), None);
+                    let person = self.genea.add_person(person_data);
+                    self.store_person_counts(person, line_data);
+                    person
                 }
             }
         };
@@ -417,7 +463,6 @@ impl Parser {
         p
     }
 
-
     /// Creates PersonData from LineData with optional henry_number override
     /// 💡: Helper to reduce duplication - most PersonData fields come directly from LineData
     fn create_person_data(
@@ -436,9 +481,18 @@ impl Parser {
             private_comments: line_data.private_comments.clone(),
             primary_henry_number,
             altid_spans: Vec::new(),
-            num_spouses: line_data.num_spouses,
-            num_kids: line_data.num_kids,
         }
+    }
+
+    /// Store count information for a person for later validation
+    fn store_person_counts(&mut self, person_id: Person, line_data: &LineData) {
+        self.person_counts.insert(
+            person_id,
+            PersonCounts {
+                num_spouses: line_data.num_spouses,
+                num_kids: line_data.num_kids,
+            },
+        );
     }
 
     /// Pops entries off the stack that are children of `line_data`
@@ -495,7 +549,10 @@ impl Parser {
                     hn: hn.clone(),
                 });
             }
-            existing_data.primary_henry_number = Some((line_data.primary_henry_number.clone(), primary_henry_number_span));
+            existing_data.primary_henry_number = Some((
+                line_data.primary_henry_number.clone(),
+                primary_henry_number_span,
+            ));
         }
 
         if line_data.comments != existing_data.comments {
@@ -520,12 +577,12 @@ impl Parser {
     fn validate_unresolved_altids(&self, path: &Path) -> Result<(), ParseError> {
         for (henry_number, &person) in &self.by_henry_number {
             let person_data = &self.genea[person];
-            
+
             // If this person has no primary henry number, it's an unresolved placeholder
             if person_data.primary_henry_number.is_none() {
                 // Find suggestions: people with the same name who have henry numbers
                 let suggestions = self.find_name_suggestions(&person_data.name);
-                
+
                 return Err(ParseError {
                     path: path.to_path_buf(),
                     line_num: person_data.span.line_num,
@@ -544,13 +601,13 @@ impl Parser {
 
     /// Validate mismatched altid references collected during parsing
     fn validate_mismatched_altids(&self, path: &Path) -> Result<(), ParseError> {
-        for (person, altid, altid_span, attempted_name) in &self.mismatched_altids {
+        if let Some((person, altid, altid_span, attempted_name)) = self.mismatched_altids.iter().next() {
             let person_data = &self.genea[*person];
             let canonical_name = &person_data.name;
-            
+
             // Find suggestions for people with the attempted name
             let suggestions = self.find_closest_henry_suggestions(attempted_name, Some(altid));
-            
+
             return Err(ParseError {
                 path: path.to_path_buf(),
                 line_num: altid_span.line_num,
@@ -574,13 +631,17 @@ impl Parser {
     }
 
     /// Find people with the same name, optionally filtering by closest to a target henry number
-    fn find_closest_henry_suggestions(&self, name: &str, target_hn: Option<&HenryNumber>) -> Vec<(HenryNumber, Span)> {
+    fn find_closest_henry_suggestions(
+        &self,
+        name: &str,
+        target_hn: Option<&HenryNumber>,
+    ) -> Vec<(HenryNumber, Span)> {
         let mut all_matches = Vec::new();
-        
+
         // Search through all people in the genea
         for person in self.genea.people() {
             let person_data = &self.genea[person];
-            
+
             // If this person has the same name and has a primary henry number
             if person_data.name == name {
                 if let Some((henry_number, span)) = &person_data.primary_henry_number {
@@ -588,21 +649,23 @@ impl Parser {
                 }
             }
         }
-        
+
         // If we have a target henry number, filter by closest match
         if let Some(target) = target_hn {
             // Find the maximum shared prefix length among all matches
-            let max_shared_prefix = all_matches.iter()
+            let max_shared_prefix = all_matches
+                .iter()
                 .map(|(hn, _span)| shared_prefix_length(target, hn))
                 .max()
                 .unwrap_or(0);
-            
+
             // Keep only matches with the maximum shared prefix
             if max_shared_prefix > 0 {
-                all_matches.retain(|(hn, _span)| shared_prefix_length(target, hn) == max_shared_prefix);
+                all_matches
+                    .retain(|(hn, _span)| shared_prefix_length(target, hn) == max_shared_prefix);
             }
         }
-        
+
         all_matches
     }
 
@@ -613,7 +676,7 @@ impl Parser {
         // TODO: Implement new validation for one-way altid system
         Ok(())
     }
-    
+
     /// Validate that no person has multiple spouses or children with the same name
     fn validate_duplicates(&self, path: &Path) -> Result<(), ParseError> {
         use std::collections::HashMap;
@@ -646,7 +709,8 @@ impl Parser {
                         self.genea[children[0]].span // fallback
                     };
 
-                    let child_spans: Vec<Span> = children.iter().map(|&c| self.genea[c].span).collect();
+                    let child_spans: Vec<Span> =
+                        children.iter().map(|&c| self.genea[c].span).collect();
                     let duplicate_child_line = child_spans.last().unwrap().line_num;
 
                     return Err(ParseError {
@@ -683,9 +747,10 @@ impl Parser {
 
             for (spouse_name, spouses) in spouse_names {
                 if spouses.len() > 1 {
-                    let spouse_spans: Vec<Span> = spouses.iter().map(|&s| self.genea[s].span).collect();
+                    let spouse_spans: Vec<Span> =
+                        spouses.iter().map(|&s| self.genea[s].span).collect();
                     let duplicate_spouse_line = spouse_spans.last().unwrap().line_num;
-                    
+
                     return Err(ParseError {
                         path: path.to_path_buf(),
                         line_num: duplicate_spouse_line,
@@ -702,243 +767,127 @@ impl Parser {
 
         Ok(())
     }
-    
-    /// Internal implementation of duplicate validation
-    fn old_validate_duplicates(&self, path: &Path) -> Result<(), ParseError> {
-        /* OLD VALIDATION CODE - KEPT FOR REFERENCE
-                if people_set.contains(&person_id) {
-                    // This person has an altid pointing to secondary_hn
-                    // Check if there's a reverse link
-                    if let Some(target_people) = self.by_primary_henry_number.get(secondary_hn) {
-                        let mut found_reverse = false;
-                        let mut found_links = Vec::new();
-                        for &target_person in target_people {
-                            let target_data = &self.genea[target_person];
-                            if target_data.name == person_data.name {
-                                // Check if target_person has a reverse link back to this person
-                                if let Some(primary_hn) = &person_data.henry_number {
-                                    for (reverse_hn, reverse_people) in
-                                        &self.by_secondary_henry_number
-                                    {
-                                        if reverse_people.contains(&target_person) {
-                                            found_links.push(reverse_hn.clone());
-                                            if reverse_hn == primary_hn {
-                                                found_reverse = true;
-                                            }
-                                        }
-                                    }
-                                }
-                                break;
-                            }
-                        }
 
-                        if !found_reverse {
-                            // Check if this is a spouse linking issue
-                            if let Some(primary_hn) = &person_data.henry_number {
-                                if let Some(spouse_error) = self.check_spouse_linking_issue(
-                                    person_id,
-                                    secondary_hn,
-                                    primary_hn,
-                                ) {
-                                    let line_num = match &spouse_error {
-                                        ParseErrorKind::SpouseMissingReverseLink {
-                                            spouse_span,
-                                            ..
-                                        } => spouse_span.line_num,
-                                        _ => person_data.span.line_num,
-                                    };
-                                    return Err(ParseError {
-                                        path: path.to_path_buf(),
-                                        line_num,
-                                        kind: spouse_error,
-                                    });
-                                }
-                            }
-
-                            return Err(ParseError {
-                                path: path.to_path_buf(),
-                                line_num: person_data.span.line_num,
-                                kind: ParseErrorKind::OneWayLink {
-                                    name: person_data.name.clone(),
-                                    name_span: person_data.span,
-                                    target_hn: secondary_hn.clone(),
-                                    target_hn_span: person_data.span, // approximation
-                                    found_links,
-                                },
-                            });
-                        }
-                    }
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Check if a linking issue is actually about a spouse missing a reverse link
-    fn check_spouse_linking_issue(
-        &self,
-        person_id: Person,
-        target_hn: &HenryNumber,
-        person_hn: &HenryNumber,
-    ) -> Option<ParseErrorKind> {
-        let person_data = &self.genea[person_id];
-
-        // Find this person's spouses
-        for &partnership_id in &person_data.parent_in {
-            let partnership_data = &self.genea[partnership_id];
-            for &spouse_id in &partnership_data.parents {
-                if spouse_id != person_id {
-                    let spouse_data = &self.genea[spouse_id];
-
-                    // Check if the spouse should have a reverse link but doesn't
-                    // First, check if there's a corresponding spouse at the target location
-                    if let Some(target_people) = self.by_primary_henry_number.get(target_hn) {
-                        for &target_person in target_people {
-                            let target_person_data = &self.genea[target_person];
-
-                            // If this target person is the linked version of our person
-                            if target_person_data.name == person_data.name {
-                                // Find target person's spouses
-                                for &target_partnership_id in &target_person_data.parent_in {
-                                    let target_partnership_data =
-                                        &self.genea[target_partnership_id];
-                                    for &target_spouse_id in &target_partnership_data.parents {
-                                        if target_spouse_id != target_person {
-                                            let target_spouse_data = &self.genea[target_spouse_id];
-
-                                            // If names match, check if the original spouse has reverse link
-                                            if spouse_data.name == target_spouse_data.name {
-                                                // Check if the original spouse has a reverse link
-                                                let mut spouse_has_reverse_link = false;
-                                                for (reverse_hn, reverse_people) in
-                                                    &self.by_secondary_henry_number
-                                                {
-                                                    if reverse_people.contains(&spouse_id) {
-                                                        spouse_has_reverse_link = true;
-                                                        break;
-                                                    }
-                                                }
-
-                                                if !spouse_has_reverse_link {
-                                                    return Some(
-                                                        ParseErrorKind::SpouseMissingReverseLink {
-                                                            person_name: person_data.name.clone(),
-                                                            person_span: person_data.span,
-                                                            spouse_name: spouse_data.name.clone(),
-                                                            spouse_span: spouse_data.span,
-                                                            target_hn: target_hn.clone(),
-                                                        },
-                                                    );
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        None
-    }
-
-    /// Validate that there are no duplicate children or spouses
-    fn validate_duplicates(&self, path: &Path) -> Result<(), ParseError> {
-        use std::collections::HashMap;
-
-        // Check for duplicate children in each partnership
-        for partnership_id in self.genea.partnerships() {
-            let partnership_data = &self.genea[partnership_id];
-            let mut child_names: HashMap<String, Vec<Person>> = HashMap::new();
-
-            for &child_id in &partnership_data.children {
-                let child_data = &self.genea[child_id];
-                child_names
-                    .entry(child_data.name.clone())
-                    .or_default()
-                    .push(child_id);
-            }
-
-            for (child_name, children) in child_names {
-                if children.len() > 1 {
-                    // Get parent name for error message
-                    let parent_name = if let Some(&parent_id) = partnership_data.parents.first() {
-                        self.genea[parent_id].name.clone()
-                    } else {
-                        "Unknown".to_string()
-                    };
-
-                    let parent_span = if let Some(&parent_id) = partnership_data.parents.first() {
-                        self.genea[parent_id].span
-                    } else {
-                        self.genea[children[0]].span // fallback
-                    };
-
-                    return Err(ParseError {
-                        path: path.to_path_buf(),
-                        line_num: parent_span.line_num,
-                        kind: ParseErrorKind::DuplicateChild {
-                            parent_name,
-                            parent_span,
-                            child_name,
-                            child_spans: children.iter().map(|&c| self.genea[c].span).collect(),
-                        },
-                    });
-                }
-            }
-        }
-
-        // Check for duplicate spouses for each person
-        for person_id in self.genea.people() {
+    /// Validate that declared spouse/child counts match actual counts
+    fn validate_counts(&self, path: &Path) -> Result<(), ParseError> {
+        for (&person_id, counts) in &self.person_counts {
             let person_data = &self.genea[person_id];
-            let mut spouse_names: HashMap<String, Vec<Person>> = HashMap::new();
 
-            for &partnership_id in &person_data.parent_in {
-                let partnership_data = &self.genea[partnership_id];
-                for &spouse_id in &partnership_data.parents {
-                    if spouse_id != person_id {
-                        let spouse_data = &self.genea[spouse_id];
-                        spouse_names
-                            .entry(spouse_data.name.clone())
-                            .or_default()
-                            .push(spouse_id);
-                    }
-                }
-            }
-
-            for (spouse_name, spouses) in spouse_names {
-                if spouses.len() > 1 {
-                    let spouse_spans: Vec<Span> = spouses.iter().map(|&s| self.genea[s].span).collect();
-                    let duplicate_spouse_line = spouse_spans.last().unwrap().line_num;
-                    
-                    return Err(ParseError {
-                        path: path.to_path_buf(),
-                        line_num: duplicate_spouse_line,
-                        kind: ParseErrorKind::DuplicateSpouse {
-                            person_name: person_data.name.clone(),
-                            person_span: person_data.span,
-                            spouse_name,
-                            spouse_spans,
-                        },
-                    });
-                }
+            // Rule 1: Secondary spouses must have 0/0 counts
+            if let Some((_, _)) = person_data.primary_henry_number {
+                // This is a primary spouse (has henry number)
+                self.validate_primary_counts(path, person_id, person_data, counts)?;
+            } else {
+                // This is a secondary spouse (no henry number)
+                self.validate_secondary_counts(path, person_id, person_data, counts)?;
             }
         }
 
-        */
         Ok(())
     }
+
+    /// Validate counts for secondary spouses (must be 0/0)
+    fn validate_secondary_counts(
+        &self,
+        path: &Path,
+        _person_id: Person,
+        person_data: &PersonData,
+        counts: &PersonCounts,
+    ) -> Result<(), ParseError> {
+        if counts.num_spouses != 0 || counts.num_kids != 0 {
+            // TODO: Add specific error type for invalid secondary spouse counts
+            return Err(ParseError {
+                path: path.to_path_buf(),
+                line_num: person_data.span.line_num,
+                kind: ParseErrorKind::Other(anyhow::anyhow!(
+                    "Secondary spouse {} should have 0 spouses and 0 children, but has {} spouses and {} children",
+                    person_data.name, counts.num_spouses, counts.num_kids
+                )),
+            });
+        }
+        Ok(())
+    }
+
+    /// Validate counts for primary spouses (count actual children/spouses)
+    fn validate_primary_counts(
+        &self,
+        path: &Path,
+        person_id: Person,
+        person_data: &PersonData,
+        counts: &PersonCounts,
+    ) -> Result<(), ParseError> {
+        let (henry_number, _) = person_data.primary_henry_number.as_ref().unwrap();
+
+        // Count children: people whose henry number is exactly one level deeper
+        let actual_kids = self
+            .genea
+            .people()
+            .filter(|&child_id| {
+                child_id != person_id && {
+                    let child_data = &self.genea[child_id];
+                    if let Some((child_hn, _)) = &child_data.primary_henry_number {
+                        // Check if child's henry number is exactly one level deeper
+                        child_hn.ancestry.len() == henry_number.ancestry.len() + 1 &&
+                        henry_number.is_prefix_of(child_hn)
+                    } else {
+                        false
+                    }
+                }
+            })
+            .count();
+
+        // Count spouses: unique partners across all partnerships
+        let actual_spouses = person_data
+            .parent_in
+            .iter()
+            .flat_map(|&partnership_id| {
+                let partnership_data = &self.genea[partnership_id];
+                partnership_data
+                    .parents
+                    .iter()
+                    .filter(|&&spouse_id| spouse_id != person_id)
+                    .cloned()
+            })
+            .collect::<std::collections::BTreeSet<_>>()
+            .len();
+
+        if counts.num_kids != actual_kids {
+            // TODO: Add specific error type for count mismatch
+            return Err(ParseError {
+                path: path.to_path_buf(),
+                line_num: person_data.span.line_num,
+                kind: ParseErrorKind::Other(anyhow::anyhow!(
+                    "{} declared {} children but actual count is {} (based on henry number prefix {:?})",
+                    person_data.name, counts.num_kids, actual_kids, henry_number
+                )),
+            });
+        }
+
+        if counts.num_spouses != actual_spouses {
+            // TODO: Add specific error type for count mismatch
+            return Err(ParseError {
+                path: path.to_path_buf(),
+                line_num: person_data.span.line_num,
+                kind: ParseErrorKind::Other(anyhow::anyhow!(
+                    "{} declared {} spouses but actual count is {}",
+                    person_data.name,
+                    counts.num_spouses,
+                    actual_spouses
+                )),
+            });
+        }
+
+        Ok(())
+    }
+
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::Path;
-    use expect_test::{expect, Expect};
     use crate::genea::error::create_test_file;
+    use expect_test::{expect, Expect};
+    use std::path::Path;
 
     fn check_parse_error(test_name: &str, genea_text: &str, expected: Expect) {
         let path = create_test_file(test_name, genea_text).unwrap();
@@ -953,24 +902,28 @@ mod tests {
     fn test_primary_spouse_cannot_have_altid() {
         // Test that primary spouse (spousal index 0) with altid throws error
         let genea_text = " 1 0 0 0 0 0 0 0 0 0 M 1 1 0 2000000 John Doe\\test comment";
-        
-        check_parse_error("test_primary_spouse_cannot_have_altid", genea_text, expect![[r#"
+
+        check_parse_error(
+            "test_primary_spouse_cannot_have_altid",
+            genea_text,
+            expect![[r#"
             error: primary spouse John Doe at henry number 1 cannot have an altid
              --> test-test_primary_spouse_cannot_have_altid.genea:1:1
               |
             1 |  1 0 0 0 0 0 0 0 0 0 M 1 1 0 2000000 John Doe\test comment
               | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
-              |"#]]);
+              |"#]],
+        );
     }
 
     #[test]
     fn test_primary_spouse_without_altid_succeeds() {
         // Test that primary spouse (spousal index 0) without altid works
-        let genea_text = " 1 0 0 0 0 0 0 0 0 0 M 1 1 0         John Doe\\test comment";
+        let genea_text = " 1 0 0 0 0 0 0 0 0 0 M 0 0 0         John Doe\\test comment";
         let path = Path::new("test.genea");
-        
+
         let result = parse_text(path, genea_text);
-        
+
         if let Err(ref e) = result {
             eprintln!("Error: {}", e);
         }
@@ -989,19 +942,27 @@ mod tests {
  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe"#;
         let path = Path::new("test.genea");
         let result = parse_text(path, genea_text);
-        
+
         // Should produce UnresolvedAltid error
         assert!(result.is_err());
         let anyhow_error = result.unwrap_err();
         let parse_error = anyhow_error.downcast::<ParseError>().unwrap();
         match parse_error.kind {
-            ParseErrorKind::UnresolvedAltid { name, altid, suggestions, .. } => {
+            ParseErrorKind::UnresolvedAltid {
+                name,
+                altid,
+                suggestions,
+                ..
+            } => {
                 assert_eq!(name, "Jane Doe");
                 assert_eq!(altid.to_string(), "2");
                 // No suggestions expected since there's no other "Jane Doe" in the test data
                 assert_eq!(suggestions.len(), 0);
             }
-            _ => panic!("Expected UnresolvedAltid error, got: {:?}", parse_error.kind),
+            _ => panic!(
+                "Expected UnresolvedAltid error, got: {:?}",
+                parse_error.kind
+            ),
         }
     }
 
@@ -1014,59 +975,77 @@ mod tests {
  2 1 0 0 0 0 0 0 0 0 F 0 1 0         Person B"#;
         let path = Path::new("test.genea");
         let result = parse_text(path, genea_text);
-        
+
         assert!(result.is_err());
         let anyhow_error = result.unwrap_err();
         let parse_error = anyhow_error.downcast::<ParseError>().unwrap();
         match parse_error.kind {
-            ParseErrorKind::UnresolvedAltid { name, altid, suggestions, .. } => {
+            ParseErrorKind::UnresolvedAltid {
+                name,
+                altid,
+                suggestions,
+                ..
+            } => {
                 assert_eq!(name, "Person B");
                 assert_eq!(altid.to_string(), "2-2");
                 // Should have suggestion for the Person B that exists at 2.1
                 assert_eq!(suggestions.len(), 1);
-                let suggestion_henry_numbers: Vec<String> = suggestions.iter()
+                let suggestion_henry_numbers: Vec<String> = suggestions
+                    .iter()
                     .map(|(hn, _span)| hn.to_string())
                     .collect();
                 assert!(suggestion_henry_numbers.contains(&"2-1".to_string()));
             }
-            _ => panic!("Expected UnresolvedAltid error, got: {:?}", parse_error.kind),
+            _ => panic!(
+                "Expected UnresolvedAltid error, got: {:?}",
+                parse_error.kind
+            ),
         }
     }
 
     #[test]
     fn test_secondary_spouse_without_altid_succeeds() {
         // Test that secondary spouse without altid creates person without henry_number
-        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 1 1 0         John Doe\primary spouse
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 0 1 0         John Doe\primary spouse
  1 0 0 0 0 0 0 0 0 0 F 0 0 1         Jane Doe\secondary spouse without altid"#;
         let path = Path::new("test.genea");
-        
+
         let result = parse_text(path, genea_text);
-        
+
+        if let Err(ref e) = result {
+            eprintln!("Error: {}", e);
+        }
         assert!(result.is_ok());
         let genea = result.unwrap();
         assert_eq!(genea.people().count(), 2);
         // Find Jane Doe (the secondary spouse)
-        let jane = genea.people().find(|&p| genea[p].name == "Jane Doe").unwrap();
+        let jane = genea
+            .people()
+            .find(|&p| genea[p].name == "Jane Doe")
+            .unwrap();
         assert!(genea[jane].henry_number().is_none());
     }
 
     #[test]
     fn test_altid_linking_and_merging() {
         // Test the full cycle: secondary spouse creates placeholder, then primary spouse merges
-        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 1 1 0         John Doe\primary spouse first
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 0 1 0         John Doe\primary spouse first
  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe
- 2 0 0 0 0 0 0 0 0 0 F 1 1 0         Jane Doe\test person"#;
+ 2 0 0 0 0 0 0 0 0 0 F 0 1 0         Jane Doe\test person"#;
         let path = Path::new("test.genea");
-        
+
         let result = parse_text(path, genea_text);
-        
+
         if let Err(ref e) = result {
             eprintln!("Error: {}", e);
         }
         assert!(result.is_ok());
         let genea = result.unwrap();
         assert_eq!(genea.people().count(), 2); // John and Jane (merged)
-        let jane = genea.people().find(|&p| genea[p].name == "Jane Doe").unwrap();
+        let jane = genea
+            .people()
+            .find(|&p| genea[p].name == "Jane Doe")
+            .unwrap();
         // After merging, should have henry_number set
         assert!(genea[jane].henry_number().is_some());
     }
@@ -1076,14 +1055,18 @@ mod tests {
         // Test that secondary spouse with altid but different name from existing primary fails
         let genea_text = r#" 2 0 0 0 0 0 0 0 0 0 F 1 1 0         Jane Doe\primary spouse
  1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe"#;
-        
-        check_parse_error("test_secondary_spouse_with_altid_name_mismatch", genea_text, expect![[r#"
+
+        check_parse_error(
+            "test_secondary_spouse_with_altid_name_mismatch",
+            genea_text,
+            expect![[r#"
             error: expected partner on the stack
              --> test-test_secondary_spouse_with_altid_name_mismatch.genea:2:1
               |
             2 |  1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe
               | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
-              |"#]]);
+              |"#]],
+        );
     }
 
     #[test]
@@ -1093,8 +1076,11 @@ mod tests {
         let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 1 1 0         John Doe\primary spouse first
  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe
  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Wrong Name\primary spouse with different name"#;
-        
-        check_parse_error("test_mismatched_name_error_shows_both_locations", genea_text, expect![[r#"
+
+        check_parse_error(
+            "test_mismatched_name_error_shows_both_locations",
+            genea_text,
+            expect![[r#"
             error: name does not match, expected Jane Doe found Wrong Name
              --> test-test_mismatched_name_error_shows_both_locations.genea:3:38
               |
@@ -1102,7 +1088,8 @@ mod tests {
               |                                      -------- info: Expected Jane Doe based on this reference
             3 |  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Wrong Name\primary spouse with different name
               |                                      ^^^^^^^^^^ Found Wrong Name here
-              |"#]]);
+              |"#]],
+        );
     }
 
     #[test]
@@ -1111,8 +1098,11 @@ mod tests {
         let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 2 1 0         John Doe
  1 1 0 0 0 0 0 0 0 0 F 0 0 0         Mary Smith
  1 2 0 0 0 0 0 0 0 0 F 0 0 0         Mary Smith"#;
-        
-        check_parse_error("test_duplicate_children_error", genea_text, expect![[r#"
+
+        check_parse_error(
+            "test_duplicate_children_error",
+            genea_text,
+            expect![[r#"
             error: John Doe has multiple children named 'Mary Smith'
              --> test-test_duplicate_children_error.genea:3:38
               |
@@ -1122,7 +1112,8 @@ mod tests {
               |                                      ---------- info: First Mary Smith declared here
             3 |  1 2 0 0 0 0 0 0 0 0 F 0 0 0         Mary Smith
               |                                      ^^^^^^^^^^ Second Mary Smith declared here (duplicate of John Doe's child)
-              |"#]]);
+              |"#]],
+        );
     }
 
     #[test]
@@ -1132,8 +1123,11 @@ mod tests {
  1 0 0 0 0 0 0 0 0 0 F 0 0 1         Jane Smith
  1 0 0 0 0 0 0 0 0 0 F 0 0 2         Jane Smith
  1 1 0 0 0 0 0 0 0 0 M 0 0 0         Child One"#;
-        
-        check_parse_error("test_duplicate_spouses_error", genea_text, expect![[r#"
+
+        check_parse_error(
+            "test_duplicate_spouses_error",
+            genea_text,
+            expect![[r#"
             error: John Doe has multiple spouses named 'Jane Smith'
              --> test-test_duplicate_spouses_error.genea:1:38
               |
@@ -1143,7 +1137,8 @@ mod tests {
               |                                      ---------- info: First Jane Smith declared here
             3 |  1 0 0 0 0 0 0 0 0 0 F 0 0 2         Jane Smith
               |                                      ^^^^^^^^^^ Second Jane Smith declared here (duplicate spouse of John Doe)
-              |"#]]);
+              |"#]],
+        );
     }
 
     #[test]
@@ -1153,8 +1148,11 @@ mod tests {
  1 0 0 0 0 0 0 0 0 0 F 2 0 1         Root Spouse\spouse of root
  1 1 0 0 0 0 0 0 0 0 F 2 2 0         Maria Karavasilis\first primary spouse
  1 1 0 0 0 0 0 0 0 0 F 0 1 0         Tassoula Vazanis\second primary spouse, same henry number"#;
-        
-        check_parse_error("test_conflicting_primary_spouses_error", genea_text, expect![[r#"
+
+        check_parse_error(
+            "test_conflicting_primary_spouses_error",
+            genea_text,
+            expect![[r#"
             error: two different people with same henry number that are not partners: Maria Karavasilis and Tassoula Vazanis
              --> test-test_conflicting_primary_spouses_error.genea:4:38
               |
@@ -1162,7 +1160,8 @@ mod tests {
               |                                      ----------------- info: Maria Karavasilis already has henry number 1-1
             4 |  1 1 0 0 0 0 0 0 0 0 F 0 1 0         Tassoula Vazanis\second primary spouse, same henry number
               |                                      ^^^^^^^^^^^^^^^^ Tassoula Vazanis cannot have the same henry number as Maria Karavasilis (they are not partners)
-              |"#]]);
+              |"#]],
+        );
     }
 
     #[test]
@@ -1172,8 +1171,11 @@ mod tests {
  1 0 0 0 0 0 0 0 0 0 F 2 0 1         Primary Spouse\spouse data
  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Real Person\real person data
  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Real Person\secondary spouse should not have comments"#;
-        
-        check_parse_error("test_secondary_spouse_with_altid_and_comments", genea_text, expect![[r#"
+
+        check_parse_error(
+            "test_secondary_spouse_with_altid_and_comments",
+            genea_text,
+            expect![[r#"
             error: secondary spouse with altid should only have name, but Real Person has comments
              --> test-test_secondary_spouse_with_altid_and_comments.genea:4:50
               |
@@ -1181,7 +1183,105 @@ mod tests {
               |                                      ----------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Real Person has comments but should only have name (altid points to 2)
               |                                      |
               |                                      help: Put all data on the primary person at henry number 2, not here
-              |"#]]);
+              |"#]],
+        );
+    }
+
+    #[test]
+    fn test_secondary_spouse_cannot_have_non_zero_counts() {
+        // Test that secondary spouse with non-zero counts fails validation
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 0 1 0         John Doe\primary spouse
+ 1 0 0 0 0 0 0 0 0 0 F 1 0 1         Jane Doe\secondary spouse with non-zero count"#;
+
+        check_parse_error(
+            "test_secondary_spouse_cannot_have_non_zero_counts",
+            genea_text,
+            expect![[r#"
+                error: Secondary spouse Jane Doe should have 0 spouses and 0 children, but has 0 spouses and 1 children
+                 --> test-test_secondary_spouse_cannot_have_non_zero_counts.genea:2:1
+                  |
+                2 |  1 0 0 0 0 0 0 0 0 0 F 1 0 1         Jane Doe\secondary spouse with non-zero count
+                  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+                  |"#]],
+        );
+    }
+
+    #[test]
+    fn test_count_children_direct_only_not_grandchildren() {
+        // Test that parent counts only direct children, not grandchildren
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 1 0 0         John Doe\should have 1 child
+ 1 1 0 0 0 0 0 0 0 0 M 1 0 0         Child One\John's direct child
+ 1 1 1 0 0 0 0 0 0 0 M 0 0 0         Grandchild\Child One's child, not John's direct child"#;
+        let path = Path::new("test.genea");
+
+        let result = parse_text(path, genea_text);
+        assert!(result.is_ok(), "Should parse successfully - John has 1 direct child, not counting grandchild");
+    }
+
+    #[test]
+    fn test_primary_spouse_wrong_child_count_fails() {
+        // Test that primary spouse with incorrect child count fails validation
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 2 1 0         John Doe\declares 2 children but has 1
+ 1 1 0 0 0 0 0 0 0 0 F 0 0 0         Only Child\John's only child"#;
+
+        check_parse_error(
+            "test_primary_spouse_wrong_child_count_fails",
+            genea_text,
+            expect![[r#"
+                error: John Doe declared 2 children but actual count is 1 (based on henry number prefix HenryNumber { ancestry: [1] })
+                 --> test-test_primary_spouse_wrong_child_count_fails.genea:1:1
+                  |
+                1 |  1 0 0 0 0 0 0 0 0 0 M 2 1 0         John Doe\declares 2 children but has 1
+                  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+                  |"#]],
+        );
+    }
+
+    #[test]
+    fn test_primary_spouse_wrong_spouse_count_fails() {
+        // Test that primary spouse with incorrect spouse count fails validation
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 0 2 0         John Doe\declares 2 spouses but has 1
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1         Jane Doe\John's only spouse"#;
+
+        check_parse_error(
+            "test_primary_spouse_wrong_spouse_count_fails",
+            genea_text,
+            expect![[r#"
+                error: John Doe declared 2 spouses but actual count is 1
+                 --> test-test_primary_spouse_wrong_spouse_count_fails.genea:1:1
+                  |
+                1 |  1 0 0 0 0 0 0 0 0 0 M 0 2 0         John Doe\declares 2 spouses but has 1
+                  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+                  |"#]],
+        );
+    }
+
+    #[test]
+    fn test_merged_person_uses_primary_counts() {
+        // Test that when secondary spouse creates placeholder then primary merges, 
+        // final validation uses primary spouse's counts
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 0 1 0         John Doe\primary spouse
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe
+ 2 0 0 0 0 0 0 0 0 0 F 0 1 0         Jane Doe\primary record with correct 1 spouse count"#;
+        let path = Path::new("test.genea");
+
+        let result = parse_text(path, genea_text);
+        if let Err(ref e) = result {
+            eprintln!("Error: {}", e);
+        }
+        assert!(result.is_ok(), "Should validate successfully using primary spouse's counts after merge");
+    }
+
+    #[test]
+    fn test_multiple_spouses_count_validation() {
+        // Test that person with multiple spouses declares correct count
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 0 2 0         John Doe\has 2 spouses
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1         First Wife\first spouse
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 2         Second Wife\second spouse"#;
+        let path = Path::new("test.genea");
+
+        let result = parse_text(path, genea_text);
+        assert!(result.is_ok(), "Should validate successfully with correct spouse count");
     }
 }
 

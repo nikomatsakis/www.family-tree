@@ -110,23 +110,6 @@ pub enum ParseErrorKind {
         suggestions: Vec<(HenryNumber, Span)>,
     },
 
-    #[error("{name} links to {target_hn} but no matching reverse link found (found links to {found_links:?} instead)")]
-    OneWayLink {
-        name: String,
-        name_span: Span,
-        target_hn: HenryNumber,
-        target_hn_span: Span,
-        found_links: Vec<HenryNumber>,
-    },
-
-    #[error("{spouse_name} appears as spouse of {person_name} who is linked, but {spouse_name} has no corresponding reverse link")]
-    SpouseMissingReverseLink {
-        person_name: String,
-        person_span: Span,
-        spouse_name: String,
-        spouse_span: Span,
-        target_hn: HenryNumber,
-    },
 
     #[error("{parent_name} has multiple children named '{child_name}'")]
     DuplicateChild {
