@@ -164,6 +164,10 @@ impl Parser {
         Ok(self.genea)
     }
 
+    // 💡: Large error variants (224 bytes) are acceptable here because this genealogy parser
+    // prioritizes detailed error messages over performance. Rich error context with names, spans,
+    // and suggestions provides much better user experience than stack size optimization.
+    #[expect(clippy::result_large_err)]
     fn parse_line(&mut self, line: &str, line_num: usize) -> Result<(), ParseErrorKind> {
         let line_trim = line.trim();
         if line_trim.is_empty() {
@@ -508,6 +512,10 @@ impl Parser {
         }
     }
 
+    // 💡: Large error variants (224 bytes) are acceptable here because genealogy validation
+    // errors need rich context (names, spans, suggestions) for users to fix their data files.
+    // This is not a performance-critical path.
+    #[expect(clippy::result_large_err)]
     fn merge_person(
         line_num: usize,
         existing_data: &mut PersonData,
