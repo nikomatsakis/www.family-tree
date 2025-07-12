@@ -1,0 +1,25 @@
+[package]
+name = "edit-person"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "edit-person"
+path = "src/main.rs"
+
+[dependencies]
+# For Netlify Function runtime
+lambda_web = "0.2"
+lambda_runtime = "0.8"
+tokio = { version = "1", features = ["macros"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# For GitHub API
+octocrab = "0.34"
+
+# Error handling
+anyhow = "1.0"
+
+# Reference to main family-tree crate
+family-tree = { path = "../../.." }

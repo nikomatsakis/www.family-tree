@@ -1,0 +1,22 @@
+[build]
+  publish = "dist"
+  command = "pnpm build && cargo run -- json genea.doc public/api/v1/ && cp -r public/* dist/"
+
+[build.environment]
+  NODE_VERSION = "20.17.0"
+
+[functions]
+  directory = "netlify/functions"
+
+[[functions."edit-person"]]
+  runtime = "rust"
+
+[[redirects]]
+  from = "/api/fn/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
