@@ -4,6 +4,7 @@
 
 [build.environment]
   NODE_VERSION = "20.17.0"
+  NETLIFY_EXPERIMENTAL_BUILD_RUST_SOURCE = "true"
 
 [functions]
   directory = "netlify/functions"
