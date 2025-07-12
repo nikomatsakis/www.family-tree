@@ -75,6 +75,15 @@ async fn function_handler(event: lambda_web::Request) -> Result<impl lambda_web:
         }
     };
 
+    // Check for placeholder token value
+    if github_token == "XXX" {
+        return Ok(EditResponse {
+            success: false,
+            message: "Edit functionality not available".to_string(),
+            error: Some("This deployment does not have edit permissions configured".to_string()),
+        });
+    }
+
     let github_owner = env::var("GITHUB_OWNER").unwrap_or_else(|_| "nikomatsakis".to_string());
     let github_repo = env::var("GITHUB_REPO").unwrap_or_else(|_| "www.family-tree".to_string());
 
