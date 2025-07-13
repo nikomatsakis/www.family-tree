@@ -9,7 +9,7 @@ environment = { NETLIFY_EXPERIMENTAL_BUILD_RUST_SOURCE = "true" }
   NODE_VERSION = "20.17.0"
   NETLIFY_EXPERIMENTAL_BUILD_RUST_SOURCE = "true"
 
-[[functions."edit-person"]]
+[functions."edit-person"]
   runtime = "rust"
 
 [[redirects]]
