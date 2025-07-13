@@ -1,8 +1,9 @@
 // 💡: Dummy Netlify Function to test auth flow and GitHub API connectivity
 // This is a separate crate that imports the main family-tree library
 
-use lambda_web::{is_running_on_lambda, launch, LambdaError};
+use lambda_runtime::{service_fn, Error, LambdaEvent};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::env;
 
 #[derive(Deserialize)]
@@ -29,9 +30,20 @@ struct EditResponse {
     error: Option<String>,
 }
 
-async fn function_handler(event: lambda_web::Request) -> Result<impl lambda_web::IntoResponse, LambdaError> {
+async fn function_handler(event: LambdaEvent<Value>) -> Result<EditResponse, Error> {
+    let (payload, _context) = event.into_parts();
+    
+    // Parse the API Gateway request (Netlify Functions use the same format)
+    let body = payload.get("body")
+        .and_then(|b| b.as_str())
+        .unwrap_or("");
+    
+    let http_method = payload.get("httpMethod")
+        .and_then(|m| m.as_str())
+        .unwrap_or("GET");
+    
     // Only allow POST requests
-    if event.method() != "POST" {
+    if http_method != "POST" {
         return Ok(EditResponse {
             success: false,
             message: "Method not allowed".to_string(),
@@ -40,8 +52,7 @@ async fn function_handler(event: lambda_web::Request) -> Result<impl lambda_web:
     }
 
     // Parse request body
-    let body = event.body();
-    let request: EditRequest = match serde_json::from_slice(body) {
+    let request: EditRequest = match serde_json::from_str(body) {
         Ok(req) => req,
         Err(e) => {
             return Ok(EditResponse {
@@ -128,14 +139,6 @@ async fn function_handler(event: lambda_web::Request) -> Result<impl lambda_web:
 }
 
 #[tokio::main]
-async fn main() -> Result<(), LambdaError> {
-    if is_running_on_lambda() {
-        // Running on Netlify
-        launch(function_handler).await
-    } else {
-        // Running locally for testing
-        println!("Edit person function - running locally for testing");
-        println!("In production, this would be a Netlify Function");
-        Ok(())
-    }
+async fn main() -> Result<(), Error> {
+    lambda_runtime::run(service_fn(function_handler)).await
 }

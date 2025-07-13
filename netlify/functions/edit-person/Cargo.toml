@@ -9,7 +9,6 @@ path = "src/main.rs"
 
 [dependencies]
 # For Netlify Function runtime
-lambda_web = "0.2"
 lambda_runtime = "0.8"
 tokio = { version = "1", features = ["macros"] }
 serde = { version = "1.0", features = ["derive"] }

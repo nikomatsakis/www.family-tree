@@ -33,3 +33,4 @@ tmp
 # Screenshots and temporary images
 screenshot.png
 *.screenshot.png
+netlify/functions/edit-person/target/
