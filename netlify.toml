@@ -1,10 +1,6 @@
 [context.production]
 environment = { NETLIFY_EXPERIMENTAL_BUILD_RUST_SOURCE = "true" }
 
-[build]
-  publish = "dist"
-  command = "pnpm build && cargo run -- json genea.doc public/api/v1/ && cp -r public/* dist/"
-
 [build.environment]
   NODE_VERSION = "20.17.0"
   NETLIFY_EXPERIMENTAL_BUILD_RUST_SOURCE = "true"
