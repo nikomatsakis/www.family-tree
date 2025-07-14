@@ -34,3 +34,6 @@ tmp
 screenshot.png
 *.screenshot.png
 netlify/functions/edit-person/target/
+
+# Local Netlify folder
+.netlify
