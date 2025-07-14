@@ -30,7 +30,31 @@ struct EditResponse {
     error: Option<String>,
 }
 
-async fn function_handler(event: LambdaEvent<Value>) -> Result<EditResponse, Error> {
+#[derive(Serialize)]
+struct ApiGatewayResponse {
+    #[serde(rename = "statusCode")]
+    status_code: u16,
+    headers: serde_json::Map<String, Value>,
+    body: String,
+}
+
+// 💡: Helper function to create API Gateway response format expected by Netlify Functions
+fn create_api_response(status_code: u16, response: &EditResponse) -> Value {
+    let mut headers = serde_json::Map::new();
+    headers.insert("Content-Type".to_string(), Value::String("application/json".to_string()));
+    
+    serde_json::to_value(&ApiGatewayResponse {
+        status_code,
+        headers,
+        body: serde_json::to_string(response).unwrap_or_else(|_| "{\"error\":\"Failed to serialize response\"}".to_string()),
+    }).unwrap_or_else(|_| serde_json::json!({
+        "statusCode": 500,
+        "headers": {"Content-Type": "application/json"},
+        "body": "{\"error\":\"Critical error\"}"
+    }))
+}
+
+async fn function_handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
     let (payload, _context) = event.into_parts();
     
     // Parse the API Gateway request (Netlify Functions use the same format)
@@ -44,22 +68,24 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<EditResponse, Err
     
     // Only allow POST requests
     if http_method != "POST" {
-        return Ok(EditResponse {
+        let response = EditResponse {
             success: false,
             message: "Method not allowed".to_string(),
             error: Some("Only POST requests are supported".to_string()),
-        });
+        };
+        return Ok(create_api_response(405, &response));
     }
 
     // Parse request body
     let request: EditRequest = match serde_json::from_str(body) {
         Ok(req) => req,
         Err(e) => {
-            return Ok(EditResponse {
+            let response = EditResponse {
                 success: false,
                 message: "Invalid request format".to_string(),
                 error: Some(format!("JSON parse error: {}", e)),
-            });
+            };
+            return Ok(create_api_response(400, &response));
         }
     };
 
@@ -67,32 +93,35 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<EditResponse, Err
     let correct_password = env::var("FAMILY_TREE_PASSWORD").unwrap_or_default();
 
     if request.password != correct_password {
-        return Ok(EditResponse {
+        let response = EditResponse {
             success: false,
             message: "Authentication failed".to_string(),
             error: Some("Invalid password".to_string()),
-        });
+        };
+        return Ok(create_api_response(401, &response));
     }
 
     // Test GitHub API connectivity
     let github_token = match env::var("GITHUB_TOKEN") {
         Ok(token) => token,
         Err(_) => {
-            return Ok(EditResponse {
+            let response = EditResponse {
                 success: false,
                 message: "Server configuration error".to_string(),
                 error: Some("GITHUB_TOKEN not configured".to_string()),
-            });
+            };
+            return Ok(create_api_response(500, &response));
         }
     };
 
     // Check for placeholder token value
     if github_token == "XXX" {
-        return Ok(EditResponse {
+        let response = EditResponse {
             success: false,
             message: "Edit functionality not available".to_string(),
             error: Some("This deployment does not have edit permissions configured".to_string()),
-        });
+        };
+        return Ok(create_api_response(503, &response));
     }
 
     let github_owner = env::var("GITHUB_OWNER").unwrap_or_else(|_| "nikomatsakis".to_string());
@@ -105,11 +134,12 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<EditResponse, Err
     {
         Ok(client) => client,
         Err(e) => {
-            return Ok(EditResponse {
+            let response = EditResponse {
                 success: false,
                 message: "Failed to initialize GitHub client".to_string(),
                 error: Some(format!("Client error: {}", e)),
-            });
+            };
+            return Ok(create_api_response(500, &response));
         }
     };
 
@@ -121,20 +151,24 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<EditResponse, Err
             // 1. Fetch genea.doc content via octocrab.repos().get_content()
             // 2. Call family_tree::edit_person() to update the data
             // 3. Commit changes back via octocrab.repos().create_file()
-            Ok(EditResponse {
+            let response = EditResponse {
                 success: true,
                 message: format!(
                     "Dummy edit successful! Would update person {} (requested by {} <{}>)",
                     request.person_id, request.user_info.name, request.user_info.email
                 ),
                 error: None,
-            })
+            };
+            Ok(create_api_response(200, &response))
         }
-        Err(e) => Ok(EditResponse {
-            success: false,
-            message: "GitHub API error".to_string(),
-            error: Some(format!("GitHub error: {}", e)),
-        }),
+        Err(e) => {
+            let response = EditResponse {
+                success: false,
+                message: "GitHub API error".to_string(),
+                error: Some(format!("GitHub error: {}", e)),
+            };
+            Ok(create_api_response(500, &response))
+        }
     }
 }
 
