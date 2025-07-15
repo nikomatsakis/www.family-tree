@@ -161,6 +161,25 @@ pub enum ParseErrorKind {
         suggestions: Vec<(HenryNumber, Span)>,
     },
 
+    #[error("{name} declared {declared} children but actual count is {actual}")]
+    ChildCountMismatch {
+        name: String,
+        name_span: Span,
+        declared: usize,
+        actual: usize,
+        count_span: Span,
+        henry_number: HenryNumber,
+    },
+
+    #[error("{name} declared {declared} spouses but actual count is {actual}")]
+    SpouseCountMismatch {
+        name: String,
+        name_span: Span,
+        declared: usize,
+        actual: usize,
+        count_span: Span,
+    },
+
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }
@@ -629,6 +648,37 @@ fn pretty_format(parse_error: &ParseError) -> anyhow::Result<String> {
                         .annotation(Level::Info.span(span(*spouse_span)).label(annotation_text));
                 }
             }
+        }
+        ParseErrorKind::ChildCountMismatch {
+            name,
+            name_span,
+            declared,
+            actual,
+            count_span,
+            henry_number,
+        } => {
+            annotation1 = format!(
+                "{name} declared {declared} children but actual count is {actual} (based on henry number prefix {henry_number:?})"
+            );
+            snippet = snippet.annotation(Level::Error.span(span(*count_span)).label(&annotation1));
+
+            annotation2 = format!("{name} is here");
+            snippet = snippet.annotation(Level::Info.span(span(*name_span)).label(&annotation2));
+        }
+        ParseErrorKind::SpouseCountMismatch {
+            name,
+            name_span,
+            declared,
+            actual,
+            count_span,
+        } => {
+            annotation1 = format!(
+                "{name} declared {declared} spouses but actual count is {actual}"
+            );
+            snippet = snippet.annotation(Level::Error.span(span(*count_span)).label(&annotation1));
+
+            annotation2 = format!("{name} is here");
+            snippet = snippet.annotation(Level::Info.span(span(*name_span)).label(&annotation2));
         }
         _ => {
             snippet = snippet.annotation(

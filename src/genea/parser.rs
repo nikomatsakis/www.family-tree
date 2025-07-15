@@ -89,7 +89,9 @@ lazy_static::lazy_static! {
 #[derive(Debug, Clone)]
 struct PersonCounts {
     num_spouses: usize,
+    num_spouses_span: Span,
     num_kids: usize,
+    num_kids_span: Span,
 }
 
 struct Parser {
@@ -254,7 +256,7 @@ impl Parser {
                     make_span(&line_data.primary_henry_number_range),
                 )?;
                 // Update stored counts with primary spouse's counts
-                self.store_person_counts(existing_person, line_data);
+                self.store_person_counts(existing_person, line_data, line_num);
                 existing_person
             } else {
                 // Create new person
@@ -267,7 +269,7 @@ impl Parser {
                     )),
                 );
                 let person = self.genea.add_person(person_data);
-                self.store_person_counts(person, line_data);
+                self.store_person_counts(person, line_data, line_num);
 
                 // Map henry number to this person
                 self.by_henry_number
@@ -333,7 +335,7 @@ impl Parser {
                             line_data.secondary_henry_number_range.as_ref().unwrap(),
                         ));
                         let person = self.genea.add_person(person_data);
-                        self.store_person_counts(person, line_data);
+                        self.store_person_counts(person, line_data, line_num);
 
                         // Map the altid to this placeholder person
                         self.by_henry_number.insert(altid.clone(), person);
@@ -345,7 +347,7 @@ impl Parser {
                     let person_data =
                         self.create_person_data(line_data, make_span(&line_data.name_range), None);
                     let person = self.genea.add_person(person_data);
-                    self.store_person_counts(person, line_data);
+                    self.store_person_counts(person, line_data, line_num);
                     person
                 }
             }
@@ -489,12 +491,14 @@ impl Parser {
     }
 
     /// Store count information for a person for later validation
-    fn store_person_counts(&mut self, person_id: Person, line_data: &LineData) {
+    fn store_person_counts(&mut self, person_id: Person, line_data: &LineData, line_num: usize) {
         self.person_counts.insert(
             person_id,
             PersonCounts {
                 num_spouses: line_data.num_spouses,
+                num_spouses_span: range_to_span(line_num, &line_data.num_spouses_range),
                 num_kids: line_data.num_kids,
+                num_kids_span: range_to_span(line_num, &line_data.num_kids_range),
             },
         );
     }
@@ -864,28 +868,31 @@ impl Parser {
             .len();
 
         if counts.num_kids != actual_kids {
-            // TODO: Add specific error type for count mismatch
             return Err(ParseError {
                 path: path.to_path_buf(),
                 line_num: person_data.name_span.line_num,
-                kind: ParseErrorKind::Other(anyhow::anyhow!(
-                    "{} declared {} children but actual count is {} (based on henry number prefix {:?})",
-                    person_data.name, counts.num_kids, actual_kids, henry_number
-                )),
+                kind: ParseErrorKind::ChildCountMismatch {
+                    name: person_data.name.clone(),
+                    name_span: person_data.name_span,
+                    declared: counts.num_kids,
+                    actual: actual_kids,
+                    count_span: counts.num_kids_span,
+                    henry_number: henry_number.clone(),
+                },
             });
         }
 
         if counts.num_spouses != actual_spouses {
-            // TODO: Add specific error type for count mismatch
             return Err(ParseError {
                 path: path.to_path_buf(),
                 line_num: person_data.name_span.line_num,
-                kind: ParseErrorKind::Other(anyhow::anyhow!(
-                    "{} declared {} spouses but actual count is {}",
-                    person_data.name,
-                    counts.num_spouses,
-                    actual_spouses
-                )),
+                kind: ParseErrorKind::SpouseCountMismatch {
+                    name: person_data.name.clone(),
+                    name_span: person_data.name_span,
+                    declared: counts.num_spouses,
+                    actual: actual_spouses,
+                    count_span: counts.num_spouses_span,
+                },
             });
         }
 
@@ -1240,11 +1247,13 @@ mod tests {
             "test_primary_spouse_wrong_child_count_fails",
             genea_text,
             expect![[r#"
-                error: John Doe declared 2 children but actual count is 1 (based on henry number prefix HenryNumber { ancestry: [1] })
-                 --> test-test_primary_spouse_wrong_child_count_fails.genea:1:1
+                error: John Doe declared 2 children but actual count is 1
+                 --> test-test_primary_spouse_wrong_child_count_fails.genea:1:24
                   |
                 1 |  1 0 0 0 0 0 0 0 0 0 M 2 1 0         John Doe\declares 2 children but has 1
-                  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+                  |                        ^             -------- info: John Doe is here
+                  |                        |
+                  |                        John Doe declared 2 children but actual count is 1 (based on henry number prefix HenryNumber { ancestry: [1] })
                   |"#]],
         );
     }
@@ -1260,10 +1269,12 @@ mod tests {
             genea_text,
             expect![[r#"
                 error: John Doe declared 2 spouses but actual count is 1
-                 --> test-test_primary_spouse_wrong_spouse_count_fails.genea:1:1
+                 --> test-test_primary_spouse_wrong_spouse_count_fails.genea:1:26
                   |
                 1 |  1 0 0 0 0 0 0 0 0 0 M 0 2 0         John Doe\declares 2 spouses but has 1
-                  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+                  |                          ^           -------- info: John Doe is here
+                  |                          |
+                  |                          John Doe declared 2 spouses but actual count is 1
                   |"#]],
         );
     }
@@ -1310,11 +1321,13 @@ mod tests {
             "test_validation_error_points_to_primary_definition_not_reference",
             genea_text,
             expect![[r#"
-                error: Amanda Reference declared 1 children but actual count is 0 (based on henry number prefix HenryNumber { ancestry: [2, 1] })
-                 --> test-test_validation_error_points_to_primary_definition_not_reference.genea:4:1
+                error: Amanda Reference declared 1 children but actual count is 0
+                 --> test-test_validation_error_points_to_primary_definition_not_reference.genea:4:24
                   |
                 4 |  2 1 0 0 0 0 0 0 0 0 F 1 0 0         Amanda Reference\primary definition with wrong child count
-                  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+                  |                        ^             ---------------- info: Amanda Reference is here
+                  |                        |
+                  |                        Amanda Reference declared 1 children but actual count is 0 (based on henry number prefix HenryNumber { ancestry: [2, 1] })
                   |"#]],
         );
     }
@@ -1327,7 +1340,9 @@ struct LineData {
     primary_henry_number_range: std::ops::Range<usize>,
     gender: Gender,
     num_kids: usize,
+    num_kids_range: std::ops::Range<usize>,
     num_spouses: usize,
+    num_spouses_range: std::ops::Range<usize>,
     spousal_index: SpousalIndex,
     spousal_index_range: std::ops::Range<usize>,
     secondary_henry_number: Option<HenryNumber>,
@@ -1367,12 +1382,14 @@ impl FromStr for LineData {
             .as_str()
             .parse()
             .context("invalid number of kids")?;
+        let num_kids_range: std::ops::Range<usize> = captures.name("numkids").unwrap().range();
         let numspouses: usize = captures
             .name("numspouses")
             .unwrap()
             .as_str()
             .parse()
             .context("invalid number of spouses")?;
+        let num_spouses_range: std::ops::Range<usize> = captures.name("numspouses").unwrap().range();
         let spousal_index: SpousalIndex = captures
             .name("spouse")
             .unwrap()
@@ -1405,7 +1422,9 @@ impl FromStr for LineData {
             comments_range,
             private_comments: private_comments.to_string(),
             num_spouses: numspouses,
+            num_spouses_range,
             num_kids: numkids,
+            num_kids_range,
             primary_henry_number,
             spousal_index,
             spousal_index_range,
