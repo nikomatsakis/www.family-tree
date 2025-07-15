@@ -368,7 +368,7 @@ impl Parser {
                     line_hn_span: make_span(&line_data.primary_henry_number_range),
                     spousal_index_span: make_span(&line_data.spousal_index_range),
                     top_name: self.genea[top.person].name.clone(),
-                    top_span: self.genea[top.person].span,
+                    top_span: self.genea[top.person].name_span,
                     top_hn: self.genea[top.person].henry_number().cloned().unwrap(),
                 });
             }
@@ -395,7 +395,7 @@ impl Parser {
                     line_hn_span: make_span(&line_data.primary_henry_number_range),
                     top_name: self.genea[parent].name.clone(),
                     top_hn: self.genea[parent].henry_number().cloned().unwrap(),
-                    top_span: self.genea[parent].span,
+                    top_span: self.genea[parent].name_span,
                 });
             }
 
@@ -411,7 +411,7 @@ impl Parser {
                         line_hn: line_data.primary_henry_number.clone(),
                         line_hn_span: make_span(&line_data.primary_henry_number_range),
                         sibling_name: self.genea[sibling].name.clone(),
-                        sibling_span: self.genea[sibling].span,
+                        sibling_span: self.genea[sibling].name_span,
                     });
                 }
             }
@@ -476,7 +476,7 @@ impl Parser {
         primary_henry_number: Option<(HenryNumber, Span)>,
     ) -> PersonData {
         PersonData {
-            span,
+            name_span: span,
             gender: line_data.gender,
             child_in: Default::default(),
             parent_in: Default::default(),
@@ -528,7 +528,7 @@ impl Parser {
                 // Two different people claiming the same henry number as primary spouses
                 return Err(ParseErrorKind::ConflictingPrimarySpouses {
                     first_name: existing_data.name.clone(),
-                    first_name_span: existing_data.span,
+                    first_name_span: existing_data.name_span,
                     second_name: line_data.name.clone(),
                     second_name_span: Span {
                         line_num,
@@ -540,7 +540,7 @@ impl Parser {
                 // Altid merging case - secondary spouse being merged with primary
                 return Err(ParseErrorKind::MismatchedName {
                     expected_name: existing_data.name.clone(),
-                    expected_name_span: existing_data.span,
+                    expected_name_span: existing_data.name_span,
                     found_name: line_data.name.clone(),
                     found_name_span: Span {
                         line_num,
@@ -561,6 +561,12 @@ impl Parser {
                 line_data.primary_henry_number.clone(),
                 primary_henry_number_span,
             ));
+            // 💡: Update span to point to primary definition location, not the reference location
+            // This ensures validation errors point to where fixes need to be made
+            existing_data.name_span = Span {
+                line_num,
+                chars: Some((line_data.name_range.start, line_data.name_range.end)),
+            };
         }
 
         if line_data.comments != existing_data.comments && !line_data.comments.is_empty() {
@@ -569,7 +575,7 @@ impl Parser {
                     name: line_data.name.clone(),
                     name_span: range_to_span(line_num, &line_data.name_range),
                     comments_span: range_to_span(line_num, &line_data.comments_range),
-                    other_span: existing_data.span,
+                    other_span: existing_data.name_span,
                 });
             }
 
@@ -591,10 +597,10 @@ impl Parser {
 
                 return Err(ParseError {
                     path: path.to_path_buf(),
-                    line_num: person_data.span.line_num,
+                    line_num: person_data.name_span.line_num,
                     kind: ParseErrorKind::UnresolvedAltid {
                         name: person_data.name.clone(),
-                        name_span: person_data.span,
+                        name_span: person_data.name_span,
                         altid: henry_number.clone(),
                         altid_spans: person_data.altid_spans.clone(),
                         suggestions,
@@ -622,7 +628,7 @@ impl Parser {
                     hn: altid.clone(),
                     hn_span: *altid_span,
                     existing_names: vec![canonical_name.clone()],
-                    existing_name_spans: vec![person_data.span],
+                    existing_name_spans: vec![person_data.name_span],
                     suggestions,
                 },
             });
@@ -710,13 +716,13 @@ impl Parser {
                     };
 
                     let parent_span = if let Some(&parent_id) = partnership_data.parents.first() {
-                        self.genea[parent_id].span
+                        self.genea[parent_id].name_span
                     } else {
-                        self.genea[children[0]].span // fallback
+                        self.genea[children[0]].name_span // fallback
                     };
 
                     let child_spans: Vec<Span> =
-                        children.iter().map(|&c| self.genea[c].span).collect();
+                        children.iter().map(|&c| self.genea[c].name_span).collect();
                     let duplicate_child_line = child_spans.last().unwrap().line_num;
 
                     return Err(ParseError {
@@ -754,7 +760,7 @@ impl Parser {
             for (spouse_name, spouses) in spouse_names {
                 if spouses.len() > 1 {
                     let spouse_spans: Vec<Span> =
-                        spouses.iter().map(|&s| self.genea[s].span).collect();
+                        spouses.iter().map(|&s| self.genea[s].name_span).collect();
                     let duplicate_spouse_line = spouse_spans.last().unwrap().line_num;
 
                     return Err(ParseError {
@@ -762,7 +768,7 @@ impl Parser {
                         line_num: duplicate_spouse_line,
                         kind: ParseErrorKind::DuplicateSpouse {
                             person_name: person_data.name.clone(),
-                            person_span: person_data.span,
+                            person_span: person_data.name_span,
                             spouse_name,
                             spouse_spans,
                         },
@@ -804,7 +810,7 @@ impl Parser {
             // TODO: Add specific error type for invalid secondary spouse counts
             return Err(ParseError {
                 path: path.to_path_buf(),
-                line_num: person_data.span.line_num,
+                line_num: person_data.name_span.line_num,
                 kind: ParseErrorKind::Other(anyhow::anyhow!(
                     "Secondary spouse {} should have 0 spouses and 0 children, but has {} spouses and {} children",
                     person_data.name, counts.num_spouses, counts.num_kids
@@ -861,7 +867,7 @@ impl Parser {
             // TODO: Add specific error type for count mismatch
             return Err(ParseError {
                 path: path.to_path_buf(),
-                line_num: person_data.span.line_num,
+                line_num: person_data.name_span.line_num,
                 kind: ParseErrorKind::Other(anyhow::anyhow!(
                     "{} declared {} children but actual count is {} (based on henry number prefix {:?})",
                     person_data.name, counts.num_kids, actual_kids, henry_number
@@ -873,7 +879,7 @@ impl Parser {
             // TODO: Add specific error type for count mismatch
             return Err(ParseError {
                 path: path.to_path_buf(),
-                line_num: person_data.span.line_num,
+                line_num: person_data.name_span.line_num,
                 kind: ParseErrorKind::Other(anyhow::anyhow!(
                     "{} declared {} spouses but actual count is {}",
                     person_data.name,
@@ -1288,6 +1294,29 @@ mod tests {
 
         let result = parse_text(path, genea_text);
         assert!(result.is_ok(), "Should validate successfully with correct spouse count");
+    }
+
+    #[test]
+    fn test_validation_error_points_to_primary_definition_not_reference() {
+        // Test that validation errors point to primary definition where fix is needed,
+        // not to reference lines. Amanda appears first as reference (altid 2100000) 
+        // then as primary definition where she declares wrong child count.
+        let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 0 1 0         John Doe\root ancestor with correct counts
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2100000 Amanda Reference
+ 2 0 0 0 0 0 0 0 0 0 F 0 0 0         Root Two\another root
+ 2 1 0 0 0 0 0 0 0 0 F 1 0 0         Amanda Reference\primary definition with wrong child count"#;
+
+        check_parse_error(
+            "test_validation_error_points_to_primary_definition_not_reference",
+            genea_text,
+            expect![[r#"
+                error: Amanda Reference declared 1 children but actual count is 0 (based on henry number prefix HenryNumber { ancestry: [2, 1] })
+                 --> test-test_validation_error_points_to_primary_definition_not_reference.genea:4:1
+                  |
+                4 |  2 1 0 0 0 0 0 0 0 0 F 1 0 0         Amanda Reference\primary definition with wrong child count
+                  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+                  |"#]],
+        );
     }
 }
 

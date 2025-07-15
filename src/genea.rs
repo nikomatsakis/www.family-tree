@@ -228,8 +228,8 @@ impl SpousalIndex {
 
 #[derive(Debug)]
 pub struct PersonData {
-    /// The offset of the individual's *name*
-    pub span: Span,
+    /// The span representing the location of the individual's name in the source file
+    pub name_span: Span,
 
     /// If `Some`, this person is the canonical person with the
     /// henry number (i.e., the 0th spouse). If `None`, then this is
