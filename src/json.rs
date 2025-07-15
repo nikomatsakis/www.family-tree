@@ -107,7 +107,7 @@ impl<'a> JsonGen<'a> {
                 name: person_data.name.to_string(),
                 comments: person_data.comments.clone(),
                 gender: person_data.gender.to_string(),
-                is_spouse: person_data.henry_number().is_none(),
+                is_spouse: person_data.spousal_index.is_secondary(),
             },
             PersonRelationships {
                 parent_in: person_data
@@ -151,20 +151,11 @@ impl<'a> JsonGen<'a> {
 
     fn id(&self, person: Person) -> String {
         let person_data = &self.genea[person];
-        match person_data.henry_number() {
-            Some(hn) => hn.to_string(),
-            None => {
-                assert_eq!(person_data.parent_in.len(), 1);
-                let parent_in = *person_data.parent_in.first().unwrap();
-                let partner = self.genea[parent_in].other_parent(person).unwrap();
-                let hn = self.genea[partner].henry_number().unwrap();
-                let spousal_index = self.genea[partner]
-                    .parent_in
-                    .iter()
-                    .position(|p| *p == parent_in)
-                    .unwrap();
-                format!("{hn}--{spousal_index}")
-            }
+        if person_data.spousal_index.is_primary() {
+            person_data.henry_number().to_string()
+        } else {
+            // Secondary spouse: use henry_number--spousal_index format
+            format!("{}--{}", person_data.henry_number(), person_data.spousal_index.as_usize())
         }
     }
 }

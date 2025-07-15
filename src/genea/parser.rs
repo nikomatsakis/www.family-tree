@@ -263,10 +263,7 @@ impl Parser {
                 let person_data = self.create_person_data(
                     line_data,
                     make_span(&line_data.name_range),
-                    Some((
-                        line_data.primary_henry_number.clone(),
-                        make_span(&line_data.primary_henry_number_range),
-                    )),
+                    make_span(&line_data.primary_henry_number_range),
                 );
                 let person = self.genea.add_person(person_data);
                 self.store_person_counts(person, line_data, line_num);
@@ -324,12 +321,11 @@ impl Parser {
                         primary_person
                     } else {
                         // Altid doesn't exist yet - create a placeholder person
-                        // 💡: This creates a person without a henry_number (placeholder) but maps the altid to them
-                        // Later when we process the primary line for this altid, we'll merge and set the henry_number
+                        // 💡: This person has a henry number (from the line) but points to a different location via altid
                         let mut person_data = self.create_person_data(
                             line_data,
                             make_span(&line_data.name_range),
-                            None,
+                            make_span(&line_data.primary_henry_number_range),
                         );
                         person_data.altid_spans.push(make_span(
                             line_data.secondary_henry_number_range.as_ref().unwrap(),
@@ -343,9 +339,12 @@ impl Parser {
                     }
                 }
                 None => {
-                    // No altid - create a new person without a henry number
-                    let person_data =
-                        self.create_person_data(line_data, make_span(&line_data.name_range), None);
+                    // No altid - create a new person (secondary spouse with shared henry number)
+                    let person_data = self.create_person_data(
+                        line_data,
+                        make_span(&line_data.name_range),
+                        make_span(&line_data.primary_henry_number_range),
+                    );
                     let person = self.genea.add_person(person_data);
                     self.store_person_counts(person, line_data, line_num);
                     person
@@ -361,7 +360,7 @@ impl Parser {
                 .last()
                 .ok_or_else(|| anyhow::anyhow!("expected partner on the stack"))?;
 
-            let partner_henry_number = self.genea[top.person].henry_number().unwrap();
+            let partner_henry_number = self.genea[top.person].henry_number();
             if *partner_henry_number != line_data.primary_henry_number {
                 return Err(ParseErrorKind::TopNotPartner {
                     line_name: line_data.name.clone(),
@@ -371,7 +370,7 @@ impl Parser {
                     spousal_index_span: make_span(&line_data.spousal_index_range),
                     top_name: self.genea[top.person].name.clone(),
                     top_span: self.genea[top.person].name_span,
-                    top_hn: self.genea[top.person].henry_number().cloned().unwrap(),
+                    top_hn: self.genea[top.person].henry_number().clone(),
                 });
             }
 
@@ -389,14 +388,14 @@ impl Parser {
                 .ok_or_else(|| anyhow::anyhow!("no root ancestor found on stack"))?;
             let parent = top.person;
 
-            if *self.genea[parent].henry_number().unwrap() != parent_hn {
+            if *self.genea[parent].henry_number() != parent_hn {
                 return Err(ParseErrorKind::TopNotParent {
                     line_name: line_data.name.clone(),
                     line_name_span: make_span(&line_data.name_range),
                     line_hn: line_data.primary_henry_number.clone(),
                     line_hn_span: make_span(&line_data.primary_henry_number_range),
                     top_name: self.genea[parent].name.clone(),
-                    top_hn: self.genea[parent].henry_number().cloned().unwrap(),
+                    top_hn: self.genea[parent].henry_number().clone(),
                     top_span: self.genea[parent].name_span,
                 });
             }
@@ -405,7 +404,7 @@ impl Parser {
             let partnership = top.partnership.unwrap_or_else(|| self.partner_top(None));
 
             for &sibling in &self.genea[partnership].children {
-                let child_hn = self.genea[sibling].henry_number().unwrap();
+                let child_hn = self.genea[sibling].henry_number();
                 if line_data.primary_henry_number == *child_hn {
                     return Err(ParseErrorKind::SiblingWithSameHenryNumber {
                         line_name: line_data.name.clone(),
@@ -434,7 +433,7 @@ impl Parser {
         }
 
         assert!(
-            self.genea[person].henry_number().is_some(),
+            self.genea[person].is_primary_spouse(),
             "on line {line_num}, person should be primary descendant"
         );
         self.stack.push(StackEntry {
@@ -469,23 +468,25 @@ impl Parser {
         p
     }
 
-    /// Creates PersonData from LineData with optional henry_number override
+    /// Creates PersonData from LineData
     /// 💡: Helper to reduce duplication - most PersonData fields come directly from LineData
     fn create_person_data(
         &self,
         line_data: &LineData,
         span: Span,
-        primary_henry_number: Option<(HenryNumber, Span)>,
+        henry_number_span: Span,
     ) -> PersonData {
         PersonData {
             name_span: span,
+            henry_number: line_data.primary_henry_number.clone(),
+            henry_number_span,
+            spousal_index: line_data.spousal_index,
             gender: line_data.gender,
             child_in: Default::default(),
             parent_in: Default::default(),
             name: line_data.name.clone(),
             comments: line_data.comments.clone(),
             private_comments: line_data.private_comments.clone(),
-            primary_henry_number,
             altid_spans: Vec::new(),
         }
     }
@@ -508,7 +509,7 @@ impl Parser {
         let hn = &line_data.primary_henry_number;
         while let Some(&StackEntry { person: top, .. }) = self.stack.last() {
             let top_data = &self.genea[top];
-            if top_data.henry_number().unwrap().is_prefix_of(hn) {
+            if top_data.henry_number().is_prefix_of(hn) {
                 break;
             }
 
@@ -528,7 +529,7 @@ impl Parser {
     ) -> Result<(), ParseErrorKind> {
         if existing_data.name != line_data.name {
             // Check if both are primary spouses (both have henry numbers)
-            if existing_data.henry_number().is_some() && line_data.spousal_index.is_primary() {
+            if existing_data.is_primary_spouse() && line_data.spousal_index.is_primary() {
                 // Two different people claiming the same henry number as primary spouses
                 return Err(ParseErrorKind::ConflictingPrimarySpouses {
                     first_name: existing_data.name.clone(),
@@ -555,16 +556,16 @@ impl Parser {
         }
 
         if line_data.spousal_index.is_primary() {
-            if let Some((hn, _span)) = &existing_data.primary_henry_number {
+            if existing_data.is_primary_spouse() {
                 return Err(ParseErrorKind::TwoPrimaryHenryNumbers {
                     name: existing_data.name.clone(),
-                    hn: hn.clone(),
+                    hn: existing_data.henry_number().clone(),
                 });
             }
-            existing_data.primary_henry_number = Some((
-                line_data.primary_henry_number.clone(),
-                primary_henry_number_span,
-            ));
+            // Update to primary spouse - set henry number and spousal index
+            existing_data.henry_number = line_data.primary_henry_number.clone();
+            existing_data.henry_number_span = primary_henry_number_span;
+            existing_data.spousal_index = line_data.spousal_index;
             // 💡: Update span to point to primary definition location, not the reference location
             // This ensures validation errors point to where fixes need to be made
             existing_data.name_span = Span {
@@ -595,7 +596,7 @@ impl Parser {
             let person_data = &self.genea[person];
 
             // If this person has no primary henry number, it's an unresolved placeholder
-            if person_data.primary_henry_number.is_none() {
+            if person_data.spousal_index.is_secondary() {
                 // Find suggestions: people with the same name who have henry numbers
                 let suggestions = self.find_name_suggestions(&person_data.name);
 
@@ -660,8 +661,8 @@ impl Parser {
 
             // If this person has the same name and has a primary henry number
             if person_data.name == name {
-                if let Some((henry_number, span)) = &person_data.primary_henry_number {
-                    all_matches.push((henry_number.clone(), *span));
+                if person_data.is_primary_spouse() {
+                    all_matches.push((person_data.henry_number().clone(), person_data.henry_number_span()));
                 }
             }
         }
@@ -790,7 +791,7 @@ impl Parser {
             let person_data = &self.genea[person_id];
 
             // Rule 1: Secondary spouses must have 0/0 counts
-            if let Some((_, _)) = person_data.primary_henry_number {
+            if person_data.is_primary_spouse() {
                 // This is a primary spouse (has henry number)
                 self.validate_primary_counts(path, person_id, person_data, counts)?;
             } else {
@@ -832,7 +833,7 @@ impl Parser {
         person_data: &PersonData,
         counts: &PersonCounts,
     ) -> Result<(), ParseError> {
-        let (henry_number, _) = person_data.primary_henry_number.as_ref().unwrap();
+        let henry_number = person_data.henry_number();
 
         // Count children: people whose henry number is exactly one level deeper
         let actual_kids = self
@@ -841,8 +842,9 @@ impl Parser {
             .filter(|&child_id| {
                 child_id != person_id && {
                     let child_data = &self.genea[child_id];
-                    if let Some((child_hn, _)) = &child_data.primary_henry_number {
+                    if child_data.is_primary_spouse() {
                         // Check if child's henry number is exactly one level deeper
+                        let child_hn = child_data.henry_number();
                         child_hn.ancestry.len() == henry_number.ancestry.len() + 1 &&
                         henry_number.is_prefix_of(child_hn)
                     } else {
@@ -951,7 +953,7 @@ mod tests {
         assert_eq!(genea.people().count(), 1);
         let person = genea.people().next().unwrap();
         assert_eq!(genea[person].name, "John Doe");
-        assert!(genea[person].henry_number().is_some());
+        assert!(genea[person].is_primary_spouse());
     }
 
     #[test]
@@ -1042,7 +1044,7 @@ mod tests {
             .people()
             .find(|&p| genea[p].name == "Jane Doe")
             .unwrap();
-        assert!(genea[jane].henry_number().is_none());
+        assert!(genea[jane].spousal_index.is_secondary());
     }
 
     #[test]
@@ -1066,7 +1068,7 @@ mod tests {
             .find(|&p| genea[p].name == "Jane Doe")
             .unwrap();
         // After merging, should have henry_number set
-        assert!(genea[jane].henry_number().is_some());
+        assert!(genea[jane].is_primary_spouse());
     }
 
     #[test]

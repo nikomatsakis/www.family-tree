@@ -45,11 +45,7 @@ impl Genea {
     /// Iterator over all the `Person` values
     pub fn root_people(&self) -> impl Iterator<Item = Person> + '_ {
         self.people().filter(|&person| {
-            self[person]
-                .henry_number()
-                .as_ref()
-                .map(|h| h.is_root_ancestor())
-                .unwrap_or(false)
+            self[person].henry_number().is_root_ancestor()
         })
     }
 
@@ -224,6 +220,16 @@ impl SpousalIndex {
     pub fn is_secondary(&self) -> bool {
         self.0 != 0
     }
+
+    /// Get the numeric index value for line reconstruction
+    pub fn as_usize(&self) -> usize {
+        self.0
+    }
+
+    /// Create a new SpousalIndex from a numeric value
+    pub fn new(index: usize) -> Self {
+        Self(index)
+    }
 }
 
 #[derive(Debug)]
@@ -231,11 +237,23 @@ pub struct PersonData {
     /// The span representing the location of the individual's name in the source file
     pub name_span: Span,
 
-    /// If `Some`, this person is the canonical person with the
-    /// henry number (i.e., the 0th spouse). If `None`, then this is
-    /// a spouse for whom we do not have ancestral information.
-    /// The span tracks where the primary henry number appears in the source.
-    pub primary_henry_number: Option<(HenryNumber, Span)>,
+    /// The henry number this person appears under (always present).
+    /// 💡: We prefer the primary henry number (spousal_index=0) when available, but if this
+    /// person doesn't have their own henry number, we use their spouse's henry number with
+    /// a non-zero spousal_index. During parsing, these fields may be temporarily assigned
+    /// different values before being finalized through merging operations.
+    pub henry_number: HenryNumber,
+
+    /// Span where the henry number appears in the source file.
+    /// 💡: Points to the location of the henry number used above, which may be from this
+    /// person's primary line or from a spouse's line depending on spousal_index.
+    pub henry_number_span: Span,
+
+    /// Position in spouse list: 0=primary spouse (owns henry_number), 1,2,3...=secondary spouses.
+    /// 💡: When spousal_index=0, this person owns the henry_number. When spousal_index>0,
+    /// this person shares their spouse's henry_number and appears as spouse #N in that location.
+    /// This enables complete line reconstruction for editing functionality.
+    pub spousal_index: SpousalIndex,
 
     /// Spans of all altid references to this person in the source file.
     /// Used for comprehensive error reporting and validation.
@@ -261,8 +279,16 @@ pub struct PersonData {
 }
 
 impl PersonData {
-    pub fn henry_number(&self) -> Option<&HenryNumber> {
-        self.primary_henry_number.as_ref().map(|(hn, _span)| hn)
+    pub fn henry_number(&self) -> &HenryNumber {
+        &self.henry_number
+    }
+
+    pub fn henry_number_span(&self) -> Span {
+        self.henry_number_span
+    }
+
+    pub fn is_primary_spouse(&self) -> bool {
+        self.spousal_index.is_primary()
     }
 }
 
