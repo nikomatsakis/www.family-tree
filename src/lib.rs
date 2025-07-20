@@ -9,6 +9,7 @@ mod html;
 mod json;
 mod json_api;
 mod outline;
+pub mod edit;
 
 #[derive(structopt::StructOpt)]
 enum Args {

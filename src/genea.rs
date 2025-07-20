@@ -21,6 +21,11 @@ impl Genea {
         parser::parse_text(path, &text)
     }
 
+    /// Parse genea content from a string (for testing and edit operations)
+    pub fn from_genea_content(content: &str) -> anyhow::Result<Self> {
+        parser::parse_text(Path::new("<in-memory>"), content)
+    }
+
     fn add_person(&mut self, person_data: PersonData) -> Person {
         let len = self.people.len();
         self.people.push(person_data);
@@ -44,13 +49,21 @@ impl Genea {
 
     /// Iterator over all the `Person` values
     pub fn root_people(&self) -> impl Iterator<Item = Person> + '_ {
-        self.people().filter(|&person| {
-            self[person].henry_number().is_root_ancestor()
-        })
+        self.people()
+            .filter(|&person| self[person].henry_number().is_root_ancestor())
     }
 
     pub fn maintainer_link(&self) -> &Option<String> {
         &self.maintainer_link
+    }
+
+    /// Find a person by their coordinates (henry number + spousal index)
+    pub fn find_person_by_coordinates(&self, coords: &Coordinates) -> Option<Person> {
+        self.people().find(|&person| {
+            let person_data = &self[person];
+            person_data.henry_number == coords.henry_number
+                && person_data.spousal_index == coords.spousal_index
+        })
     }
 }
 
@@ -139,6 +152,12 @@ pub struct Span {
     chars: Option<(usize, usize)>,
 }
 
+impl Span {
+    pub fn line_num(&self) -> usize {
+        self.line_num
+    }
+}
+
 /// Index of an individual
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Person(usize);
@@ -161,17 +180,47 @@ pub struct Coordinates {
     spousal_index: SpousalIndex,
 }
 
+impl Coordinates {
+    /// Parse coordinates from compact format "1-2-10-1" where the last number is spousal_index
+    pub fn parse(s: &str) -> anyhow::Result<Self> {
+        let parts: Vec<&str> = s.split('-').collect();
+        if parts.len() < 2 {
+            anyhow::bail!("Invalid coordinate format: {}", s);
+        }
+
+        let spousal_index = parts[parts.len() - 1]
+            .parse::<usize>()
+            .context("Invalid spousal index")?;
+
+        let ancestry: Result<Vec<usize>, _> = parts[..parts.len() - 1]
+            .iter()
+            .map(|s| s.parse::<usize>())
+            .collect();
+
+        let ancestry = ancestry.context("Invalid henry number components")?;
+
+        Ok(Self {
+            henry_number: HenryNumber { ancestry },
+            spousal_index: SpousalIndex::new(spousal_index),
+        })
+    }
+
+    pub fn to_string(&self) -> String {
+        format!("{}-{}", self.henry_number, self.spousal_index.as_usize())
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct HenryNumber {
-    ancestry: Vec<usize>,
+    pub ancestry: Vec<usize>,
 }
 
 impl HenryNumber {
-    fn is_root_ancestor(&self) -> bool {
+    pub fn is_root_ancestor(&self) -> bool {
         self.ancestry.len() == 1
     }
 
-    fn is_prefix_of(&self, hn: &HenryNumber) -> bool {
+    pub fn is_prefix_of(&self, hn: &HenryNumber) -> bool {
         self.ancestry.len() <= hn.ancestry.len()
             && self.ancestry.iter().zip(&hn.ancestry).all(|(i, j)| i == j)
     }
@@ -310,6 +359,16 @@ pub enum Gender {
     Male,
     Female,
     Unknown,
+}
+
+impl Gender {
+    pub fn as_char(&self) -> char {
+        match self {
+            Gender::Male => 'M',
+            Gender::Female => 'F',
+            Gender::Unknown => '?',
+        }
+    }
 }
 
 impl std::fmt::Display for Gender {
