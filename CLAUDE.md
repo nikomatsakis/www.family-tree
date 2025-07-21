@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Deployments
+
+- **Test Site**: https://shi-kahr.netlify.app/ - Uses Spock test data for safe testing and development
+- **Edit API**: Available at test site for testing edit functionality
+- **Environment Variables**: 
+  - `FAMILY_TREE_PASSWORD` - For viewing protected content
+  - `FAMILY_TREE_EDIT_PASSWORD` - Must be set to enable editing functionality 
+  - `GITHUB_TOKEN` - Required for edit functionality (needs repo write permissions)
+
 ## Project Overview
 
 This is a family tree application that:

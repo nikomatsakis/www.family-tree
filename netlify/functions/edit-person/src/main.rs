@@ -89,19 +89,30 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
         }
     };
 
-    // Verify password
-    let correct_password = env::var("FAMILY_TREE_PASSWORD").unwrap_or_default();
+    // Check if editing is enabled - requires FAMILY_TREE_EDIT_PASSWORD to be set
+    // 💡: Editing requires explicit opt-in via edit password, no fallback to view password
+    let correct_password = match env::var("FAMILY_TREE_EDIT_PASSWORD") {
+        Ok(password) => password,
+        Err(_) => {
+            let response = EditResponse {
+                success: false,
+                message: "Edit functionality is disabled".to_string(),
+                error: Some("FAMILY_TREE_EDIT_PASSWORD is not configured for this deployment".to_string()),
+            };
+            return Ok(create_api_response(503, &response));
+        }
+    };
 
     if request.password != correct_password {
         let response = EditResponse {
             success: false,
             message: "Authentication failed".to_string(),
-            error: Some("Invalid password".to_string()),
+            error: Some("Invalid edit password".to_string()),
         };
         return Ok(create_api_response(401, &response));
     }
 
-    // Test GitHub API connectivity
+    // Get GitHub token - required for edit functionality
     let github_token = match env::var("GITHUB_TOKEN") {
         Ok(token) => token,
         Err(_) => {
@@ -113,16 +124,6 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
             return Ok(create_api_response(500, &response));
         }
     };
-
-    // Check for placeholder token value
-    if github_token == "XXX" {
-        let response = EditResponse {
-            success: false,
-            message: "Edit functionality not available".to_string(),
-            error: Some("This deployment does not have edit permissions configured".to_string()),
-        };
-        return Ok(create_api_response(503, &response));
-    }
 
     let github_owner = env::var("GITHUB_OWNER").unwrap_or_else(|_| "nikomatsakis".to_string());
     let github_repo = env::var("GITHUB_REPO").unwrap_or_else(|_| "www.family-tree".to_string());
