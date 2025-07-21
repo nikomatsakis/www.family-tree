@@ -1,5 +1,6 @@
 use crate::genea::{Coordinates, Genea, Person, PersonData};
 use anyhow::{anyhow, Context};
+use base64::Engine;
 use serde::{Deserialize, Serialize};
 
 /// State information for a person, used for both expected and updated states
@@ -16,6 +17,31 @@ pub struct PreparedEdit {
     pub updated_content: String,
     pub person_name: String,
     pub line_number: usize,
+}
+
+/// Result of a GitHub edit operation
+#[derive(Debug)]
+pub struct GitHubEditResult {
+    pub success: bool,
+    pub person_name: String,
+    pub commit_sha: String,
+    pub message: String,
+}
+
+/// Errors that can occur during GitHub operations
+#[derive(Debug, thiserror::Error)]
+pub enum GitHubEditError {
+    #[error("GitHub API error: {0}")]
+    GitHubApi(#[from] octocrab::Error),
+
+    #[error("Merge conflict detected after {attempts} attempts")]
+    MergeConflict { attempts: u32 },
+
+    #[error("Content preparation failed: {0}")]
+    ContentPreparation(#[from] anyhow::Error),
+
+    #[error("File not found in repository: {path}")]
+    FileNotFound { path: String },
 }
 
 /// Prepares an edit operation for a person in a genea.doc file.
@@ -175,7 +201,7 @@ fn generate_genea_line(
     } else {
         format!("{}{}", person_data.gender.as_char(), num_kids)
     };
-    
+
     let line = format!(
         "{} {} {} {}         {}{}",
         henry_str,
@@ -273,6 +299,191 @@ fn replace_line_in_content(
     Ok(result.join("\n"))
 }
 
+/// Edit a person in GitHub with automatic retry logic for merge conflicts.
+///
+/// This function fetches the current genea.doc from GitHub, applies the edit using
+/// `prepare_edit()`, and commits the changes back. If a merge conflict occurs due to
+/// concurrent edits, it will retry up to 3 times with fresh content.
+///
+/// # Arguments
+///
+/// * `octocrab` - GitHub API client
+/// * `owner` - Repository owner
+/// * `repo` - Repository name  
+/// * `file_path` - Path to genea.doc file in the repository
+/// * `coordinates` - Person coordinates in "henry-number-spousal-index" format
+/// * `expected_state` - Expected current state (for conflict detection)
+/// * `updated_state` - Desired new state
+/// * `user_info` - User information for commit attribution
+///
+/// # Returns
+///
+/// Returns a `GitHubEditResult` with commit information on success.
+///
+/// # Errors
+///
+/// Returns `GitHubEditError` if:
+/// - GitHub API calls fail
+/// - File cannot be found in the repository  
+/// - Merge conflicts persist after 3 retry attempts
+/// - Content preparation fails (invalid coordinates, conflicting edits, etc.)
+///
+/// # Example
+///
+/// ```no_run
+/// use octocrab::Octocrab;
+/// use family_tree::edit::{edit_person_in_github, PersonState};
+///
+/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+/// let octocrab = Octocrab::builder().personal_token("token".to_string()).build()?;
+///
+/// let expected = PersonState {
+///     comments: Some("Old comment".to_string()),
+///     name: None,
+/// };
+/// let updated = PersonState {
+///     comments: Some("New comment".to_string()),  
+///     name: None,
+/// };
+///
+/// let result = edit_person_in_github(
+///     &octocrab,
+///     "owner",
+///     "repo",
+///     "genea.doc",
+///     "1-2-0",
+///     &expected,
+///     &updated,
+///     ("John Doe", "john@example.com")
+/// ).await?;
+///
+/// println!("Edit successful: {}", result.commit_sha);
+/// # Ok(())
+/// # }
+/// ```
+pub async fn edit_person_in_github(
+    octocrab: &octocrab::Octocrab,
+    owner: &str,
+    repo: &str,
+    file_path: &str,
+    coordinates: &str,
+    expected_state: &PersonState,
+    updated_state: &PersonState,
+    user_info: (&str, &str), // (name, email)
+) -> Result<GitHubEditResult, GitHubEditError> {
+    const MAX_RETRIES: u32 = 3;
+    let (user_name, user_email) = user_info;
+
+    for attempt in 1..=MAX_RETRIES {
+        // 💡: We retry specifically for SHA mismatch errors, which indicate concurrent edits.
+        // Other errors (network issues, auth failures, etc.) fail immediately without retry,
+        // as retrying wouldn't help in those cases.
+        
+        // Fetch current file content from GitHub
+        let file_content = fetch_file_content(octocrab, owner, repo, file_path).await?;
+        let current_sha = file_content.sha.clone();
+
+        // Decode base64 content using octocrab's built-in method
+        let content_str = file_content
+            .decoded_content()
+            .ok_or_else(|| anyhow!("File content is empty or invalid"))?;
+
+        // Prepare the edit by parsing genea.doc, validating state, and generating the updated line
+        let prepared_edit = prepare_edit(&content_str, coordinates, expected_state, updated_state)
+            .map_err(GitHubEditError::ContentPreparation)?;
+
+        // Create commit message
+        let commit_message = format!(
+            "Update {} via web app\n\nEdited line {}: {}\n\nCo-Authored-By: {} <{}>",
+            prepared_edit.person_name,
+            prepared_edit.line_number,
+            prepared_edit.person_name,
+            user_name,
+            user_email
+        );
+
+        // Attempt to commit the changes
+        match commit_file_content(
+            octocrab,
+            owner,
+            repo,
+            file_path,
+            &prepared_edit.updated_content,
+            &commit_message,
+            &current_sha,
+        )
+        .await
+        {
+            Ok(commit_sha) => {
+                let person_name = prepared_edit.person_name.clone();
+                return Ok(GitHubEditResult {
+                    success: true,
+                    person_name: person_name.clone(),
+                    commit_sha,
+                    message: format!(
+                        "Successfully updated {} after {} attempt(s)",
+                        person_name, attempt
+                    ),
+                });
+            }
+            Err(GitHubEditError::GitHubApi(octocrab::Error::GitHub { source, .. }))
+                if source.message.contains("does not match") && attempt < MAX_RETRIES =>
+            {
+                // SHA mismatch indicates concurrent edit - retry with fresh content
+                continue;
+            }
+            Err(other_error) => return Err(other_error),
+        }
+    }
+
+    Err(GitHubEditError::MergeConflict {
+        attempts: MAX_RETRIES,
+    })
+}
+
+/// Fetch file content from GitHub repository
+async fn fetch_file_content(
+    octocrab: &octocrab::Octocrab,
+    owner: &str,
+    repo: &str,
+    file_path: &str,
+) -> Result<octocrab::models::repos::Content, GitHubEditError> {
+    let content = octocrab
+        .repos(owner, repo)
+        .get_content()
+        .path(file_path)
+        .send()
+        .await?;
+
+    match content.items.into_iter().next() {
+        Some(file) => Ok(file),
+        None => Err(GitHubEditError::FileNotFound {
+            path: file_path.to_string(),
+        }),
+    }
+}
+
+/// Commit updated file content to GitHub
+async fn commit_file_content(
+    octocrab: &octocrab::Octocrab,
+    owner: &str,
+    repo: &str,
+    file_path: &str,
+    content: &str,
+    message: &str,
+    current_sha: &str,
+) -> Result<String, GitHubEditError> {
+    let encoded_content = base64::engine::general_purpose::STANDARD.encode(content.as_bytes());
+
+    let response = octocrab
+        .repos(owner, repo)
+        .update_file(file_path, message, &encoded_content, current_sha)
+        .send()
+        .await?;
+
+    Ok(response.commit.sha.unwrap_or_else(|| "unknown".to_string()))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -282,20 +493,46 @@ mod tests {
         // Valid coordinates
         let coords = Coordinates::parse("1-0").unwrap();
         assert_eq!(coords.to_string(), "1-0");
-        
+
         let coords = Coordinates::parse("1-2-3-0").unwrap();
         assert_eq!(coords.to_string(), "1-2-3-0");
 
         let coords = Coordinates::parse("8-1-2-7-1-2-1").unwrap();
         assert_eq!(coords.to_string(), "8-1-2-7-1-2-1");
-        
+
         let coords = Coordinates::parse("10-11-12-1").unwrap();
         assert_eq!(coords.to_string(), "10-11-12-1");
 
         // Invalid formats
-        assert!(Coordinates::parse("1").is_err());  // Missing spousal index
+        assert!(Coordinates::parse("1").is_err()); // Missing spousal index
         assert!(Coordinates::parse("").is_err());
         assert!(Coordinates::parse("1-a-0").is_err());
         assert!(Coordinates::parse("a-b-0").is_err());
+    }
+
+    #[test]
+    fn test_github_edit_error_types() {
+        // Test error type construction
+        let error = GitHubEditError::FileNotFound {
+            path: "genea.doc".to_string(),
+        };
+        assert!(error.to_string().contains("File not found"));
+
+        let error = GitHubEditError::MergeConflict { attempts: 3 };
+        assert!(error.to_string().contains("3 attempts"));
+    }
+
+    #[test]
+    fn test_github_edit_result() {
+        let result = GitHubEditResult {
+            success: true,
+            person_name: "Test Person".to_string(),
+            commit_sha: "abc123def456".to_string(),
+            message: "Edit successful".to_string(),
+        };
+
+        assert!(result.success);
+        assert_eq!(result.person_name, "Test Person");
+        assert_eq!(result.commit_sha, "abc123def456");
     }
 }

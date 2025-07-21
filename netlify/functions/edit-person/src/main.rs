@@ -143,29 +143,64 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
         }
     };
 
-    // Test GitHub API connectivity by fetching repo info
-    match octocrab.repos(&github_owner, &github_repo).get().await {
-        Ok(_repo) => {
-            // 💡: For now, just return success without actually editing anything
-            // In the real implementation, this is where we'd:
-            // 1. Fetch genea.doc content via octocrab.repos().get_content()
-            // 2. Call family_tree::edit_person() to update the data
-            // 3. Commit changes back via octocrab.repos().create_file()
+    // Parse the edit request to determine expected and updated states
+    let expected_state = match request.updates.get("expectedState") {
+        Some(state) => serde_json::from_value(state.clone()).unwrap_or_default(),
+        None => family_tree::edit::PersonState::default(),
+    };
+    
+    let updated_state = match request.updates.get("updatedState") {
+        Some(state) => serde_json::from_value(state.clone()).unwrap_or_default(),
+        None => family_tree::edit::PersonState::default(),
+    };
+
+    // Perform the actual edit using the GitHub integration
+    match family_tree::edit::edit_person_in_github(
+        &octocrab,
+        &github_owner,
+        &github_repo,
+        "genea.doc",
+        &request.person_id,
+        &expected_state,
+        &updated_state,
+        (&request.user_info.name, &request.user_info.email),
+    ).await {
+        Ok(result) => {
             let response = EditResponse {
                 success: true,
                 message: format!(
-                    "Dummy edit successful! Would update person {} (requested by {} <{}>)",
-                    request.person_id, request.user_info.name, request.user_info.email
+                    "Successfully updated {}! Commit: {}",
+                    result.person_name, 
+                    &result.commit_sha[..8] // Show first 8 chars of commit SHA
                 ),
                 error: None,
             };
             Ok(create_api_response(200, &response))
         }
+        Err(family_tree::edit::GitHubEditError::MergeConflict { attempts }) => {
+            let response = EditResponse {
+                success: false,
+                message: "Edit conflict detected".to_string(),
+                error: Some(format!(
+                    "Multiple people tried to edit simultaneously. Tried {} times but conflicts persist. Please refresh and try again.",
+                    attempts
+                )),
+            };
+            Ok(create_api_response(409, &response))
+        }
+        Err(family_tree::edit::GitHubEditError::ContentPreparation(e)) => {
+            let response = EditResponse {
+                success: false,
+                message: "Edit validation failed".to_string(),
+                error: Some(format!("Your edit conflicts with recent changes: {}", e)),
+            };
+            Ok(create_api_response(409, &response))
+        }
         Err(e) => {
             let response = EditResponse {
                 success: false,
-                message: "GitHub API error".to_string(),
-                error: Some(format!("GitHub error: {}", e)),
+                message: "Edit operation failed".to_string(),
+                error: Some(format!("Error: {}", e)),
             };
             Ok(create_api_response(500, &response))
         }
