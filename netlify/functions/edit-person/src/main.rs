@@ -77,7 +77,7 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
     }
 
     // Parse request body
-    let request: EditRequest = match serde_json::from_str(body) {
+    let request: EditRequest = match serde_json::from_str::<EditRequest>(body) {
         Ok(req) => {
             println!("Edit request received:");
             println!("- personId: {}", req.person_id);
