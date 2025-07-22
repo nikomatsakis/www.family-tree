@@ -85,7 +85,7 @@ pub fn main() -> anyhow::Result<()> {
                 .arg("public/api/v1/")
                 .status()?;
                 
-            Command::new("pnpm").arg("start").status()?;
+            Command::new("npx").args(["netlify", "dev"]).status()?;
         }
         Args::Build { genea_path } => {
             let genea = Genea::from_genea_doc(genea_path)?;
