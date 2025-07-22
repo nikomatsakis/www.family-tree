@@ -118,6 +118,7 @@ pub fn prepare_edit(
         .ok_or_else(|| anyhow!("Person not found with coordinates: {}", coordinates))?;
 
     let person_data = &genea[person_id];
+    println!("Found person: {} with comments: '{}'", person_data.name, person_data.comments);
 
     // Validate expected state matches current state
     validate_expected_state(person_data, expected_state)?;

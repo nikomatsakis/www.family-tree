@@ -77,9 +77,14 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
     }
 
     // Parse request body
+    println!("Raw request body: {}", body);
     let request: EditRequest = match serde_json::from_str(body) {
-        Ok(req) => req,
+        Ok(req) => {
+            println!("Parsed request - personId: {}", req.person_id);
+            req
+        },
         Err(e) => {
+            println!("JSON parse error: {}", e);
             let response = EditResponse {
                 success: false,
                 message: "Invalid request format".to_string(),
@@ -156,6 +161,10 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
     };
 
     // Perform the actual edit using the GitHub integration
+    println!("Attempting edit for person: {}", request.person_id);
+    println!("Expected state: {:?}", expected_state);
+    println!("Updated state: {:?}", updated_state);
+    
     match family_tree::edit::edit_person_in_github(
         &octocrab,
         &github_owner,
