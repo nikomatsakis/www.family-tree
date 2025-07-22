@@ -493,24 +493,34 @@ export default class Person extends Component {
         updatedState.comments = this.editedComment;
       }
 
+      // Prepare request payload
+      const requestPayload = {
+        personId: this.args.model.id,
+        updates: {
+          expectedState,
+          updatedState
+        },
+        password: this.editPassword,
+        userInfo: {
+          name: this.editUserName,
+          email: this.editUserEmail
+        }
+      };
+
+      // Log request details (excluding password)
+      console.log('Edit request details:');
+      console.log('- Person ID:', requestPayload.personId);
+      console.log('- Person name:', this.args.model.name);
+      console.log('- Expected state:', expectedState);
+      console.log('- Updated state:', updatedState);
+
       // Make API call to edit-person function
       const response = await fetch('/.netlify/functions/edit-person', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          personId: this.args.model.id,
-          updates: {
-            expectedState,
-            updatedState
-          },
-          password: this.editPassword,
-          userInfo: {
-            name: this.editUserName,
-            email: this.editUserEmail
-          }
-        })
+        body: JSON.stringify(requestPayload)
       });
 
       const responseText = await response.text();
