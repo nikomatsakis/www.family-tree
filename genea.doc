@@ -1,1 +1,40 @@
-VGhlIHRyZWUgaXMgYmFzZWQgb24gOCAicHJpbWFsIGFuY2VzdG9ycyIgKHdoaWNoIGFyZSBuZXZlciBpbmRlbnRlZCkuCkV2ZXJ5b25lIGlzIGlkZW50aWZpZWQgYnkgSGVucnkgbnVtYmVycywgd2hpY2ggZ2l2ZSBwb3NpdGlvbiBpbiB0cmVlIHJlbGF0aXZlIHRvIGEgIlByaW1hbCBBbmNlc3RvciIKVGhlIDFzdCBjaGlsZCBvZiB0aGUgMm5kIGNoaWxkIG9mIHRoZSBmb3VydGggY2hpbGQgb2YgdGhlIGVpZ3RoIFByaW1hbCBBbmNlc3RvciAoTWF0c2FraXMgbGluZSkgd291bGQgYmU6IDg0MjEwMDAwMDAuClRob3NlIDEwIG51bWJlcnMgYXJlIGNhbGxlZCBIZW5yeSBOdW1iZXJzLgpBbGwgc3BvdXNlcyBoYXZlIHRoZSBzYW1lIGluZGVudGF0aW9uIGFzIHRoZWlyIG1hdGVzLCBpbmNsdWRpbmcgaWYgb25lIHBlcnNvbiBoYWQgdHdvIHNwb3VzZXMuCkFmdGVyIHRoZSBIZW5yeSBudW1iZXJzIGlzIHRoZSBzZXggKE0gb3IgRiksIHRoZSBudW1iZXIgb2YgY2hpbGRyZW4sIGFuZCB0aGUgbnVtYmVyIG9mIHNwb3VzZXMuIFRoZSBuZXh0IG51bWJlciBpcyB3aGljaCBzcG91c2UgdGhlIHBlcnNvbiBpcy4KU29tZXRpbWVzIHRoZSBzcG91c2UgaXMgYSBkZXNjZW5kZW50IG9mIHNvbWVvbmUgZWxzZSBvbiB0aGUgdHJlZSwgYW5kIHRoZW4gdGhlIHNwb3VzZSdzIGR1cGxpY2F0ZSBzZXQgb2YgSGVucnkgTnVtYmVycyBpcyBnaXZlbi4KSW4gc29tZSBwcmludG91dCB2ZXJzaW9ucywgY2hpbGRyZW4gYXJlIGluZGVudGVkIGZyb20gdGhlaXIgcGFyZW50cyBhbmQgdGhlIEhlbnJ5IG51bWJlcnMgYXBwZWFyIHRvd2FyZHMgdGhlIGVuZCBvZiB0aGUgbGluZS4KSW4gb3RoZXIgcHJpbnRvdXQgdmVyc2lvbnMgdGhlIEhlbnJ5IG51bWJlcnMgYXJlIGF0IHRoZSBzdGFydCBvZiB0aGUgbGluZS4KVGhpbmdzIGFmdGVyIGEgc2VtaWNvbG9uIGFyZSBlaXRoZXIgcHJpdmF0ZSBvciBmb3IgY3Jvc3MtY2hlY2tpbmcuCgpUaGlzIHZlcnNpb24gaXMgdGhlIGZhbWlseSB0cmVlIG9mIFNwb2NrLCBiYXNlZCBvbiAgCkJhc2VkIG9uIGh0dHBzOi8vd3d3LnJlZGRpdC5jb20vci9Vc2VmdWxDaGFydHMvY29tbWVudHMvMTRkeTl5Yy9mYW1pbHlfdHJlZV9vZl9zcG9ja19mcm9tX3N0YXJfdHJlay8jbGlnaHRib3gKYW5kICFbU3BvY2sncyBmYW1pbHkgdHJlZV0oLi9mYW1pbHktdHJlZS1zcG9jay5wbmcpLgoKTWFpbnRhaW5lciBVUkw6IDxodHRwczovL2dpdGh1Yi5jb20vbmlrb21hdHNha2lzL3d3dy5mYW1pbHktdHJlZS9lZGl0L21haW4vZ2VuZWEuZG9jPgoKIDEgMCAwIDAgMCAwIDAgMCAwIDAgTSAxIDAgMCAgICAgICAgIFNvbGthclxQcmltYWwgYW5jZXN0b3Igb2YgdGhlIHRyZWUKIDEgMSAwIDAgMCAwIDAgMCAwIDAgTSAxIDIgMCAgICAgICAgIFNrb24KIDEgMSAwIDAgMCAwIDAgMCAwIDAgRiAwIDAgMSAgICAgICAgIFQnTWVsaXMKIDEgMSAwIDAgMCAwIDAgMCAwIDAgRiAwIDAgMiAgICAgICAgIFQnUmFtYQogMSAxIDEgMCAwIDAgMCAwIDAgMCBNIDMgMyAwICAgICAgICAgU2FyZWtcVnVsY2FuIHBpb25lZXIKIDEgMSAxIDAgMCAwIDAgMCAwIDAgRiAwIDAgMSAgICAgICAgIFQnUmVhXEZpcnN0IHdpZmUgb2YgU2FyZWsKIDEgMSAxIDEgMCAwIDAgMCAwIDAgTSAxIDAgMCAgICAgICAgIFN5Ym9rCiAxIDEgMSAxIDEgMCAwIDAgMCAwIE0gMCAwIDAgICAgICAgICBUZXNrYVxTcG9jaydzIG5pZWNlIGZyb20gdGhlIG5vdmVsIE1pbmQgTWVsZCwgdW5rbm93biBwYXJlbnRhZ2UKIDEgMSAxIDAgMCAwIDAgMCAwIDAgRiAwIDAgMiAyMTAwMDAwIEFtYW5kYSBHcmF5c29uCiAxIDEgMSAyIDAgMCAwIDAgMCAwIE0gMiAzIDAgICAgICAgICBTcG9ja1xUaGUgbWFuIGhpbXNlbGYhCiAxIDEgMSAyIDAgMCAwIDAgMCAwIE0gMCAwIDEgICAgICAgICBaYXJhYmV0aAogMSAxIDEgMiAxIDAgMCAwIDAgMCBNIDAgMCAwICAgICAgICAgWmFyO1hYWCBOZWVkIHRvIGZpbGwgaW4gaGlzIGZhbWlseSBkZXRhaWxzCiAxIDEgMSAyIDAgMCAwIDAgMCAwIE0gMCAwIDIgICAgICAgICBBbGV4YW5kcmEgVHJlbW9udGFpbmVcTWFycmllcyBTcG9jayBpbiBUaGUgRmlyZSBhbmQgVGhlIFJvc2UKIDEgMSAxIDIgMiAwIDAgMCAwIDAgRiAwIDAgMCAgICAgICAgIFQnQW1hbmRhXAogMSAxIDEgMiAwIDAgMCAwIDAgMCBNIDAgMCAzICAgICAgICAgU2FhdmlrXE1hcnJpZXMgU3BvY2sgaW4gdGhlIG5vdmVsIFZ1bGNhbidzIEhlYXJ0CiAxIDEgMSAzIDAgMCAwIDAgMCAwIEYgMSAxIDAgICAgICAgICBNaWNoYWVsIEJ1cm5oYW1cQWRvcHRlZCBodW1hbiBmcm9tIFN0YXIgVHJlayBEaXNjb3ZlcnkKIDEgMSAxIDMgMCAwIDAgMCAwIDAgTSAwIDAgMSAgICAgICAgIENsZXZlbGFuZCBCb29rZXJcQm9vazsgS3dlaWphbjsgc2VlIGZpbmFsIHNlYXNvbiBvZiBEaXNjb3ZlcnkKIDEgMSAxIDMgMSAwIDAgMCAwIDAgTSAwIDAgMCAgICAgICAgIExldG8KIDEgMSAxIDAgMCAwIDAgMCAwIDAgRiAwIDAgMyAgICAgICAgIFBlcnJpbiBMYW5kb3ZlclxIdW1hbgogMiAwIDAgMCAwIDAgMCAwIDAgMCBGIDEgMSAwICAgICAgICAgQW1hbmRhJ3MgTW9tbXkKIDIgMCAwIDAgMCAwIDAgMCAwIDAgTSAwIDAgMSAgICAgICAgIEFtYW5kYSdzIERhZGR5CiAyIDEgMCAwIDAgMCAwIDAgMCAwIEYgMCAxIDAgICAgICAgICBBbWFuZGEgR3JheXNvblxIdW1hbgog
+The tree is based on 8 "primal ancestors" (which are never indented).
+Everyone is identified by Henry numbers, which give position in tree relative to a "Primal Ancestor"
+The 1st child of the 2nd child of the fourth child of the eigth Primal Ancestor (Matsakis line) would be: 8421000000.
+Those 10 numbers are called Henry Numbers.
+All spouses have the same indentation as their mates, including if one person had two spouses.
+After the Henry numbers is the sex (M or F), the number of children, and the number of spouses. The next number is which spouse the person is.
+Sometimes the spouse is a descendent of someone else on the tree, and then the spouse's duplicate set of Henry Numbers is given.
+In some printout versions, children are indented from their parents and the Henry numbers appear towards the end of the line.
+In other printout versions the Henry numbers are at the start of the line.
+Things after a semicolon are either private or for cross-checking.
+
+This version is the family tree of Spock, based on  
+Based on https://www.reddit.com/r/UsefulCharts/comments/14dy9yc/family_tree_of_spock_from_star_trek/#lightbox
+and ![Spock's family tree](./family-tree-spock.png).
+
+Maintainer URL: <https://github.com/nikomatsakis/www.family-tree/edit/main/genea.doc>
+
+ 1 0 0 0 0 0 0 0 0 0 M 1 0 0         Solkar\Primal ancestor of the tree
+ 1 1 0 0 0 0 0 0 0 0 M 1 2 0         Skon
+ 1 1 0 0 0 0 0 0 0 0 F 0 0 1         T'Melis
+ 1 1 0 0 0 0 0 0 0 0 F 0 0 2         T'Rama
+ 1 1 1 0 0 0 0 0 0 0 M 3 3 0         Sarek\Vulcan pioneer
+ 1 1 1 0 0 0 0 0 0 0 F 0 0 1         T'Rea\First wife of Sarek
+ 1 1 1 1 0 0 0 0 0 0 M 1 0 0         Sybok
+ 1 1 1 1 1 0 0 0 0 0 M 0 0 0         Teska\Spock's niece from the novel Mind Meld, unknown parentage
+ 1 1 1 0 0 0 0 0 0 0 F 0 0 2 2100000 Amanda Grayson
+ 1 1 1 2 0 0 0 0 0 0 M 2 3 0         Spock\The man himself!
+ 1 1 1 2 0 0 0 0 0 0 M 0 0 1         Zarabeth
+ 1 1 1 2 1 0 0 0 0 0 M 0 0 0         Zar;XXX Need to fill in his family details
+ 1 1 1 2 0 0 0 0 0 0 M 0 0 2         Alexandra Tremontaine\Marries Spock in The Fire and The Rose
+ 1 1 1 2 2 0 0 0 0 0 F 0 0 0         T'Amanda\
+ 1 1 1 2 0 0 0 0 0 0 M 0 0 3         Saavik\Marries Spock in the novel Vulcan's Heart
+ 1 1 1 3 0 0 0 0 0 0 F 1 1 0         Michael Burnham\Adopted human
+ 1 1 1 3 0 0 0 0 0 0 M 0 0 1         Cleveland Booker\Book; Kweijan; see final season of Discovery
+ 1 1 1 3 1 0 0 0 0 0 M 0 0 0         Leto
+ 1 1 1 0 0 0 0 0 0 0 F 0 0 3         Perrin Landover\Human
+ 2 0 0 0 0 0 0 0 0 0 F 1 1 0         Amanda's Mommy
+ 2 0 0 0 0 0 0 0 0 0 M 0 0 1         Amanda's Daddy
+ 2 1 0 0 0 0 0 0 0 0 F 0 1 0         Amanda Grayson\Human
+ 
