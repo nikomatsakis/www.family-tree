@@ -491,24 +491,32 @@ mod tests {
 
     #[test]
     fn test_coordinate_parsing() {
-        // Valid coordinates
-        let coords = Coordinates::parse("1-0").unwrap();
+        // Primary person coordinates (no double dash)
+        let coords = Coordinates::parse("1").unwrap();
         assert_eq!(coords.to_string(), "1-0");
 
-        let coords = Coordinates::parse("1-2-3-0").unwrap();
+        let coords = Coordinates::parse("1-2-3").unwrap();
         assert_eq!(coords.to_string(), "1-2-3-0");
 
-        let coords = Coordinates::parse("8-1-2-7-1-2-1").unwrap();
-        assert_eq!(coords.to_string(), "8-1-2-7-1-2-1");
+        let coords = Coordinates::parse("1-1-1-3").unwrap();
+        assert_eq!(coords.to_string(), "1-1-1-3-0");
 
-        let coords = Coordinates::parse("10-11-12-1").unwrap();
+        // Secondary spouse coordinates (with double dash)
+        let coords = Coordinates::parse("1--1").unwrap();
+        assert_eq!(coords.to_string(), "1-1");
+
+        let coords = Coordinates::parse("1-2-3--2").unwrap();
+        assert_eq!(coords.to_string(), "1-2-3-2");
+
+        let coords = Coordinates::parse("10-11-12--1").unwrap();
         assert_eq!(coords.to_string(), "10-11-12-1");
 
         // Invalid formats
-        assert!(Coordinates::parse("1").is_err()); // Missing spousal index
         assert!(Coordinates::parse("").is_err());
-        assert!(Coordinates::parse("1-a-0").is_err());
-        assert!(Coordinates::parse("a-b-0").is_err());
+        assert!(Coordinates::parse("1-a").is_err());
+        assert!(Coordinates::parse("a-b").is_err());
+        assert!(Coordinates::parse("--1").is_err()); // Empty henry number
+        assert!(Coordinates::parse("1--").is_err()); // Empty spousal index
     }
 
     #[test]

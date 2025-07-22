@@ -181,28 +181,53 @@ pub struct Coordinates {
 }
 
 impl Coordinates {
-    /// Parse coordinates from compact format "1-2-10-1" where the last number is spousal_index
+    /// Parse coordinates from compact format
+    /// Primary person IDs: "1-1-1-3" (entire string is henry number, spousal_index=0)
+    /// Secondary spouse IDs: "1-1-1--2" (henry number before "--", spousal_index after)
     pub fn parse(s: &str) -> anyhow::Result<Self> {
-        let parts: Vec<&str> = s.split('-').collect();
-        if parts.len() < 2 {
-            anyhow::bail!("Invalid coordinate format: {}", s);
+        // 💡: Split on "--" first to check if this is a secondary spouse ID
+        if let Some(dash_pos) = s.find("--") {
+            // Secondary spouse format: "1-1-1--2"
+            let henry_part = &s[..dash_pos];
+            let spousal_part = &s[dash_pos + 2..];
+
+            let spousal_index = spousal_part
+                .parse::<usize>()
+                .context("Invalid spousal index after '--'")?;
+
+            let ancestry: Result<Vec<usize>, _> = henry_part
+                .split('-')
+                .map(|s| s.parse::<usize>())
+                .collect();
+
+            let ancestry = ancestry.context("Invalid henry number components before '--'")?;
+
+            if ancestry.is_empty() {
+                anyhow::bail!("Henry number cannot be empty");
+            }
+
+            Ok(Self {
+                henry_number: HenryNumber { ancestry },
+                spousal_index: SpousalIndex::new(spousal_index),
+            })
+        } else {
+            // Primary person format: "1-1-1-3" (entire string is henry number)
+            let ancestry: Result<Vec<usize>, _> = s
+                .split('-')
+                .map(|s| s.parse::<usize>())
+                .collect();
+
+            let ancestry = ancestry.context("Invalid henry number components")?;
+
+            if ancestry.is_empty() {
+                anyhow::bail!("Henry number cannot be empty");
+            }
+
+            Ok(Self {
+                henry_number: HenryNumber { ancestry },
+                spousal_index: SpousalIndex::new(0), // Primary spouse
+            })
         }
-
-        let spousal_index = parts[parts.len() - 1]
-            .parse::<usize>()
-            .context("Invalid spousal index")?;
-
-        let ancestry: Result<Vec<usize>, _> = parts[..parts.len() - 1]
-            .iter()
-            .map(|s| s.parse::<usize>())
-            .collect();
-
-        let ancestry = ancestry.context("Invalid henry number components")?;
-
-        Ok(Self {
-            henry_number: HenryNumber { ancestry },
-            spousal_index: SpousalIndex::new(spousal_index),
-        })
     }
 
     pub fn to_string(&self) -> String {
