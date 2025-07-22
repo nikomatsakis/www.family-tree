@@ -1407,3 +1407,25 @@ body {
   z-index: 1001;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
+.refresh-countdown {
+  margin-top: 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-cancel-refresh {
+  background: #f8f9fa;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.btn-cancel-refresh:hover {
+  background: #e9ecef;
+}

@@ -12,6 +12,13 @@ import { DEFAULT_RENDERER_TYPE } from '../utils/family-tree-renderers';
 export default class Person extends Component {
   @service genea;
   @service router;
+  
+  constructor() {
+    super(...arguments);
+    // Store initial model state to detect changes
+    this.lastKnownName = this.args.model?.name;
+    this.lastKnownComments = this.args.model?.comments;
+  }
 
   @tracked showEditDialog = false;
   @tracked editedName = '';
@@ -22,6 +29,9 @@ export default class Person extends Component {
   @tracked isSubmittingEdit = false;
   @tracked editError = null;
   @tracked editSuccess = false;
+  @tracked pendingEditsVersion = 0; // Track localStorage changes
+  @tracked refreshCountdown = 0;
+  refreshInterval = null;
 
   <template>
     <button
@@ -163,12 +173,6 @@ export default class Person extends Component {
         <div class='edit-dialog'>
           <h3>Edit {{@model.name}}</h3>
           
-          {{#if this.editError}}
-            <div class='edit-error'>
-              {{this.editError}}
-            </div>
-          {{/if}}
-          
           <div class='edit-fields'>
             <label for='edit-name-field'>Name:</label>
             <input
@@ -225,6 +229,12 @@ export default class Person extends Component {
             Changes typically appear in 2-4 minutes after submission.
           </p>
           
+          {{#if this.editError}}
+            <div class='edit-error'>
+              {{this.editError}}
+            </div>
+          {{/if}}
+          
           <div class='edit-dialog-actions'>
             <button
               type='button'
@@ -249,6 +259,14 @@ export default class Person extends Component {
     {{#if this.editSuccess}}
       <div class='edit-success-message'>
         Edit submitted successfully! Changes will appear in a few minutes.
+        {{#if this.refreshCountdown}}
+          <div class='refresh-countdown'>
+            Refreshing in {{this.refreshCountdown}} seconds...
+            <button type='button' class='btn-cancel-refresh' {{on 'click' this.cancelRefresh}}>
+              Cancel
+            </button>
+          </div>
+        {{/if}}
       </div>
     {{/if}}
   </template>
@@ -361,6 +379,18 @@ export default class Person extends Component {
   // Edit-related getters and methods
 
   get hasPendingEdit() {
+    // Check if model has changed (indicating data refresh)
+    if (this.lastKnownName !== this.args.model?.name || 
+        this.lastKnownComments !== this.args.model?.comments) {
+      // Model has changed, clear any pending edit for this person
+      this.clearPendingEdit(this.args.model.id);
+      // Update last known values
+      this.lastKnownName = this.args.model?.name;
+      this.lastKnownComments = this.args.model?.comments;
+    }
+    
+    // Access pendingEditsVersion to make this getter reactive
+    this.pendingEditsVersion;
     const pending = this.getPendingEdits();
     return !!pending[this.args.model.id];
   }
@@ -380,18 +410,21 @@ export default class Person extends Component {
     });
     
     localStorage.setItem('familyTreePendingEdits', JSON.stringify(pending));
+    this.pendingEditsVersion++; // Trigger reactivity
   }
 
   addPendingEdit(personId, field, newValue) {
     const pending = this.getPendingEdits();
     pending[personId] = { field, newValue, timestamp: new Date().toISOString() };
     localStorage.setItem('familyTreePendingEdits', JSON.stringify(pending));
+    this.pendingEditsVersion++; // Trigger reactivity
   }
 
   clearPendingEdit(personId) {
     const pending = this.getPendingEdits();
     delete pending[personId];
     localStorage.setItem('familyTreePendingEdits', JSON.stringify(pending));
+    this.pendingEditsVersion++; // Trigger reactivity
   }
 
   loadSavedEditInfo() {
@@ -550,9 +583,14 @@ export default class Person extends Component {
         this.showEditDialog = false;
         this.editSuccess = true;
         
-        // Hide success message after 5 seconds
+        // Start refresh countdown (120 seconds = 2 minutes)
+        this.startRefreshCountdown(120);
+        
+        // Hide success message after 5 seconds (but keep countdown if active)
         setTimeout(() => {
-          this.editSuccess = false;
+          if (this.refreshCountdown === 0) {
+            this.editSuccess = false;
+          }
         }, 5000);
 
       } else {
@@ -572,6 +610,56 @@ export default class Person extends Component {
       this.editError = `Network error: ${error.message}`;
     } finally {
       this.isSubmittingEdit = false;
+    }
+  }
+
+  @action
+  startRefreshCountdown(seconds) {
+    this.refreshCountdown = seconds;
+    
+    // Clear any existing interval
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+    
+    this.refreshInterval = setInterval(() => {
+      this.refreshCountdown--;
+      
+      if (this.refreshCountdown <= 0) {
+        clearInterval(this.refreshInterval);
+        this.refreshInterval = null;
+        this.performRefresh();
+      }
+    }, 1000);
+  }
+
+  @action
+  cancelRefresh() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+    }
+    this.refreshCountdown = 0;
+    this.editSuccess = false;
+  }
+
+  @action
+  performRefresh() {
+    // Use the same refresh logic as the refresh button
+    if (window.FamilyTreePWA && window.FamilyTreePWA.refreshFamilyData) {
+      window.FamilyTreePWA.refreshFamilyData();
+    } else {
+      // Fallback to simple reload
+      window.location.reload();
+    }
+  }
+  
+  willDestroy() {
+    super.willDestroy(...arguments);
+    // Clean up interval if component is destroyed
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
     }
   }
 }
