@@ -1,6 +1,5 @@
 use crate::genea::{Coordinates, Genea, Person, PersonData};
 use anyhow::{anyhow, Context};
-use base64::Engine;
 use serde::{Deserialize, Serialize};
 
 /// State information for a person, used for both expected and updated states
@@ -474,11 +473,11 @@ async fn commit_file_content(
     message: &str,
     current_sha: &str,
 ) -> Result<String, GitHubEditError> {
-    let encoded_content = base64::engine::general_purpose::STANDARD.encode(content.as_bytes());
-
+    // 💡: octocrab's update_file method automatically handles base64 encoding internally,
+    // so we pass the raw content string directly without manual encoding
     let response = octocrab
         .repos(owner, repo)
-        .update_file(file_path, message, &encoded_content, current_sha)
+        .update_file(file_path, message, content, current_sha)
         .send()
         .await?;
 
