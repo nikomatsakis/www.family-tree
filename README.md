@@ -49,17 +49,31 @@ Place `reference-material.json` beside your genealogy data file:
       "title": "Original family history",
       "file": "family-history.pdf",
       "visibility": "public",
-      "pageOffset": 0
+      "pageOffset": 0,
+      "pattern": "\\bPAGE\\s+(?P<page>\\d+(?:\\s*,\\s*\\d+)*)\\b"
     }
   }
 }
 ```
 
-`PAGE 19,27` in a person's private notes creates two document links in their
-card, detail heading, and outline. Only the page references are exported;
-other private notes stay private. `pages` is the source ID for legacy PAGE
-references. Citation records include a kind and source ID to support other
-citation formats later.
+With this configuration, `PAGE 19,27` in a person's private notes creates two
+source links. There is no built-in `PAGE` convention: every source specifies its
+own `pattern`, written in Rust regex syntax with a named `page` capture. JSON
+strings require doubled backslashes. For a single page, a pattern can be as
+simple as `"PAGE (?P<page>[0-9]+)"`. The example above also captures comma-separated
+page numbers; zero and invalid page numbers are ignored.
+
+The source key (`pages` above) is used as the citation's source ID. Add another
+source with its own file and pattern, such as `"LETTER:(?P<page>[0-9]+)"`, to cite
+a different PDF. Repeated references to the same source/page are deduplicated;
+the same page in two different sources remains two citations. Only source IDs
+and page numbers are exported; surrounding private notes stay private.
+
+`check`, `json`, `build`, and `serve` read configuration beside the input genealogy
+file. Missing configuration means no citations. Invalid JSON, invalid regexes,
+and patterns missing the named `page` capture fail with a configuration error.
+Patterns are compiled once per source, not once per person. The packaging script
+uses the same source IDs; no pattern or PDF filename is hardcoded in the parser.
 
 Files resolve relative to the configuration. `pageOffset` is added to a cited
 page number to get the physical PDF page (for example, use 2 for two cover pages).

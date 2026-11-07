@@ -3,11 +3,13 @@ use std::path::Path;
 use serde::Serialize;
 
 use crate::{
+    citations::{Citation, CitationSources},
     genea::{Genea, Partnership, Person},
     json_api::{Datum, Ref, Response, ToManyRelationship, ToOneRelationship},
 };
 
-pub fn generate(genea: &Genea, output_path: impl AsRef<Path>) -> anyhow::Result<()> {
+pub fn generate(genea: &Genea, genea_path: &Path, output_path: impl AsRef<Path>) -> anyhow::Result<()> {
+    let sources = CitationSources::load(genea_path)?;
     let output_path = output_path.as_ref();
 
     if output_path.exists() {
@@ -17,7 +19,7 @@ pub fn generate(genea: &Genea, output_path: impl AsRef<Path>) -> anyhow::Result<
         std::fs::remove_dir_all(output_path)?;
     }
 
-    let gen = JsonGen::new(genea);
+    let gen = JsonGen::new(genea, &sources);
 
     gen.root_response()
         .write_to(&output_path.join("roots").with_extension("json"))?;
@@ -27,6 +29,7 @@ pub fn generate(genea: &Genea, output_path: impl AsRef<Path>) -> anyhow::Result<
 
 struct JsonGen<'a> {
     genea: &'a Genea,
+    sources: &'a CitationSources,
 }
 
 #[derive(Serialize)]
@@ -66,8 +69,8 @@ struct PartnershipRelationships {
 }
 
 impl<'a> JsonGen<'a> {
-    fn new(genea: &'a Genea) -> Self {
-        Self { genea }
+    fn new(genea: &'a Genea, sources: &'a CitationSources) -> Self {
+        Self { genea, sources }
     }
 
     fn root_response(&self) -> Response {
@@ -108,7 +111,7 @@ impl<'a> JsonGen<'a> {
                 name: person_data.name.to_string(),
                 comments: person_data.comments.clone(),
                 gender: person_data.gender.to_string(),
-                citations: page_citations(&person_data.private_comments),
+                citations: self.sources.extract(&person_data.private_comments),
                 is_spouse: person_data.spousal_index.is_secondary(),
             },
             PersonRelationships {
@@ -162,41 +165,41 @@ impl<'a> JsonGen<'a> {
     }
 }
 
-#[derive(Serialize)]
-struct Citation {
-    kind: &'static str,
-    source: &'static str,
-    page: u32,
-}
-
-// Only export explicit PAGE references: the surrounding notes remain private.
-fn page_citations(notes: &str) -> Vec<Citation> {
-    let pattern = regex::Regex::new(r"\bPAGE\s+(\d+(?:\s*,\s*\d+)*)\b").unwrap();
-    let mut pages = Vec::new();
-    for reference in pattern.captures_iter(notes) {
-        for value in reference[1].split(',') {
-            if let Ok(page) = value.trim().parse::<u32>() {
-                if page > 0 && !pages.contains(&page) {
-                    pages.push(page);
-                }
-            }
-        }
-    }
-    pages.into_iter().map(|page| Citation { kind: "pdf", source: "pages", page }).collect()
-}
-
 #[cfg(test)]
-mod citation_tests {
+mod tests {
     use super::*;
 
     #[test]
-    fn extracts_only_explicit_positive_pages_without_private_notes() {
-        let citations = page_citations("private detail;PAGE 19, 27; PAGE 19; PAGE 0; PAGE 999999999999");
-        let json = serde_json::to_value(citations).unwrap();
-        assert_eq!(json, serde_json::json!([
-            {"kind": "pdf", "source": "pages", "page": 19},
-            {"kind": "pdf", "source": "pages", "page": 27}
+    fn generation_uses_configuration_beside_input_and_validates_before_overwriting() {
+        let directory = std::env::temp_dir().join(format!(
+            "family-tree-citation-config-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
+        ));
+        std::fs::create_dir_all(&directory).unwrap();
+        let input = directory.join("example.genea");
+        std::fs::write(&input, " 1 0 0 0 0 0 0 0 0 0 M 0 0 0         Example Person\\Public comment;ARCHIVE:7;private detail\n").unwrap();
+        let genea = Genea::from_genea_doc(&input).unwrap();
+        let config = directory.join("reference-material.json");
+        let output = directory.join("output");
+        std::fs::write(&config, r#"{"sources":{"archive":{"pattern":"ARCHIVE:(?P<page>[0-9]+)"}}}"#).unwrap();
+        generate(&genea, &input, &output).unwrap();
+        let read_output = || std::fs::read_to_string(output.join("roots.json")).unwrap();
+        let saved = read_output();
+        let json: serde_json::Value = serde_json::from_str(&saved).unwrap();
+        assert_eq!(json["included"][0]["attributes"]["citations"], serde_json::json!([
+            {"kind":"pdf","source":"archive","page":7}
         ]));
-        assert!(page_citations("private detail on page 5").is_empty());
+        assert!(!saved.contains("private detail"));
+
+        std::fs::write(&config, r#"{"sources":{"archive":{"pattern":"["}}}"#).unwrap();
+        assert!(generate(&genea, &input, &output).is_err());
+        assert_eq!(read_output(), saved);
+
+        std::fs::remove_file(&config).unwrap();
+        generate(&genea, &input, &output).unwrap();
+        let json: serde_json::Value = serde_json::from_str(&read_output()).unwrap();
+        assert_eq!(json["included"][0]["attributes"]["citations"], serde_json::json!([]));
+        std::fs::remove_dir_all(directory).unwrap();
     }
 }

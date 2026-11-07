@@ -1,0 +1,11 @@
+{
+  "sources": {
+    "pages": {
+      "title": "Test reference",
+      "file": "test-history.pdf",
+      "visibility": "public",
+      "pageOffset": 0,
+      "pattern": "\\bPAGE\\s+(?P<page>\\d+(?:\\s*,\\s*\\d+)*)\\b"
+    }
+  }
+}

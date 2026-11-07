@@ -4,6 +4,7 @@ use genea::Genea;
 use outline::Outline;
 use structopt::StructOpt;
 
+mod citations;
 mod genea;
 mod html;
 mod json;
@@ -51,6 +52,7 @@ pub fn main() -> anyhow::Result<()> {
             dump,
         } => {
             let genea = Genea::from_genea_doc(path)?;
+            citations::CitationSources::load(path)?;
 
             if *dump {
                 eprintln!("{genea:#?}")
@@ -66,7 +68,7 @@ pub fn main() -> anyhow::Result<()> {
             output_path,
         } => {
             let genea = Genea::from_genea_doc(genea_path)?;
-            json::generate(&genea, output_path)?;
+            json::generate(&genea, genea_path, output_path)?;
         }
         Args::Html {
             genea_path,
@@ -77,7 +79,7 @@ pub fn main() -> anyhow::Result<()> {
         }
         Args::Serve { genea_path } => {
             let genea = Genea::from_genea_doc(genea_path)?;
-            json::generate(&genea, "public/api/v1")?;
+            json::generate(&genea, genea_path, "public/api/v1")?;
             
             let status = Command::new("node")
                 .arg("scripts/prepare-citations.js")
@@ -96,7 +98,7 @@ pub fn main() -> anyhow::Result<()> {
         }
         Args::Build { genea_path } => {
             let genea = Genea::from_genea_doc(genea_path)?;
-            json::generate(&genea, "public/api/v1")?;
+            json::generate(&genea, genea_path, "public/api/v1")?;
             
             let status = Command::new("node")
                 .arg("scripts/prepare-citations.js")
