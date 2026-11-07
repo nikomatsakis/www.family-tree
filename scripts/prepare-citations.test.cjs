@@ -52,3 +52,34 @@ test("packages public and encrypted sources without retaining public copies", as
     fs.rmSync(temp, { recursive: true, force: true });
   }
 });
+
+test("matches name words independently and highlights every occurrence", async () => {
+  const { matchingItems } = await import("../public/citation-search.mjs");
+  const items = [
+    { textContent: "Jane married someone." },
+    { textContent: "Doe appears elsewhere. Jane again." },
+  ];
+  const matches = matchingItems(items, "Jane Doe");
+  assert.deepEqual(
+    matches.map(({ index, start, end }) =>
+      items[index].textContent.slice(start, end),
+    ),
+    ["Jane", "Doe", "Jane"],
+  );
+  assert.equal(
+    matchingItems([{ textContent: "Jane only" }], "Jane Doe").length,
+    1,
+  );
+});
+
+test("matches whole words with original offsets, ignoring case and accents", async () => {
+  const { matchingItems } = await import("../public/citation-search.mjs");
+  const items = [{ textContent: "😀 JÁNE, Jane Doe; Janette Does." }];
+  const matches = matchingItems(items, "jane JANE doe");
+  assert.deepEqual(
+    matches.map(({ start, end }) => items[0].textContent.slice(start, end)),
+    ["JÁNE", "Jane", "Doe"],
+  );
+  assert.deepEqual(matchingItems(items, "  --  "), []);
+  assert.deepEqual(matchingItems(items, "missing"), []);
+});

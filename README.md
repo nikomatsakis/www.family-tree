@@ -73,7 +73,7 @@ The lower-level `json` command generates data only.
   `FAMILY_TREE_PASSWORD` at build time and uses the same password in the viewer.
 
 The local PDF.js viewer opens in a separate tab, selects the cited page, and
-highlights exact name matches across text chunks, ignoring accents and
-punctuation. Scans need an OCR text layer. When spelling or OCR differs, the
+highlights each name word independently wherever it occurs on the page, ignoring
+case, accents, and punctuation. Scans need an OCR text layer. When spelling or OCR differs, the
 viewer explains that no match was found and lets the reader adjust the search.
 Generated PDFs and PDF.js assets are ignored by Git.

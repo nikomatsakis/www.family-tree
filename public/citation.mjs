@@ -1,3 +1,4 @@
+import { matchingItems } from "./citation-search.mjs";
 import { getDocument, GlobalWorkerOptions, TextLayer } from "/pdfjs/pdf.mjs";
 GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.mjs";
 const $ = (id) => document.getElementById(id);
@@ -10,36 +11,6 @@ let pdf,
   renderVersion = 0;
 $("name").value = params.get("name") || "";
 const decode = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
-
-// Match across PDF text chunks and line breaks; accents and punctuation are ignored.
-const normalize = (s) =>
-  s
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .trim();
-function matchingItems(items, query) {
-  const words = normalize(query).split(" ").filter(Boolean);
-  if (!words.length) return [];
-  const tokens = items.flatMap((item, index) =>
-    [...(item.textContent || "").matchAll(/[\p{L}\p{N}\p{M}]+/gu)].map(
-      (match) => ({
-        word: normalize(match[0]),
-        index,
-        start: match.index,
-        end: match.index + match[0].length,
-      }),
-    ),
-  );
-  const matched = new Set();
-  for (let i = 0; i <= tokens.length - words.length; i++) {
-    if (words.every((word, offset) => tokens[i + offset].word === word)) {
-      words.forEach((_, offset) => matched.add(tokens[i + offset]));
-    }
-  }
-  return [...matched];
-}
 
 async function readSource() {
   if (!/^[a-z0-9-]+$/.test(source))
@@ -153,8 +124,8 @@ async function render() {
     }
   }
   $("status").textContent = matches.length
-    ? `Highlighted “${$("name").value}” on this page.`
-    : "No exact name match on this page. OCR or spelling may differ; try a shorter name in the search box.";
+    ? `Highlighted ${matches.length} matching name word${matches.length === 1 ? "" : "s"} on this page.`
+    : "No matching name words on this page. OCR or spelling may differ; try another spelling in the search box.";
 }
 const report = (error) => {
   $("status").textContent = error.message;
