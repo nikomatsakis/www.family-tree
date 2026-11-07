@@ -254,6 +254,10 @@ export class Person {
     return this.#attributes.comments;
   }
 
+  get citations() {
+    return this.#attributes.citations || [];
+  }
+
   get gender() {
     return this.#attributes.gender;
   }

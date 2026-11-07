@@ -65,7 +65,7 @@ export function layoutFamily(
   const family = new Family();
 
   // Create primary person rectangle at origin
-  const personMetrics = renderer.personBoxMetrics(person.name);
+  const personMetrics = renderer.personBoxMetrics(person.name, person.citations);
   const primaryRect = new Rectangle(
     person.name,
     'primary-person',
@@ -113,7 +113,7 @@ export function layoutFamily(
     const partner =
       partnerIndex !== undefined ? renderTree.getPerson(partnerIndex) : null;
     const partnerMetrics = partner
-      ? renderer.personBoxMetrics(partner.name)
+      ? renderer.personBoxMetrics(partner.name, partner.citations)
       : null;
 
     // Layout children recursively

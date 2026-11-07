@@ -20,6 +20,7 @@ export default [
       // compiled output
       "declarations/**",
       "dist/**",
+      "public/pdfjs/**",
       // misc
       "coverage/**",
       // ember-try
@@ -70,6 +71,8 @@ export default [
       ".stylelintrc.js",
       ".template-lintrc.js",
       "ember-cli-build.js",
+      "scripts/prepare-citations.js",
+      "scripts/prepare-citations.test.cjs",
       "testem.js",
       "blueprints/*/index.js",
       "config/**/*.js",

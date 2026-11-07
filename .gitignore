@@ -37,3 +37,6 @@ netlify/functions/edit-person/target/
 
 # Local Netlify folder
 .netlify
+
+/public/pdfjs/
+/public/reference-material/

@@ -79,11 +79,18 @@ pub fn main() -> anyhow::Result<()> {
             let genea = Genea::from_genea_doc(genea_path)?;
             json::generate(&genea, "public/api/v1")?;
             
+            let status = Command::new("node")
+                .arg("scripts/prepare-citations.js")
+                .arg(genea_path)
+                .status()?;
+            anyhow::ensure!(status.success(), "Failed to prepare citation documents");
+
             // Encrypt JSON files if FAMILY_TREE_PASSWORD is set
-            Command::new("node")
+            let status = Command::new("node")
                 .arg("scripts/encrypt-json.js")
                 .arg("public/api/v1/")
                 .status()?;
+            anyhow::ensure!(status.success(), "Failed to encrypt generated data");
                 
             Command::new("npx").args(["netlify", "dev"]).status()?;
         }
@@ -91,11 +98,18 @@ pub fn main() -> anyhow::Result<()> {
             let genea = Genea::from_genea_doc(genea_path)?;
             json::generate(&genea, "public/api/v1")?;
             
+            let status = Command::new("node")
+                .arg("scripts/prepare-citations.js")
+                .arg(genea_path)
+                .status()?;
+            anyhow::ensure!(status.success(), "Failed to prepare citation documents");
+
             // Encrypt JSON files if FAMILY_TREE_PASSWORD is set
-            Command::new("node")
+            let status = Command::new("node")
                 .arg("scripts/encrypt-json.js")
                 .arg("public/api/v1/")
                 .status()?;
+            anyhow::ensure!(status.success(), "Failed to encrypt generated data");
                 
             Command::new("pnpm").arg("build").status()?;
         }

@@ -1,3 +1,4 @@
+import PersonCitations from './person-citations';
 import Component from '@glimmer/component';
 import { LinkTo } from '@ember/routing';
 import { service } from '@ember/service';
@@ -30,6 +31,7 @@ export default class PersonLinkComponent extends Component {
         {{@person.name}}
       </LinkTo>
     {{/if}}
+    <PersonCitations @person={{@person}} />
   </template>
 
   get isPagePerson() {

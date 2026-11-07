@@ -38,3 +38,42 @@ FAMILY_TREE_PASSWORD="your-shared-secret" cargo run -- build
 * [Ember] for the website itself
 
 [Ember]: https://emberjs.com/
+## Reference material and citations
+
+Place `reference-material.json` beside your genealogy data file:
+
+```json
+{
+  "sources": {
+    "pages": {
+      "title": "Original family history",
+      "file": "family-history.pdf",
+      "visibility": "public",
+      "pageOffset": 0
+    }
+  }
+}
+```
+
+`PAGE 19,27` in a person's private notes creates two document links in their
+card, detail heading, and outline. Only the page references are exported;
+other private notes stay private. `pages` is the source ID for legacy PAGE
+references. Citation records include a kind and source ID to support other
+citation formats later.
+
+Files resolve relative to the configuration. `pageOffset` is added to a cited
+page number to get the physical PDF page (for example, use 2 for two cover pages).
+`cargo run -- build path/to/genea.doc` and `serve` package the configured PDFs.
+The lower-level `json` command generates data only.
+
+- `public`: copies the PDF into the site's reference-material directory. Access
+  follows deployment-level protection; it does not require the client-side
+  genealogy password.
+- `encrypted`: embeds the PDF in an encrypted JSON asset. Requires
+  `FAMILY_TREE_PASSWORD` at build time and uses the same password in the viewer.
+
+The local PDF.js viewer opens in a separate tab, selects the cited page, and
+highlights exact name matches across text chunks, ignoring accents and
+punctuation. Scans need an OCR text layer. When spelling or OCR differs, the
+viewer explains that no match was found and lets the reader adjust the search.
+Generated PDFs and PDF.js assets are ignored by Git.

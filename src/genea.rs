@@ -348,7 +348,6 @@ pub struct PersonData {
     pub comments: String,
 
     /// Private comments not to be exposed publicly
-    #[expect(dead_code)]
     pub private_comments: String,
 }
 

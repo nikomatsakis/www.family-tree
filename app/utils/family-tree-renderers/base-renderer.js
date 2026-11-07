@@ -71,6 +71,8 @@ export default class BaseRenderer {
         [], // rightFamilyRIndices - will be populated below with families where this person is a spouse
       );
 
+      renderPerson.citations = person.citations || [];
+
       // Add to render tree and store index mapping
       const idx = renderTree.addPerson(renderPerson);
       personToIndex.set(person.id, idx);

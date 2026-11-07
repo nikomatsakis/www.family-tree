@@ -1,0 +1,75 @@
+body {
+  margin: 0;
+  background: #e8ebef;
+  color: #243144;
+  font:
+    16px system-ui,
+    sans-serif;
+}
+
+header {
+  padding: 16px 24px;
+  background: white;
+  border-bottom: 1px solid #ccd2da;
+}
+
+h1 {
+  font-size: 20px;
+  margin: 0 0 12px;
+}
+
+nav,
+form {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+[hidden] {
+  display: none;
+}
+
+button,
+input {
+  font: inherit;
+  padding: 6px;
+}
+
+#page {
+  width: 60px;
+}
+
+#status {
+  margin: 10px 0 0;
+}
+
+main {
+  padding: 20px;
+  overflow: auto;
+}
+
+#sheet {
+  position: relative;
+  width: fit-content;
+  margin: auto;
+  background: white;
+  box-shadow: 0 2px 10px #0003;
+}
+
+canvas {
+  display: block;
+}
+
+#highlights {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.highlight {
+  position: absolute;
+  background: #ffdf0080;
+  mix-blend-mode: multiply;
+}

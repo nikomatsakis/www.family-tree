@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reference material</title>
+    <link rel="stylesheet" href="/pdfjs/pdf_viewer.css" />
+    <link rel="stylesheet" href="/citation.css" />
+  </head>
+  <body>
+    <header>
+      <h1 id="title">Reference material</h1>
+      <nav aria-label="PDF pages">
+        <button id="previous" disabled>Previous</button>
+        <label>Page <input id="page" type="number" min="1" value="1" /></label>
+        <span id="total"></span>
+        <button id="next" disabled>Next</button>
+        <a id="original" hidden>Open original PDF</a>
+      </nav>
+      <form id="search">
+        <label>Highlight name <input id="name" type="search" /></label
+        ><button>Find</button>
+      </form>
+      <p id="status" role="status">Loading document…</p>
+      <form id="unlock" hidden>
+        <label
+          >Family tree password
+          <input id="password" type="password" required /></label
+        ><button>Unlock</button>
+      </form>
+    </header>
+    <main>
+      <div id="sheet">
+        <canvas aria-label="PDF page"></canvas>
+        <div id="text" class="textLayer"></div>
+        <div id="highlights"></div>
+      </div>
+    </main>
+    <script type="module" src="/citation.mjs"></script>
+  </body>
+</html>

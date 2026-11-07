@@ -1,3 +1,4 @@
+import PersonCitations from './person-citations';
 import { service } from '@ember/service';
 import IndexLink from './index-link';
 import MaintainerLink from './maintainer-link';
@@ -81,7 +82,7 @@ export default class Person extends Component {
 
     <div class='person-detail'>
       <div class='person-header'>
-        <h1 class='person-name'>{{@model.name}}</h1>
+        <h1 class='person-name'>{{@model.name}} <PersonCitations @person={{@model}} /></h1>
         {{#if @model.comments}}
           <p class='person-comments'>{{@model.comments}}</p>
         {{/if}}

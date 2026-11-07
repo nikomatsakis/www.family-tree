@@ -1,3 +1,4 @@
+import { citationLink, SOURCE_ICON_PATHS } from '../citations';
 import BaseRenderer from './base-renderer';
 import { layoutFamily } from '../family-layout';
 import { Family, Rectangle, Line } from '../layout-elements';
@@ -350,10 +351,12 @@ export default class D3TreeRenderer extends BaseRenderer {
       rectElement.attr('stroke', d3.color(strokeColor).brighter(0.5));
     }
 
+    const person = renderData.data?.renderTree?.persons.find((p) => p.id === rect.id);
+
     // Add text (centered in rectangle)
     rectGroup
       .append('text')
-      .attr('x', rect.width / 2)
+      .attr('x', (rect.width - (person?.citations?.length || 0) * 32) / 2)
       .attr('y', rect.height / 2)
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
@@ -362,6 +365,25 @@ export default class D3TreeRenderer extends BaseRenderer {
       .attr('font-weight', 'normal')
       .attr('fill', textColor)
       .text(textContent);
+
+    // Reserve a compact, keyboard-accessible source button beside the name.
+    (person?.citations || []).forEach((citation, index, citations) => {
+      const label = `Read original source, page ${citation.page}, for ${person.name} (opens in a new tab)`;
+      const link = rectGroup.append('a')
+        .attr('href', citationLink(citation, person.name))
+        .attr('target', '_blank')
+        .attr('rel', 'noopener noreferrer')
+        .attr('aria-label', label)
+        .attr('class', 'person-citation')
+        .attr('transform', `translate(${rect.width - (citations.length - index) * 32 - 6}, ${rect.height / 2 - 16})`)
+        .on('click', (event) => event.stopPropagation());
+      link.append('title').text(label);
+      link.append('rect').attr('class', 'citation-hit-area')
+        .attr('width', 32).attr('height', 32).attr('rx', 6);
+      const icon = link.append('g').attr('class', 'source-icon')
+        .attr('transform', 'translate(5, 4) scale(0.92)');
+      SOURCE_ICON_PATHS.forEach((path) => icon.append('path').attr('d', path));
+    });
 
     // Add click navigation and hover effects for person boxes (not buttons)
     if (!isExpansionPlaceholder && !isCollapseButton) {
@@ -644,12 +666,12 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @param {string} text - Text content for the person box
    * @returns {Object} Complete metrics for the person box
    */
-  personBoxMetrics(text) {
+  personBoxMetrics(text, citations = []) {
     const textWidth = this.measureText(text);
     const textHeight = this.charHeight;
 
     const width =
-      textWidth +
+      textWidth + citations.length * 32 +
       2 * (this.personPadding + this.personBorder + this.personMargin);
     const height =
       textHeight +

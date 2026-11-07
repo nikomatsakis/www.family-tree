@@ -1429,3 +1429,43 @@ body {
 .btn-cancel-refresh:hover {
   background: #e9ecef;
 }
+
+.person-citation {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  width: 32px;
+  height: 32px;
+  margin-inline-start: 0.3em;
+  border-radius: 6px;
+  color: #456480;
+  text-decoration: none;
+}
+
+.person-citation:hover {
+  color: #145a96;
+  background: #dceaf6;
+}
+
+.source-icon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.citation-hit-area {
+  fill: transparent;
+}
+
+.person-citation:hover .citation-hit-area,
+.person-citation:focus-visible .citation-hit-area {
+  fill: #dceaf6;
+}
+
+.person-citation:focus-visible {
+  outline: 2px solid #1565c0;
+  outline-offset: 2px;
+}
