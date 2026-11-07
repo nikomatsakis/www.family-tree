@@ -2,39 +2,13 @@
 //!
 //! This module parses the genea.doc format into a structured family tree.
 //!
-//! ## Linking People (altid behavior)
+//! ## Linking people
 //!
-//! When a person appears in multiple places in the family tree, they should be linked
-//! using altid numbers. **The expectation is that links are bidirectional:**
-//!
-//! - If person A at location X has altid pointing to location Y, then
-//! - Person at location Y should have altid pointing back to location X
-//!
-//! ### Children placement
-//!
-//! When a person appears in multiple locations, their children should only be listed
-//! in ONE of the locations (it doesn't matter which). The other locations should
-//! have `num_kids: 0` to indicate they don't list children there.
-//!
-//! ### Example
-//! ```text
-//! # Person appears at two locations:
-//! 8 1 2 7 1 2 0 0 0 0 F 2 0 1 9450000 Cynthia Anderson\therapist
-//! 9 4 5 0 0 0 0 0 0 0 F 2 1 0 8127000 Cynthia Anderson\therapist
-//!
-//! # Her spouse should also be linked:
-//! 8 1 2 7 1 2 0 0 0 0 M 2 1 0         Demetrios Matsakis\astronomer
-//! 9 4 5 0 0 0 0 0 0 0 M 2 0 1 8127120 Demetrios Matsakis\astronomer
-//!
-//! # Children listed under one location only:
-//! 8 1 2 7 1 2 1 0 0 0 M 1 1 0         Nicholas Matsakis\computer scientist
-//! 8 1 2 7 1 2 2 0 0 0 F 0 0 0         Kalliroi Matsakis\social worker
-//! ```
-//!
-//! The parser will validate that:
-//! - All altid links are bidirectional
-//! - No person has duplicate children with the same name
-//! - No person has duplicate spouses with the same name
+//! Each person has one primary record. Secondary appearances use an altid and
+//! the exact marker `\SEE PRIMARY 9.4.5`, with the target in dotted notation.
+//! The marker must agree with the numeric altid and is not biography text.
+//! Names must match the primary record. Children are recorded once per couple;
+//! both parents share the same partnership and children after linking.
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -97,6 +71,7 @@ struct PersonCounts {
 struct Parser {
     /// Canonical person resolved by the last physical record.
     annotation_owner: Option<Person>,
+    annotation_reference: Option<String>,
     /// Initially true, becomes false once we see the first person's data
     preamble: bool,
 
@@ -131,6 +106,7 @@ pub fn parse_text(path: &Path, text: &str) -> anyhow::Result<Genea> {
     let mut lines = text.lines().zip(1..);
     Ok(Parser {
         annotation_owner: None,
+        annotation_reference: None,
         preamble: true,
         stack: Default::default(),
         genea: Default::default(),
@@ -183,6 +159,9 @@ impl Parser {
         line_num: usize,
         lines: &mut std::iter::Peekable<impl Iterator<Item = (&'a str, usize)>>,
     ) -> Result<(), ParseErrorKind> {
+        if let Some(target) = &self.annotation_reference {
+            return Err(anyhow::anyhow!("Annotations are forbidden on cross-references; move them to primary {target}").into());
+        }
         let body = line.strip_prefix("    - ")
             .ok_or_else(|| anyhow::anyhow!("Annotation headers must start with exactly four spaces followed by '- '"))?;
         let person = self.annotation_owner
@@ -245,8 +224,30 @@ impl Parser {
 
         self.preamble = false;
 
-        let line_data =
-            &LineData::from_str(line).with_context(|| "expected person data".to_string())?;
+        let mut parsed = LineData::from_str(line)
+            .with_context(|| "expected person data".to_string())?;
+        if parsed.spousal_index.is_secondary() {
+            if let Some(target) = &parsed.secondary_henry_number {
+                let expected = format!("SEE PRIMARY {}", target.to_string().replace('-', "."));
+                if parsed.comments != expected {
+                    return Err(ParseErrorKind::Other(anyhow::anyhow!(
+                        "Cross-reference for {} must use exactly \\{} (matching its numeric altid)",
+                        parsed.name, expected
+                    )));
+                }
+                if line.contains(';') {
+                    return Err(anyhow::anyhow!("Private notes are forbidden on cross-references; move them to primary {}", target.to_string().replace('-', ".")).into());
+                }
+                // Structural marker, never merge it into the primary biography.
+                parsed.comments.clear();
+            }
+        }
+        if parsed.comments.starts_with("SEE PRIMARY") {
+            return Err(ParseErrorKind::Other(anyhow::anyhow!(
+                "SEE PRIMARY requires a secondary spouse with a numeric altid"
+            )));
+        }
+        let line_data = &parsed;
 
         let make_span = |r: &std::ops::Range<usize>| range_to_span(line_num, r);
 
@@ -327,7 +328,7 @@ impl Parser {
             // Secondary spouse - check if they have an altid
             match &line_data.secondary_henry_number {
                 Some(altid) => {
-                    // Public comments belong on the defining record; ordered annotations may accumulate here.
+                    // All biography and annotations belong on the defining record.
                     if !line_data.comments.is_empty() {
                         return Err(ParseErrorKind::SecondarySpouseWithDataAndAltid {
                             name: line_data.name.clone(),
@@ -392,6 +393,8 @@ impl Parser {
             }
         };
 
+        self.annotation_reference = line_data.secondary_henry_number.as_ref()
+            .map(|target| target.to_string().replace('-', "."));
         self.annotation_owner = Some(person);
         if !line_data.private_comments.is_empty() {
             self.genea[person].annotations.push(Annotation {
@@ -1008,7 +1011,7 @@ mod tests {
     fn test_secondary_spouse_with_unresolved_altid_error() {
         // Test that secondary spouse with altid pointing to non-existent person produces error
         let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 1 1 0         John Doe\primary spouse
- 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe"#;
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe\SEE PRIMARY 2"#;
         let path = Path::new("test.genea");
         let result = parse_text(path, genea_text);
 
@@ -1039,7 +1042,7 @@ mod tests {
     fn test_unresolved_altid_with_suggestions() {
         // Test that unresolved altid provides suggestions when there are people with same name
         let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 1 1 0         Person A
- 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2200000 Person B
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2200000 Person B\SEE PRIMARY 2.2
  2 0 0 0 0 0 0 0 0 0 M 1 1 0         Person C  
  2 1 0 0 0 0 0 0 0 0 F 0 1 0         Person B"#;
         let path = Path::new("test.genea");
@@ -1099,7 +1102,7 @@ mod tests {
     fn test_altid_linking_and_merging() {
         // Test the full cycle: secondary spouse creates placeholder, then primary spouse merges
         let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 0 1 0         John Doe\primary spouse first
- 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe\SEE PRIMARY 2
  2 0 0 0 0 0 0 0 0 0 F 0 1 0         Jane Doe\test person"#;
         let path = Path::new("test.genea");
 
@@ -1123,18 +1126,18 @@ mod tests {
     fn test_secondary_spouse_with_altid_name_mismatch() {
         // Test that secondary spouse with altid but different name from existing primary fails
         let genea_text = r#" 2 0 0 0 0 0 0 0 0 0 F 1 1 0         Jane Doe\primary spouse
- 1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe"#;
+ 1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe\SEE PRIMARY 2"#;
 
         check_parse_error(
             "test_secondary_spouse_with_altid_name_mismatch",
             genea_text,
             expect![[r#"
-            error: expected partner on the stack
-             --> test-test_secondary_spouse_with_altid_name_mismatch.genea:2:1
-              |
-            2 |  1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe
-              | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
-              |"#]],
+                error: expected partner on the stack
+                 --> test-test_secondary_spouse_with_altid_name_mismatch.genea:2:1
+                  |
+                2 |  1 0 0 0 0 0 0 0 0 0 M 1 1 1 2000000 John Doe\SEE PRIMARY 2
+                  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+                  |"#]],
         );
     }
 
@@ -1143,7 +1146,7 @@ mod tests {
         // Test that name mismatch error shows both the expected and found locations
         // Create a scenario where secondary spouse creates placeholder, then primary has different name
         let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 1 1 0         John Doe\primary spouse first
- 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe\SEE PRIMARY 2
  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Wrong Name\primary spouse with different name"#;
 
         check_parse_error(
@@ -1153,7 +1156,7 @@ mod tests {
             error: name does not match, expected Jane Doe found Wrong Name
              --> test-test_mismatched_name_error_shows_both_locations.genea:3:38
               |
-            2 |  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe
+            2 |  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe\SEE PRIMARY 2
               |                                      -------- info: Expected Jane Doe based on this reference
             3 |  2 0 0 0 0 0 0 0 0 0 F 1 1 0         Wrong Name\primary spouse with different name
               |                                      ^^^^^^^^^^ Found Wrong Name here
@@ -1245,14 +1248,12 @@ mod tests {
             "test_secondary_spouse_with_altid_and_comments",
             genea_text,
             expect![[r#"
-            error: secondary spouse with altid should only have name, but Real Person has comments
-             --> test-test_secondary_spouse_with_altid_and_comments.genea:4:50
-              |
-            4 |  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Real Person\secondary spouse should not have comments
-              |                                      ----------- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Real Person has comments but should only have name (altid points to 2)
-              |                                      |
-              |                                      help: Put all data on the primary person at henry number 2, not here
-              |"#]],
+                error: Cross-reference for Real Person must use exactly \SEE PRIMARY 2 (matching its numeric altid)
+                 --> test-test_secondary_spouse_with_altid_and_comments.genea:4:1
+                  |
+                4 |  1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Real Person\secondary spouse should not have comments
+                  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ here
+                  |"#]],
         );
     }
 
@@ -1334,7 +1335,7 @@ mod tests {
         // Test that when secondary spouse creates placeholder then primary merges, 
         // final validation uses primary spouse's counts
         let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 0 1 0         John Doe\primary spouse
- 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe\SEE PRIMARY 2
  2 0 0 0 0 0 0 0 0 0 F 0 1 0         Jane Doe\primary record with correct 1 spouse count"#;
         let path = Path::new("test.genea");
 
@@ -1363,7 +1364,7 @@ mod tests {
         // not to reference lines. Amanda appears first as reference (altid 2100000) 
         // then as primary definition where she declares wrong child count.
         let genea_text = r#" 1 0 0 0 0 0 0 0 0 0 M 0 1 0         John Doe\root ancestor with correct counts
- 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2100000 Amanda Reference
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2100000 Amanda Reference\SEE PRIMARY 2.1
  2 0 0 0 0 0 0 0 0 0 F 0 0 0         Root Two\another root
  2 1 0 0 0 0 0 0 0 0 F 1 0 0         Amanda Reference\primary definition with wrong child count"#;
 
@@ -1620,15 +1621,11 @@ mod annotation_tests {
 
     #[test]
     fn annotations_follow_canonical_person_when_alternate_id_is_resolved_later() {
-        let content = " 1 0 0 0 0 0 0 0 0 0 M 0 1 0         Example Partner\n 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Example Person\n 2 0 0 0 0 0 0 0 0 0 F 0 1 0         Example Person;legacy secret\n    - Secret: new secret\n";
+        let content = " 1 0 0 0 0 0 0 0 0 0 M 0 1 0         Example Partner\n 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Example Person\\SEE PRIMARY 2\n 2 0 0 0 0 0 0 0 0 0 F 0 1 0         Example Person;legacy secret\n    - Secret: new secret\n";
         let genea = Genea::from_genea_content(content).unwrap();
         let person = genea.people().map(|p| &genea[p]).find(|p| p.name == "Example Person").unwrap();
         assert_eq!(person.annotations.iter().map(|a| a.value.as_str()).collect::<Vec<_>>(), ["legacy secret", "new secret"]);
-        let with_reference_annotations = content.replace("2000000 Example Person\n", "2000000 Example Person\\;reference secret\n    - Note: reference annotation\n");
-        let genea = Genea::from_genea_content(&with_reference_annotations).unwrap();
-        let person = genea.people().map(|p| &genea[p]).find(|p| p.name == "Example Person").unwrap();
-        assert_eq!(person.annotations.iter().map(|a| a.value.as_str()).collect::<Vec<_>>(),
-            ["reference secret", "reference annotation", "legacy secret", "new secret"]);
+
     }
 
     #[test]
@@ -1637,5 +1634,50 @@ mod annotation_tests {
         let genea = Genea::from_genea_content(content).unwrap();
         let person = genea.people().next().unwrap();
         assert_eq!(genea[person].annotations[0].value, "Γεια σας\nfinal line");
+    }
+}
+
+#[cfg(test)]
+mod primary_marker_tests {
+    use super::*;
+
+    fn family(marker: &str) -> String {
+        format!(" 1 0 0 0 0 0 0 0 0 0 M 0 1 0         Alex\n 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2100000 Dana{marker}\n 2 0 0 0 0 0 0 0 0 0 F 1 0 0         Pat\n 2 1 0 0 0 0 0 0 0 0 F 0 1 0         Dana\\Primary biography\n")
+    }
+
+    #[test]
+    fn marker_is_required_exact_and_matches_numeric_target() {
+        for marker in ["", "\\", "\\DUPLICATE", "\\SEE PRIMARY 2.2",
+                       "\\SEE PRIMARY 2-1", "\\SEE PRIMARY 2100000",
+                       "\\SEE PRIMARY 2.1 extra", "\\see primary 2.1"] {
+            let error = parse_text(Path::new("marker.genea"), &family(marker)).unwrap_err();
+            assert!(error.to_string().contains("SEE PRIMARY 2.1"), "{marker}: {error}");
+        }
+    }
+
+    #[test]
+    fn marker_is_not_biography_and_preserves_shared_identity() {
+        let genea = parse_text(Path::new("marker.genea"), &family("\\SEE PRIMARY 2.1")).unwrap();
+        let dana: Vec<_> = genea.people().filter(|p| genea[*p].name == "Dana").collect();
+        assert_eq!(dana.len(), 1);
+        assert_eq!(genea[dana[0]].comments, "Primary biography");
+        assert!(genea[dana[0]].annotations.is_empty());
+    }
+
+    #[test]
+    fn references_reject_private_notes_and_annotation_blocks() {
+        for suffix in [";private note", ";", "\n    - Note: reference note",
+                       "\n    - Secret: private note", "\n    - Note:\n        multiline note"] {
+            let error = parse_text(Path::new("marker.genea"),
+                &family(&format!("\\SEE PRIMARY 2.1{suffix}"))).unwrap_err();
+            assert!(error.to_string().contains("forbidden on cross-references"), "{error}");
+            assert!(error.to_string().contains("primary 2.1"), "{error}");
+        }
+    }
+
+    #[test]
+    fn marker_without_numeric_reference_is_rejected() {
+        let content = " 1 0 0 0 0 0 0 0 0 0 M 0 0 0         Alex\\SEE PRIMARY 2";
+        assert!(parse_text(Path::new("marker.genea"), content).unwrap_err().to_string().contains("requires"));
     }
 }

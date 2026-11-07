@@ -12,7 +12,7 @@ Each line follows this format:
 ### Example
 ```
  1 0 0 0 0 0 0 0 0 0 M 2 1 0         John Doe\engineer
- 1 0 0 0 0 0 0 0 0 0 F 2 0 1 2000000 Jane Doe\artist
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1         Jane Doe\artist
  1 1 0 0 0 0 0 0 0 0 M 0 0 0         John Jr\son
  1 2 0 0 0 0 0 0 0 0 F 0 0 0         Jane Jr\daughter
 ```
@@ -70,18 +70,21 @@ The parser uses a "one-way" altid system for linking people who appear in multip
 ### Linking Rules
 - Secondary spouses with altids must point to primary spouses
 - Primary spouses define the canonical data (children, full comments)
-- Secondary spouses with altids should only have names
+- Secondary spouses with altids require `Name\SEE PRIMARY <dotted target>`.
+- The marker must exactly match the numeric altid: `9450000` requires `\SEE PRIMARY 9.4.5`. Missing, malformed, or mismatched markers are errors.
+- The marker is structural and is not displayed as biography text. Private notes and annotation blocks are forbidden on these references; put them on the primary record instead.
+- `SEE PRIMARY` is reserved for linked secondary appearances; it is invalid without a numeric altid.
 - Names must match across altid references
 
 ### Example
 ```
 # Primary location - John owns henry number 1
- 1 0 0 0 0 0 0 0 0 0 M 2 1 0         John Doe\engineer
- 1 0 0 0 0 0 0 0 0 0 F 2 0 1 2000000 Jane Doe
+ 1 0 0 0 0 0 0 0 0 0 M 0 1 0         John Doe\engineer
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Jane Doe\SEE PRIMARY 2
 
 # Primary location - Jane owns henry number 2  
- 2 0 0 0 0 0 0 0 0 0 F 2 1 0         Jane Doe\artist
- 2 0 0 0 0 0 0 0 0 0 M 2 0 1 1000000 John Doe
+ 2 0 0 0 0 0 0 0 0 0 F 0 1 0         Jane Doe\artist
+ 2 0 0 0 0 0 0 0 0 0 M 0 0 1 1000000 John Doe\SEE PRIMARY 1
 ```
 
 ## Validation Rules
@@ -120,13 +123,12 @@ The parser enforces these constraints:
 ```
 # Smith family
  1 0 0 0 0 0 0 0 0 0 M 1 1 0         Bob Smith
- 1 0 0 0 0 0 0 0 0 0 F 1 0 1 2000000 Alice Johnson
+ 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Alice Johnson\SEE PRIMARY 2
  1 1 0 0 0 0 0 0 0 0 F 0 0 0         Carol Smith
 
 # Johnson family  
- 2 0 0 0 0 0 0 0 0 0 F 1 1 0         Alice Johnson
- 2 0 0 0 0 0 0 0 0 0 M 1 0 1 1000000 Bob Smith
- 2 1 0 0 0 0 0 0 0 0 F 0 0 0         Carol Smith
+ 2 0 0 0 0 0 0 0 0 0 F 0 1 0         Alice Johnson
+ 2 0 0 0 0 0 0 0 0 0 M 0 0 1 1000000 Bob Smith\SEE PRIMARY 1
 ```
 
-This shows Alice and Bob appearing in both families via altid links, with their daughter Carol appearing in both trees.
+Alice and Bob appear in both families via explicit primary references. Carol is recorded once; both appearances of the couple resolve to the same partnership and children.
