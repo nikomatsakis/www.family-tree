@@ -4,6 +4,7 @@ const EmberApp = require('ember-cli/lib/broccoli/ember-app');
 const { Webpack } = require('@embroider/webpack');
 
 module.exports = function (defaults) {
+  require('./scripts/prepare-name-search').prepareNameSearch();
   // Bundle the PDF renderer locally; citation documents never go to a third party.
   const fs = require('fs');
   fs.mkdirSync('public/pdfjs', { recursive: true });

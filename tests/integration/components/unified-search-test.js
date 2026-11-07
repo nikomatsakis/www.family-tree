@@ -130,6 +130,33 @@ module('Integration | Component | unified-search', function (hooks) {
     });
   });
 
+  test('uses shared variants in the rendered search and respects exclusions', async function (assert) {
+    this.mockGeneaService.allPeople = () => [
+      {
+        id: '1',
+        name: 'Ada Exampleos',
+        comments: '',
+        parents: [],
+        partners: [],
+        parentIn: [],
+      },
+      {
+        id: '2',
+        name: 'Ada Exampleou',
+        comments: '',
+        parents: [],
+        partners: [],
+        parentIn: [],
+      },
+    ];
+    this.set('excluded', { id: '2' });
+    await render(hbs`<UnifiedSearch @excludePerson={{this.excluded}} />`);
+    await fillIn('.search-box', 'Ada Exampleou');
+    await waitFor('.search-results');
+    assert.dom('.search-result-item').exists({ count: 1 });
+    assert.dom('.search-result-item').includesText('Ada Exampleos');
+  });
+
   module('Search Exclusion', function () {
     test('it excludes specified person from results', async function (assert) {
       this.set('excludePerson', { id: '1' });

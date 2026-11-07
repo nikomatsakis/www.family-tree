@@ -83,3 +83,22 @@ test("matches whole words with original offsets, ignoring case and accents", asy
   assert.deepEqual(matchingItems(items, "  --  "), []);
   assert.deepEqual(matchingItems(items, "missing"), []);
 });
+
+test("PDF highlights surname and spelling variants in both directions", async () => {
+  const { matchingItems } = await import("../public/citation-search.mjs");
+  const items = [
+    {
+      textContent:
+        "Exampleou Exampleos Exampleous Exampleaki Exampleakis Konstantinos",
+    },
+  ];
+  const found = (query) =>
+    matchingItems(items, query).map(({ start, end }) =>
+      items[0].textContent.slice(start, end),
+    );
+  assert.deepEqual(found("Exampleou"), ["Exampleou", "Exampleos"]);
+  assert.deepEqual(found("Exampleos"), ["Exampleou", "Exampleos"]);
+  assert.deepEqual(found("Exampleaki"), ["Exampleaki", "Exampleakis"]);
+  assert.deepEqual(found("Constantinos"), ["Konstantinos"]);
+  assert.deepEqual(found("Exampleou Exampleos"), ["Exampleou", "Exampleos"]);
+});

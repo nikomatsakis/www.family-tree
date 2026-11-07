@@ -4,7 +4,7 @@ import { tracked } from '@glimmer/tracking';
 import { on } from '@ember/modifier';
 import { inject as service } from '@ember/service';
 import PersonLink from './person-link';
-import Fuse from 'fuse.js';
+import { searchPeople } from '../utils/search-people';
 
 export default class UnifiedSearch extends Component {
   @service genea;
@@ -160,52 +160,7 @@ export default class UnifiedSearch extends Component {
         allPeople = allPeople.filter((person) => person.id !== excludeId);
       }
 
-      // Split search term into individual words for better matching
-      const searchWords = this.searchTerm
-        .trim()
-        .split(/\s+/)
-        .filter((word) => word.length > 0);
-
-      if (searchWords.length === 1) {
-        // Single word search - use standard Fuse.js
-        const fuseOptions = {
-          keys: [
-            { name: 'name', weight: 0.8 },
-            { name: 'comments', weight: 0.2 },
-          ],
-          threshold: 0.4,
-          includeScore: true,
-          minMatchCharLength: 2,
-          ignoreLocation: true,
-          findAllMatches: true,
-        };
-
-        const fuse = new Fuse(allPeople, fuseOptions);
-        const fuseResults = fuse.search(searchWords[0]);
-        this.searchResults = fuseResults.map((result) => result.item);
-      } else {
-        // Multi-word search - use Fuse extended search with $and operator
-        const fuseOptions = {
-          keys: ['name', 'comments'],
-          threshold: 0.3, // Slightly more strict for multi-word
-          includeScore: true,
-          ignoreLocation: true,
-          findAllMatches: true,
-          useExtendedSearch: true,
-        };
-
-        const fuse = new Fuse(allPeople, fuseOptions);
-
-        // Create $and query where each word must match somewhere in the name or comments
-        const andQuery = {
-          $and: searchWords.map((word) => ({
-            $or: [{ name: word }, { comments: word }],
-          })),
-        };
-
-        const fuseResults = fuse.search(andQuery);
-        this.searchResults = fuseResults.map((result) => result.item);
-      }
+      this.searchResults = searchPeople(allPeople, this.searchTerm);
     } catch (error) {
       console.error('Search error:', error);
       this.searchResults = [];

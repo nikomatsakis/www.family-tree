@@ -72,6 +72,7 @@ export default [
       ".template-lintrc.js",
       "ember-cli-build.js",
       "scripts/prepare-citations.js",
+      "scripts/prepare-name-search.js",
       "scripts/prepare-citations.test.cjs",
       "testem.js",
       "blueprints/*/index.js",

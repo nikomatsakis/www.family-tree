@@ -77,3 +77,16 @@ highlights each name word independently wherever it occurs on the page, ignoring
 case, accents, and punctuation. Scans need an OCR text layer. When spelling or OCR differs, the
 viewer explains that no match was found and lets the reader adjust the search.
 Generated PDFs and PDF.js assets are ignored by Git.
+
+Name matching rules live in `app/utils/name-search.js`, shared by website search
+and PDF highlighting. `NAME_SUFFIX_GROUPS` defines reversible endings (`ou/os`,
+`aki/akis`, `idi/idis`); `NAME_VARIANT_GROUPS` lists explicit spelling equivalents
+(`Emanuel/Emmanuel`, `Konstantinos/Constantinos`). Add confirmed alternatives to
+these lists rather than broadly stripping suffixes. Suffix rules require at
+least three Latin letters before the ending. They are search hints only and do
+not change recorded names or merge people.
+
+Website search still supports partial names and typos and requires all query
+words to match. Exact name words rank before variants and fuzzy results. PDF
+highlighting matches any query word or listed variant at whole-word boundaries.
+The build copies the shared rules to the standalone viewer automatically.

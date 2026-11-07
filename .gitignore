@@ -40,3 +40,5 @@ netlify/functions/edit-person/target/
 
 /public/pdfjs/
 /public/reference-material/
+
+/public/name-search.mjs

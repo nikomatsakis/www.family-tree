@@ -24,7 +24,7 @@
     "start:build": "cargo run -- serve genea.doc",
     "test": "pnpm run test:citations && pnpm run test:fixtures && concurrently \"pnpm:lint\" \"pnpm:test:ember\" --names \"lint,test:\"",
     "test:ember": "ember test",
-    "test:citations": "node --test scripts/prepare-citations.test.cjs",
+    "test:citations": "node scripts/prepare-name-search.js && node --test scripts/prepare-citations.test.cjs",
     "test:fixtures": "scripts/generate-test-fixtures.sh"
   },
   "devDependencies": {
