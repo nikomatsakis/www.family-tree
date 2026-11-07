@@ -3,7 +3,7 @@ export function citationLink(citation, name) {
   const params = new URLSearchParams({
     source: citation.source,
     page: citation.page,
-    name,
+    name: citation.search || name,
   });
   return `/citation.html#${params}`;
 }

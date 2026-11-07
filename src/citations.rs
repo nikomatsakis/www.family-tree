@@ -15,12 +15,14 @@ struct Config {
 
 #[derive(Deserialize)]
 struct SourceConfig {
-    pattern: String,
+    pattern: Option<String>,
+    title: Option<String>,
 }
 
 #[derive(Default)]
 pub struct CitationSources {
     patterns: Vec<(String, Regex)>,
+    titles: BTreeMap<String, String>,
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize)]
@@ -28,6 +30,10 @@ pub struct Citation {
     kind: &'static str,
     source: String,
     page: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    search: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    title: Option<String>,
 }
 
 impl CitationSources {
@@ -53,24 +59,83 @@ impl CitationSources {
         let config: Config = serde_json::from_str(contents)?;
         let valid_id = Regex::new(r"^[a-z0-9-]+$").unwrap();
         let mut patterns = Vec::new();
+        let mut titles = BTreeMap::new();
         for (id, source) in config.sources {
             anyhow::ensure!(valid_id.is_match(&id), "Invalid source ID: {id}");
-            let pattern = Regex::new(&source.pattern)
+            titles.insert(id.clone(), source.title.unwrap_or_else(|| id.clone()));
+            let Some(pattern) = source.pattern else {
+                continue;
+            };
+            let pattern = Regex::new(&pattern)
                 .with_context(|| format!("Invalid pattern for source '{id}'"))?;
             anyhow::ensure!(pattern.capture_names().flatten().any(|name| name == "page"),
                 "Pattern for source '{id}' must contain a named 'page' capture, e.g. (?P<page>[0-9]+)");
             patterns.push((id, pattern));
         }
-        Ok(Self { patterns })
+        Ok(Self { patterns, titles })
     }
 
-    pub fn extract_secrets(&self, annotations: &[crate::genea::Annotation]) -> Vec<Citation> {
+    pub fn validate(&self, genea: &crate::genea::Genea) -> anyhow::Result<()> {
+        for person in genea.people() {
+            for annotation in &genea[person].annotations {
+                if annotation.header.eq_ignore_ascii_case("source") {
+                    self.direct(&annotation.value).with_context(|| {
+                        format!("Invalid Source annotation on line {}", annotation.line_num)
+                    })?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn direct(&self, value: &str) -> anyhow::Result<Citation> {
+        let mut fields = value.split('|').map(str::trim);
+        let source = fields.next().unwrap_or_default();
+        let title = self
+            .titles
+            .get(source)
+            .with_context(|| format!("Unknown source '{source}'"))?;
+        let mut citation = Citation {
+            kind: "pdf",
+            source: source.into(),
+            page: 1,
+            search: None,
+            title: Some(title.clone()),
+        };
+        let mut seen = HashSet::new();
+        for field in fields {
+            let (key, value) = field
+                .split_once('=')
+                .context("Expected page=NUMBER or search=NAME after |")?;
+            let (key, value) = (key.trim(), value.trim());
+            anyhow::ensure!(seen.insert(key), "Repeated source option '{key}'");
+            match key {
+                "page" => {
+                    citation.page = value.parse().context("Invalid source page")?;
+                    anyhow::ensure!(citation.page > 0, "Source page must be positive");
+                }
+                "search" => {
+                    anyhow::ensure!(!value.is_empty(), "Source search cannot be empty");
+                    citation.search = Some(value.into());
+                }
+                _ => anyhow::bail!("Unknown source option '{key}'"),
+            }
+        }
+        Ok(citation)
+    }
+
+    pub fn extract_annotations(&self, annotations: &[crate::genea::Annotation]) -> Vec<Citation> {
         let mut citations = Vec::new();
-        for annotation in annotations
-            .iter()
-            .filter(|annotation| annotation.is_secret())
-        {
-            for citation in self.extract(&annotation.value) {
+        for annotation in annotations {
+            let found = if annotation.is_secret() {
+                self.extract(&annotation.value)
+            } else if annotation.header.eq_ignore_ascii_case("source") {
+                // generate() validates all annotations before writing any files.
+                self.direct(&annotation.value).into_iter().collect()
+            } else {
+                Vec::new()
+            };
+            for citation in found {
                 if !citations.contains(&citation) {
                     citations.push(citation);
                 }
@@ -98,6 +163,8 @@ impl CitationSources {
                             kind: "pdf",
                             source: source.clone(),
                             page,
+                            search: None,
+                            title: None,
                         });
                     }
                 }
@@ -110,6 +177,33 @@ impl CitationSources {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn direct_sources_default_to_first_page_and_support_search_aliases() {
+        let sources =
+            CitationSources::from_json(r#"{"sources":{"article":{"title":"An article"}}}"#)
+                .unwrap();
+        let citation = sources.direct("article").unwrap();
+        assert_eq!(citation.page, 1);
+        assert_eq!(citation.search, None);
+        let citation = sources
+            .direct("article | page=3 | search=Άννα Παππά")
+            .unwrap();
+        assert_eq!(citation.page, 3);
+        assert_eq!(citation.search.as_deref(), Some("Άννα Παππά"));
+        assert_eq!(citation.title.as_deref(), Some("An article"));
+        for invalid in [
+            "missing",
+            "article | page=0",
+            "article | page=-1",
+            "article | page=x",
+            "article | search=",
+            "article | typo=x",
+            "article | page=2 | page=3",
+        ] {
+            assert!(sources.direct(invalid).is_err(), "{invalid}");
+        }
+    }
 
     #[test]
     fn extracts_configured_sources_lists_and_repeated_references() {

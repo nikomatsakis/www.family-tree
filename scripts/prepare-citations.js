@@ -31,6 +31,9 @@ function prepareCitations(geneaPath) {
       title: source.title || id,
       pageOffset: source.pageOffset || 0,
     };
+    if (source.ocr) {
+      metadata.ocr = JSON.parse(fs.readFileSync(path.resolve(directory, source.ocr), 'utf8'));
+    }
     if (source.visibility === 'public') {
       fs.writeFileSync(`${output}/${id}.pdf`, bytes);
       metadata.url = `/reference-material/${id}.pdf`;

@@ -146,7 +146,36 @@ later. Existing restrictions on public comments and counts on alternate-ID
 records still apply. Name/comment edits preserve all annotation text, private suffixes, numeric columns, and line
 endings. Existing files need no migration.
 
-This establishes storage and parsing only. `Source`, `Image`, and `Note` currently
-behave like any other unknown header: preserved but not rendered. Person-specific
-attachment resolution, document icons, images, and public long-form notes can be
-added as explicit consumers of these annotations without changing the syntax.
+### Attach a source to a person
+
+Register the PDF in `reference-material.json` beside the genealogy data. Sources
+used only by annotations do not need a `pattern`:
+
+```json
+{"sources":{"article":{"title":"Family history article","file":"article.pdf","visibility":"public"}}}
+```
+
+Then add an annotation immediately after the appropriate person record:
+
+```text
+    - Source: article
+    - Source: register | page=3 | search=Name as printed in the document
+```
+
+`Source` adds the book/arrow icon and opens the viewer in another tab. `page`
+defaults to 1; `search` defaults to the person's name. Each name word is searched
+independently, using the existing spelling variants. Use `search` for another
+alphabet or a name that differs in that document. Options use literal text, not
+URL encoding, and are separated by `|`. Repeat `Source` to attach several
+references. Unknown source IDs and invalid options fail validation before output
+is overwritten. Document titles appear in the link tooltips.
+
+Scanned PDFs need OCR for highlights. Generate a sidecar locally with
+`python3 scripts/ocr-source.py scan.pdf scan.ocr.json --language ell` (requires
+Poppler and Tesseract's Greek language model), then set `"ocr":"scan.ocr.json"`
+on that source. Coordinates are normalized to the unrotated rendered page; each
+`pages` entry contains `words` with `text`, `x`, `y`, `width`, and `height`.
+The sidecar follows the source's public/encrypted visibility. The original PDF
+is preserved; its standalone download does not gain a text layer.
+
+`Image` and `Note` remain preserved metadata without rendering behavior.

@@ -368,7 +368,7 @@ export default class D3TreeRenderer extends BaseRenderer {
 
     // Reserve a compact, keyboard-accessible source button beside the name.
     (person?.citations || []).forEach((citation, index, citations) => {
-      const label = `Read original source, page ${citation.page}, for ${person.name} (opens in a new tab)`;
+      const label = `Read ${citation.title || 'original source'}, page ${citation.page}, for ${person.name} (opens in a new tab)`;
       const link = rectGroup.append('a')
         .attr('href', citationLink(citation, person.name))
         .attr('target', '_blank')

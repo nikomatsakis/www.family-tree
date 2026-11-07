@@ -1,6 +1,6 @@
  1 0 0 0 0 0 0 0 0 0 M 0 1 0         Example Person\Public comment;PAGE 1
     - Secret: PAGE 2
-    - Source: https://example.test/archive:volume-1
+    - Source: pages | page=5 | search=Example Alias
     - Secret:
         PAGE 3
         private multiline note
@@ -8,7 +8,7 @@
         # literal text, not a comment
             additional indentation
         - NotAHeader: literal text
-    - Source: another-document
+    - Source: pages | page=6
     - Empty:
  1 0 0 0 0 0 0 0 0 0 F 0 0 1         Example Partner
     - Image: portrait

@@ -1592,7 +1592,7 @@ mod annotation_tests {
             ["Secret", "Secret", "Source", "Secret", "Source", "Empty"]);
         assert_eq!(annotations[0].value, "PAGE 1");
         assert_eq!(annotations[1].value, "PAGE 2");
-        assert_eq!(annotations[2].value, "https://example.test/archive:volume-1");
+        assert_eq!(annotations[2].value, "pages | page=5 | search=Example Alias");
         assert_eq!(annotations[3].value, "PAGE 3\nprivate multiline note\n\n# literal text, not a comment\n    additional indentation\n- NotAHeader: literal text");
         assert_eq!(annotations[3].line_num, 4);
         assert_eq!(annotations[5].value, "");

@@ -105,9 +105,22 @@ async function render() {
   });
   await textLayer.render();
   if (version !== renderVersion) return;
-  const matches = matchingItems(textLayer.textDivs, $("name").value);
+  const ocr = metadata.ocr?.pages?.[pageNumber - 1];
+  const items = ocr ? ocr.words.map(word => ({ textContent: word.text })) : textLayer.textDivs;
+  const matches = matchingItems(items, $("name").value);
   const origin = $("sheet").getBoundingClientRect();
   for (const match of matches) {
+    if (ocr) {
+      const word = ocr.words[match.index];
+      const box = document.createElement("span");
+      box.className = "highlight";
+      box.style.left = `${word.x * viewport.width}px`;
+      box.style.top = `${word.y * viewport.height}px`;
+      box.style.width = `${word.width * viewport.width}px`;
+      box.style.height = `${word.height * viewport.height}px`;
+      highlights.append(box);
+      continue;
+    }
     const node = textLayer.textDivs[match.index].firstChild;
     if (!node) continue;
     const range = document.createRange();

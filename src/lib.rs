@@ -52,7 +52,7 @@ pub fn main() -> anyhow::Result<()> {
             dump,
         } => {
             let genea = Genea::from_genea_doc(path)?;
-            citations::CitationSources::load(path)?;
+            citations::CitationSources::load(path)?.validate(&genea)?;
 
             if *dump {
                 eprintln!("{genea:#?}")

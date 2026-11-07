@@ -10,6 +10,7 @@ use crate::{
 
 pub fn generate(genea: &Genea, genea_path: &Path, output_path: impl AsRef<Path>) -> anyhow::Result<()> {
     let sources = CitationSources::load(genea_path)?;
+    sources.validate(genea)?;
     let output_path = output_path.as_ref();
 
     if output_path.exists() {
@@ -111,7 +112,7 @@ impl<'a> JsonGen<'a> {
                 name: person_data.name.to_string(),
                 comments: person_data.comments.clone(),
                 gender: person_data.gender.to_string(),
-                citations: self.sources.extract_secrets(&person_data.annotations),
+                citations: self.sources.extract_annotations(&person_data.annotations),
                 is_spouse: person_data.spousal_index.is_secondary(),
             },
             PersonRelationships {
@@ -170,12 +171,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn annotations_export_only_configured_citations_from_secret_values() {
+    fn annotations_export_configured_sources_without_private_text() {
         let input = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/genea/annotations.genea");
         let mut content = std::fs::read_to_string(&input).unwrap();
         content.push_str("    - Unknown: PAGE 99; do not publish\n    - Secret: PAGE 4\n");
         let genea = Genea::from_genea_content(&content).unwrap();
         let sources = CitationSources::load(&input).unwrap();
+        sources.validate(&genea).unwrap();
         let response = JsonGen::new(&genea, &sources).root_response();
         let json = serde_json::to_value(response).unwrap();
         let first = &json["included"][0]["attributes"];
@@ -183,7 +185,9 @@ mod tests {
         assert_eq!(first["citations"], serde_json::json!([
             {"kind":"pdf","source":"pages","page":1},
             {"kind":"pdf","source":"pages","page":2},
-            {"kind":"pdf","source":"pages","page":3}
+            {"kind":"pdf","source":"pages","page":5,"search":"Example Alias","title":"Test reference"},
+            {"kind":"pdf","source":"pages","page":3},
+            {"kind":"pdf","source":"pages","page":6,"title":"Test reference"}
         ]));
         assert_eq!(json["included"][1]["attributes"]["citations"], serde_json::json!([
             {"kind":"pdf","source":"pages","page":4}
@@ -216,6 +220,11 @@ mod tests {
             {"kind":"pdf","source":"archive","page":7}
         ]));
         assert!(!saved.contains("private detail"));
+
+        let invalid = Genea::from_genea_content(" 1 0 0 0 0 0 0 0 0 0 M 0 0 0         Example Person\n    - Source: missing\n").unwrap();
+        let error = generate(&invalid, &input, &output).unwrap_err();
+        assert!(error.to_string().contains("line 2"));
+        assert_eq!(read_output(), saved);
 
         std::fs::write(&config, r#"{"sources":{"archive":{"pattern":"["}}}"#).unwrap();
         assert!(generate(&genea, &input, &output).is_err());

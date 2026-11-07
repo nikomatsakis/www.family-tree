@@ -7,7 +7,7 @@ export default class PersonCitations extends Component {
   get links() {
     return (this.args.person?.citations || []).map((citation) => ({
       href: citationLink(citation, this.args.person.name),
-      label: `Read original source, page ${citation.page}, for ${this.args.person.name} (opens in a new tab)`,
+      label: `Read ${citation.title || 'original source'}, page ${citation.page}, for ${this.args.person.name} (opens in a new tab)`,
     }));
   }
 

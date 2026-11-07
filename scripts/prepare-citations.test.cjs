@@ -13,9 +13,11 @@ test("packages public and encrypted sources without retaining public copies", as
   try {
     process.chdir(temp);
     fs.writeFileSync("source.pdf", "%PDF-1.6\ntest fixture");
+    const ocr = { pages: [{ words: [{ text: "Example", x: 0.1, y: 0.2, width: 0.3, height: 0.04 }] }] };
+    fs.writeFileSync("scan.ocr.json", JSON.stringify(ocr));
     const config = {
       sources: {
-        pages: { file: "source.pdf", visibility: "public", pageOffset: 2 },
+        pages: { file: "source.pdf", visibility: "public", pageOffset: 2, ocr: "scan.ocr.json" },
       },
     };
     fs.writeFileSync("reference-material.json", JSON.stringify(config));
@@ -29,6 +31,7 @@ test("packages public and encrypted sources without retaining public copies", as
       fs.readFileSync("public/reference-material/pages.pdf", "utf8"),
       "%PDF-1.6\ntest fixture",
     );
+    assert.deepEqual(JSON.parse(fs.readFileSync("public/reference-material/pages.json")).ocr, ocr);
     config.sources.pages.visibility = "encrypted";
     fs.writeFileSync("reference-material.json", JSON.stringify(config));
     delete process.env.FAMILY_TREE_PASSWORD;
@@ -38,6 +41,7 @@ test("packages public and encrypted sources without retaining public copies", as
     );
     process.env.FAMILY_TREE_PASSWORD = "test-only-password";
     prepareCitations("genea.doc");
+    assert.deepEqual(JSON.parse(fs.readFileSync("public/api/v1/source-pages.json")).ocr, ocr);
     await encryptDirectory("public/api/v1");
     assert.equal(fs.existsSync("public/reference-material/pages.pdf"), false);
     assert.equal(fs.existsSync("public/api/v1/source-pages.json"), false);
@@ -101,4 +105,22 @@ test("PDF highlights surname and spelling variants in both directions", async ()
   assert.deepEqual(found("Exampleaki"), ["Exampleaki", "Exampleakis"]);
   assert.deepEqual(found("Constantinos"), ["Konstantinos"]);
   assert.deepEqual(found("Exampleou Exampleos"), ["Exampleou", "Exampleos"]);
+});
+
+
+test("Greek source spellings match accented OCR words independently", async () => {
+  const { matchingItems } = await import("../public/citation-search.mjs");
+  const items = [{ textContent: "ΣΟΦΙΑ" }, { textContent: "Παππά" }];
+  assert.equal(matchingItems(items, "Σοφία Παππά").length, 2);
+});
+
+test("citation links use explicit source spellings or default to the person's name", async () => {
+  const { citationLink } = await import("../app/utils/citations.js");
+  const citation = { source: "register", page: 3, search: "Σοφία Παππά" };
+  let params = new URLSearchParams(citationLink(citation, "Example Person").split("#")[1]);
+  assert.equal(params.get("name"), citation.search);
+  assert.equal(params.get("page"), "3");
+  delete citation.search;
+  params = new URLSearchParams(citationLink(citation, "Example Person").split("#")[1]);
+  assert.equal(params.get("name"), "Example Person");
 });
