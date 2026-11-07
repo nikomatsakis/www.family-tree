@@ -64,6 +64,21 @@ impl CitationSources {
         Ok(Self { patterns })
     }
 
+    pub fn extract_secrets(&self, annotations: &[crate::genea::Annotation]) -> Vec<Citation> {
+        let mut citations = Vec::new();
+        for annotation in annotations
+            .iter()
+            .filter(|annotation| annotation.is_secret())
+        {
+            for citation in self.extract(&annotation.value) {
+                if !citations.contains(&citation) {
+                    citations.push(citation);
+                }
+            }
+        }
+        citations
+    }
+
     // Only export source IDs and captured page numbers, never surrounding notes.
     // A page capture may hold one number or a comma-separated list of numbers.
     pub fn extract(&self, notes: &str) -> Vec<Citation> {

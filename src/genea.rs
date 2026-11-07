@@ -153,6 +153,10 @@ pub struct Span {
 }
 
 impl Span {
+    pub fn char_range(&self) -> Option<std::ops::Range<usize>> {
+        self.chars.map(|(start, end)| start..end)
+    }
+
     pub fn line_num(&self) -> usize {
         self.line_num
     }
@@ -306,6 +310,19 @@ impl SpousalIndex {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Annotation {
+    pub header: String,
+    pub value: String,
+    pub line_num: usize,
+}
+
+impl Annotation {
+    pub fn is_secret(&self) -> bool {
+        self.header.eq_ignore_ascii_case("Secret")
+    }
+}
+
 #[derive(Debug)]
 pub struct PersonData {
     /// The span representing the location of the individual's name in the source file
@@ -347,8 +364,8 @@ pub struct PersonData {
     /// Comments from the file
     pub comments: String,
 
-    /// Private comments not to be exposed publicly
-    pub private_comments: String,
+    /// Ordered metadata; unknown headers are retained but never exported by default.
+    pub annotations: Vec<Annotation>,
 }
 
 impl PersonData {
@@ -383,16 +400,6 @@ pub enum Gender {
     Male,
     Female,
     Unknown,
-}
-
-impl Gender {
-    pub fn as_char(&self) -> char {
-        match self {
-            Gender::Male => 'M',
-            Gender::Female => 'F',
-            Gender::Unknown => '?',
-        }
-    }
 }
 
 impl std::fmt::Display for Gender {

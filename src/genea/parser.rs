@@ -50,7 +50,7 @@ use crate::genea::Span;
 
 use super::{
     error::{ParseError, ParseErrorKind},
-    Gender, Genea, HenryNumber, Partnership, PartnershipData, Person, PersonData, SpousalIndex,
+    Annotation, Gender, Genea, HenryNumber, Partnership, PartnershipData, Person, PersonData, SpousalIndex,
 };
 
 /// Calculate the length of shared prefix between two henry numbers
@@ -74,7 +74,7 @@ lazy_static::lazy_static! {
         (?P<spouse>\\d+)\\s+\
         (?P<altid>\\d+)?\\s*\
         (?P<name>[^\\\\;]+)\
-        (\\\\(?P<comment>[^;]+))?\
+        (\\\\(?P<comment>[^;]*))?\
         (;(?P<private>.*))?"
     ).unwrap();
 }
@@ -95,6 +95,8 @@ struct PersonCounts {
 }
 
 struct Parser {
+    /// Canonical person resolved by the last physical record.
+    annotation_owner: Option<Person>,
     /// Initially true, becomes false once we see the first person's data
     preamble: bool,
 
@@ -128,6 +130,7 @@ struct StackEntry {
 pub fn parse_text(path: &Path, text: &str) -> anyhow::Result<Genea> {
     let mut lines = text.lines().zip(1..);
     Ok(Parser {
+        annotation_owner: None,
         preamble: true,
         stack: Default::default(),
         genea: Default::default(),
@@ -145,14 +148,19 @@ impl Parser {
         path: &Path,
         lines: &mut dyn Iterator<Item = (&str, usize)>,
     ) -> Result<Genea, ParseError> {
-        for (line, line_num) in lines {
-            let () = self
-                .parse_line(line, line_num)
-                .map_err(|source| ParseError {
-                    path: path.to_path_buf(),
-                    line_num,
-                    kind: source,
-                })?;
+        let mut lines = lines.peekable();
+        while let Some((line, line_num)) = lines.next() {
+            let result = if line.trim_start().starts_with("- ") {
+                self.parse_annotation(line, line_num, &mut lines)
+            } else if !self.preamble && line.starts_with("    ")
+                && !line.trim().is_empty() && !line.trim_start().starts_with('#')
+                && !PERSON_LINE.is_match(line)
+            {
+                Err(anyhow::anyhow!("Unexpected indented text: annotation headers need four spaces and '- '; block content needs eight spaces after an empty header").into())
+            } else {
+                self.parse_line(line, line_num)
+            };
+            result.map_err(|kind| ParseError { path: path.to_path_buf(), line_num, kind })?;
         }
 
         // 💡: Validate after all parsing is complete to catch missing reverse links and duplicates
@@ -164,6 +172,48 @@ impl Parser {
         self.validate_counts(path)?;
 
         Ok(self.genea)
+    }
+
+    // Consume a literal block before interpreting person lines, comments, or
+    // annotation-like text. Blank lines within a block remain part of its value.
+    #[expect(clippy::result_large_err)]
+    fn parse_annotation<'a>(
+        &mut self,
+        line: &str,
+        line_num: usize,
+        lines: &mut std::iter::Peekable<impl Iterator<Item = (&'a str, usize)>>,
+    ) -> Result<(), ParseErrorKind> {
+        let body = line.strip_prefix("    - ")
+            .ok_or_else(|| anyhow::anyhow!("Annotation headers must start with exactly four spaces followed by '- '"))?;
+        let person = self.annotation_owner
+            .ok_or_else(|| anyhow::anyhow!("Annotation has no preceding person"))?;
+        let (header, value) = body.split_once(':')
+            .ok_or_else(|| anyhow::anyhow!("Annotation needs 'Header: Value' or 'Header:'"))?;
+        let header = header.trim();
+        if header.is_empty() || header.chars().any(char::is_control) {
+            return Err(anyhow::anyhow!("Annotation header must be nonempty text").into());
+        }
+        let value = if value.trim().is_empty() {
+            let mut content = Vec::new();
+            while let Some(&(next, _)) = lines.peek() {
+                if let Some(text) = next.strip_prefix("        ") {
+                    content.push(text);
+                    lines.next();
+                } else if next.trim().is_empty() {
+                    content.push("");
+                    lines.next();
+                } else {
+                    break;
+                }
+            }
+            content.join("\n")
+        } else {
+            value.strip_prefix(' ').unwrap_or(value).to_string()
+        };
+        self.genea[person].annotations.push(Annotation {
+            header: header.to_string(), value, line_num,
+        });
+        Ok(())
     }
 
     // 💡: Large error variants (224 bytes) are acceptable here because this genealogy parser
@@ -277,7 +327,7 @@ impl Parser {
             // Secondary spouse - check if they have an altid
             match &line_data.secondary_henry_number {
                 Some(altid) => {
-                    // Validate that secondary spouse with altid only has name, no other data
+                    // Public comments belong on the defining record; ordered annotations may accumulate here.
                     if !line_data.comments.is_empty() {
                         return Err(ParseErrorKind::SecondarySpouseWithDataAndAltid {
                             name: line_data.name.clone(),
@@ -287,16 +337,6 @@ impl Parser {
                             altid: altid.clone(),
                         });
                     }
-                    if !line_data.private_comments.is_empty() {
-                        return Err(ParseErrorKind::SecondarySpouseWithDataAndAltid {
-                            name: line_data.name.clone(),
-                            name_span: make_span(&line_data.name_range),
-                            field_name: "private comments".to_string(),
-                            field_span: make_span(&line_data.comments_range), // Note: private comments share the same span as comments
-                            altid: altid.clone(),
-                        });
-                    }
-
                     // They have an altid - look up the primary person
                     if let Some(&primary_person) = self.by_henry_number.get(altid) {
                         // Check if name matches - if not, record mismatch and continue parsing
@@ -351,6 +391,13 @@ impl Parser {
                 }
             }
         };
+
+        self.annotation_owner = Some(person);
+        if !line_data.private_comments.is_empty() {
+            self.genea[person].annotations.push(Annotation {
+                header: "Secret".to_string(), value: line_data.private_comments.clone(), line_num,
+            });
+        }
 
         // If this is a spouse, their partner should be atop the stack.
         // Create a new partnership for them.
@@ -486,7 +533,7 @@ impl Parser {
             parent_in: Default::default(),
             name: line_data.name.clone(),
             comments: line_data.comments.clone(),
-            private_comments: line_data.private_comments.clone(),
+            annotations: Vec::new(),
             altid_spans: Vec::new(),
         }
     }
@@ -586,6 +633,7 @@ impl Parser {
 
             existing_data.comments = line_data.comments.clone();
         }
+
 
         Ok(())
     }
@@ -1514,5 +1562,80 @@ fn range_to_span(line_num: usize, r: &std::ops::Range<usize>) -> Span {
     Span {
         line_num,
         chars: Some((r.start, r.end)),
+    }
+}
+
+#[cfg(test)]
+mod annotation_tests {
+    use super::*;
+
+    #[test]
+    fn legacy_secret_after_empty_public_comment_is_not_lost() {
+        let genea = Genea::from_genea_content(
+            " 1 0 0 0 0 0 0 0 0 0 M 0 0 0         Example Person\\;PAGE 17"
+        ).unwrap();
+        let person = genea.people().next().unwrap();
+        assert_eq!(genea[person].comments, "");
+        assert_eq!(genea[person].annotations[0].header, "Secret");
+        assert_eq!(genea[person].annotations[0].value, "PAGE 17");
+    }
+
+    #[test]
+    fn parses_ordered_repeated_and_literal_multiline_annotations() {
+        let content = include_str!("../../tests/fixtures/genea/annotations.genea");
+        let genea = Genea::from_genea_content(content).unwrap();
+        let people: Vec<_> = genea.people().map(|person| &genea[person]).collect();
+        assert_eq!(people[0].comments, "Public comment");
+        let annotations = &people[0].annotations;
+        assert_eq!(annotations.iter().map(|a| a.header.as_str()).collect::<Vec<_>>(),
+            ["Secret", "Secret", "Source", "Secret", "Source", "Empty"]);
+        assert_eq!(annotations[0].value, "PAGE 1");
+        assert_eq!(annotations[1].value, "PAGE 2");
+        assert_eq!(annotations[2].value, "https://example.test/archive:volume-1");
+        assert_eq!(annotations[3].value, "PAGE 3\nprivate multiline note\n\n# literal text, not a comment\n    additional indentation\n- NotAHeader: literal text");
+        assert_eq!(annotations[3].line_num, 4);
+        assert_eq!(annotations[5].value, "");
+        assert_eq!(people[1].annotations[0].header, "Image");
+        assert!(people[1].annotations[1].is_secret());
+    }
+
+    #[test]
+    fn rejects_orphans_malformed_headers_and_bad_indentation_at_their_lines() {
+        let person = " 1 0 0 0 0 0 0 0 0 0 M 0 0 0         Example Person";
+        for (content, line) in [
+            ("    - Secret: orphan".to_string(), 1),
+            (format!("{person}\n  - Note: bad"), 2),
+            (format!("{person}\n\t- Note: bad"), 2),
+            (format!("{person}\n    - Missing colon"), 2),
+            (format!("{person}\n    - : missing name"), 2),
+            (format!("{person}\n        orphan block"), 2),
+            (format!("{person}\n    - Note:\n       seven spaces"), 3),
+            (format!("{person}\n    - Note: inline\n        unexpected block"), 3),
+        ] {
+            let error = parse_text(Path::new("<annotations>"), &content).unwrap_err();
+            let error = error.downcast_ref::<ParseError>().unwrap();
+            assert_eq!(error.line_num, line, "{content}");
+        }
+    }
+
+    #[test]
+    fn annotations_follow_canonical_person_when_alternate_id_is_resolved_later() {
+        let content = " 1 0 0 0 0 0 0 0 0 0 M 0 1 0         Example Partner\n 1 0 0 0 0 0 0 0 0 0 F 0 0 1 2000000 Example Person\n 2 0 0 0 0 0 0 0 0 0 F 0 1 0         Example Person;legacy secret\n    - Secret: new secret\n";
+        let genea = Genea::from_genea_content(content).unwrap();
+        let person = genea.people().map(|p| &genea[p]).find(|p| p.name == "Example Person").unwrap();
+        assert_eq!(person.annotations.iter().map(|a| a.value.as_str()).collect::<Vec<_>>(), ["legacy secret", "new secret"]);
+        let with_reference_annotations = content.replace("2000000 Example Person\n", "2000000 Example Person\\;reference secret\n    - Note: reference annotation\n");
+        let genea = Genea::from_genea_content(&with_reference_annotations).unwrap();
+        let person = genea.people().map(|p| &genea[p]).find(|p| p.name == "Example Person").unwrap();
+        assert_eq!(person.annotations.iter().map(|a| a.value.as_str()).collect::<Vec<_>>(),
+            ["reference secret", "reference annotation", "legacy secret", "new secret"]);
+    }
+
+    #[test]
+    fn multiline_at_eof_preserves_unicode_and_crlf_normalizes_to_newlines() {
+        let content = " 1 0 0 0 0 0 0 0 0 0 M 0 0 0         Example Person\r\n    - Custom:\r\n        Γεια σας\r\n        final line";
+        let genea = Genea::from_genea_content(content).unwrap();
+        let person = genea.people().next().unwrap();
+        assert_eq!(genea[person].annotations[0].value, "Γεια σας\nfinal line");
     }
 }

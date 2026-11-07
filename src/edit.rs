@@ -1,4 +1,4 @@
-use crate::genea::{Coordinates, Genea, Person, PersonData};
+use crate::genea::{Coordinates, Genea, PersonData};
 use anyhow::{anyhow, Context};
 use serde::{Deserialize, Serialize};
 
@@ -126,7 +126,9 @@ pub fn prepare_edit(
     let line_number = person_data.henry_number_span.line_num();
 
     // Generate the updated line
-    let updated_line = generate_genea_line(person_data, &genea, person_id, updated_state)?;
+    let original_line = genea_content.lines().nth(line_number - 1)
+        .ok_or_else(|| anyhow!("Person line not found"))?;
+    let updated_line = generate_genea_line(person_data, original_line, updated_state)?;
 
     // Replace the line in the content
     let updated_content = replace_line_in_content(genea_content, line_number, &updated_line)?;
@@ -166,112 +168,31 @@ fn validate_expected_state(
     Ok(())
 }
 
-/// Generate a genea.doc line from PersonData
+/// Patch only editable fields; preserve numeric columns, private notes, and
+/// metadata blocks rather than reconstructing the complete person record.
 fn generate_genea_line(
     person_data: &PersonData,
-    genea: &Genea,
-    person_id: Person,
+    original: &str,
     updates: &PersonState,
 ) -> anyhow::Result<String> {
-    // Use updated values if provided, otherwise keep existing
-    let name = updates.name.as_ref().unwrap_or(&person_data.name);
-    let comments = updates.comments.as_ref().unwrap_or(&person_data.comments);
-
-    // Calculate counts
-    let num_kids = count_children(genea, person_id);
-    let num_spouses = count_spouses(genea, person_id);
-
-    // 💡: Format henry number with fixed-width 2-character fields
-    // Each component gets exactly 2 characters, right-padded with space
-    let mut henry_str = String::new();
-    for i in 0..10 {
-        if i < person_data.henry_number.ancestry.len() {
-            henry_str.push_str(&format!("{:2}", person_data.henry_number.ancestry[i]));
-        } else {
-            henry_str.push_str(" 0");
-        }
+    if let Some(name) = &updates.name {
+        anyhow::ensure!(!name.trim().is_empty() && !name.contains(['\\', ';', '\r', '\n']), "Name cannot be empty or contain record delimiters");
     }
-
-    // 💡: Format with consistent column alignment - leading space is part of henry_str already
-    // The num_kids field needs to be exactly 2 characters total including gender
-    // Single digit: "M 1" (gender + space + digit)
-    // Double digit: "M10" (gender + two digits)
-    let kids_field = if num_kids < 10 {
-        format!("{} {}", person_data.gender.as_char(), num_kids)
-    } else {
-        format!("{}{}", person_data.gender.as_char(), num_kids)
+    if let Some(comments) = &updates.comments {
+        anyhow::ensure!(!comments.contains([';', '\r', '\n']), "Comment cannot contain private-note or line delimiters");
+    }
+    let range = person_data.name_span.char_range().context("Missing name span")?;
+    let name = updates.name.as_deref().unwrap_or(&original[range.clone()]);
+    let tail = &original[range.end..];
+    let tail = match &updates.comments {
+        None => tail.to_string(),
+        Some(comments) => {
+            let secret = tail.find(';').map(|offset| &tail[offset..]).unwrap_or("");
+            let public = if comments.is_empty() { String::new() } else { format!("\\{comments}") };
+            format!("{public}{secret}")
+        }
     };
-
-    let line = format!(
-        "{} {} {} {}         {}{}",
-        henry_str,
-        kids_field,
-        num_spouses,
-        person_data.spousal_index.as_usize(),
-        name,
-        if comments.is_empty() {
-            String::new()
-        } else {
-            format!("\\{}", comments)
-        }
-    );
-
-    Ok(line)
-}
-
-/// Count the number of children for a person
-/// 💡: Uses partnership relationships but filters by henry number to match parser logic
-fn count_children(genea: &Genea, person_id: Person) -> usize {
-    let person_data = &genea[person_id];
-    let henry_number = &person_data.henry_number;
-
-    // Only primary spouses can have children listed under their henry number
-    if !person_data.is_primary_spouse() {
-        return 0;
-    }
-
-    // Count children whose henry number is exactly one level deeper
-    person_data
-        .parent_in
-        .iter()
-        .flat_map(|&partnership_id| &genea[partnership_id].children)
-        .filter(|&&child_id| {
-            let child_data = &genea[child_id];
-            if child_data.is_primary_spouse() {
-                let child_hn = &child_data.henry_number;
-                child_hn.ancestry.len() == henry_number.ancestry.len() + 1
-                    && henry_number.is_prefix_of(child_hn)
-            } else {
-                false
-            }
-        })
-        .count()
-}
-
-/// Count the number of spouses for a person
-/// 💡: Counts unique partners across all partnerships (matching parser validation)
-fn count_spouses(genea: &Genea, person_id: Person) -> usize {
-    let person_data = &genea[person_id];
-
-    // Secondary spouses must have 0 spouse count
-    if !person_data.is_primary_spouse() {
-        return 0;
-    }
-
-    // Count unique partners across all partnerships
-    let unique_spouses: std::collections::BTreeSet<_> = person_data
-        .parent_in
-        .iter()
-        .flat_map(|&partnership_id| {
-            genea[partnership_id]
-                .parents
-                .iter()
-                .filter(|&&spouse_id| spouse_id != person_id)
-                .cloned()
-        })
-        .collect();
-
-    unique_spouses.len()
+    Ok(format!("{}{name}{tail}", &original[..range.start]))
 }
 
 /// Replace a specific line in the content
@@ -280,23 +201,21 @@ fn replace_line_in_content(
     line_number: usize,
     new_line: &str,
 ) -> anyhow::Result<String> {
-    let lines: Vec<&str> = content.lines().collect();
-
-    // Line numbers are 1-based
-    if line_number == 0 || line_number > lines.len() {
-        return Err(anyhow!("Invalid line number: {}", line_number));
-    }
-
-    let mut result = Vec::new();
-    for (i, line) in lines.iter().enumerate() {
-        if i + 1 == line_number {
-            result.push(new_line);
+    anyhow::ensure!(line_number > 0, "Invalid line number: {line_number}");
+    let mut found = false;
+    let mut result = String::new();
+    for (index, line) in content.split_inclusive('\n').enumerate() {
+        if index + 1 == line_number {
+            found = true;
+            result.push_str(new_line);
+            if line.ends_with("\r\n") { result.push_str("\r\n"); }
+            else if line.ends_with('\n') { result.push('\n'); }
         } else {
-            result.push(*line);
+            result.push_str(line);
         }
     }
-
-    Ok(result.join("\n"))
+    anyhow::ensure!(found, "Invalid line number: {line_number}");
+    Ok(result)
 }
 
 /// Edit a person in GitHub with automatic retry logic for merge conflicts.

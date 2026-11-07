@@ -111,7 +111,7 @@ impl<'a> JsonGen<'a> {
                 name: person_data.name.to_string(),
                 comments: person_data.comments.clone(),
                 gender: person_data.gender.to_string(),
-                citations: self.sources.extract(&person_data.private_comments),
+                citations: self.sources.extract_secrets(&person_data.annotations),
                 is_spouse: person_data.spousal_index.is_secondary(),
             },
             PersonRelationships {
@@ -168,6 +168,31 @@ impl<'a> JsonGen<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn annotations_export_only_configured_citations_from_secret_values() {
+        let input = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/genea/annotations.genea");
+        let mut content = std::fs::read_to_string(&input).unwrap();
+        content.push_str("    - Unknown: PAGE 99; do not publish\n    - Secret: PAGE 4\n");
+        let genea = Genea::from_genea_content(&content).unwrap();
+        let sources = CitationSources::load(&input).unwrap();
+        let response = JsonGen::new(&genea, &sources).root_response();
+        let json = serde_json::to_value(response).unwrap();
+        let first = &json["included"][0]["attributes"];
+        assert_eq!(first["comments"], "Public comment");
+        assert_eq!(first["citations"], serde_json::json!([
+            {"kind":"pdf","source":"pages","page":1},
+            {"kind":"pdf","source":"pages","page":2},
+            {"kind":"pdf","source":"pages","page":3}
+        ]));
+        assert_eq!(json["included"][1]["attributes"]["citations"], serde_json::json!([
+            {"kind":"pdf","source":"pages","page":4}
+        ]));
+        let text = json.to_string();
+        for private in ["private multiline", "example.test", "portrait", "do not publish", "annotations"] {
+            assert!(!text.contains(private));
+        }
+    }
 
     #[test]
     fn generation_uses_configuration_beside_input_and_validates_before_overwriting() {

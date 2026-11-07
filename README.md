@@ -104,3 +104,49 @@ Website search still supports partial names and typos and requires all query
 words to match. Exact name words rank before variants and fuzzy results. PDF
 highlighting matches any query word or listed variant at whole-word boundaries.
 The build copies the shared rules to the standalone viewer automatically.
+
+## Person annotations
+
+A person record may be followed by an ordered list of annotations. Header names
+and values are retained, including repeated or unrecognized headers:
+
+```text
+ 1 0 0 0 0 0 0 0 0 0 M 0 0 0         Example Person\Short public comment;legacy private note
+    - Secret: PAGE 17
+    - Custom: https://example.test/document:section
+    - Custom: Another value
+    - Secret:
+        A longer private account.
+
+        A second paragraph, including literal #, ; or \ characters.
+            Additional indentation is preserved.
+```
+
+Headers start with exactly four spaces and `- `. The first colon separates the
+header from its value; further colons are literal. Empty header names are errors.
+For inline values, one optional space after the colon is removed.
+
+A header with nothing after the colon starts a literal multiline value. Content
+lines have at least eight leading spaces; exactly eight are removed. Blank lines
+are retained. No escaping, interpolation, YAML syntax, or comment processing is
+applied inside the block. A new four-space annotation or person record ends it.
+An empty block is allowed. Tabs cannot replace required indentation. Errors
+identify the offending source line.
+
+`Secret` (case insensitive) is private. Existing `;...` notes become a `Secret`
+entry internally, before subsequent annotations, without rewriting the file.
+The `\` shorthand remains the public comment. Configured citation patterns run
+on each Secret value independently; only the extracted citations are exported,
+with duplicate source/page pairs removed. Unknown annotations are not exported.
+
+Annotations attach to the immediately preceding person record, including spouses.
+If that record references another person by alternate ID, annotations accumulate
+on that same person in file order, including when its defining record appears
+later. Existing restrictions on public comments and counts on alternate-ID
+records still apply. Name/comment edits preserve all annotation text, private suffixes, numeric columns, and line
+endings. Existing files need no migration.
+
+This establishes storage and parsing only. `Source`, `Image`, and `Note` currently
+behave like any other unknown header: preserved but not rendered. Person-specific
+attachment resolution, document icons, images, and public long-form notes can be
+added as explicit consumers of these annotations without changing the syntax.
