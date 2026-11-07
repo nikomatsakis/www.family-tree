@@ -9,6 +9,26 @@ import { loadGeneaFixture } from 'family-tree/tests/helpers/genea-fixtures';
 module('Integration | Component | d3-tree-renderer', function (hooks) {
   setupRenderingTest(hooks);
 
+  test('life date badges survive graph conversion and reserve room in the tree', function (assert) {
+    const renderer = createRenderer('d3-tree');
+    const person = {
+      id: 'example-person', name: 'Example Person', gender: 'M', parentIn: [], childIn: null,
+      lifeDates: [{ kind: 'birth', label: 'Born 20 Mar', yearRedacted: true },
+        { kind: 'death', label: 'Died 1 Apr 2020', yearRedacted: false }],
+    };
+    const graph = renderer.buildVisibleGraph(person);
+    assert.deepEqual(graph.getPerson(0).lifeDates, person.lifeDates);
+    const plain = renderer.personBoxMetrics(person.name);
+    const dated = renderer.personBoxMetrics(person.name, [], person.lifeDates);
+    assert.true(dated.height > plain.height);
+    const container = document.createElement('div');
+    renderer.renderToElement(container, renderer.prepareRenderData(graph));
+    assert.strictEqual(container.querySelectorAll('g.life-date-badge').length, 2);
+    assert.strictEqual(container.querySelector('g.life-date-birth text').textContent, 'Born 20 Mar');
+    assert.strictEqual(container.querySelector('g.life-date-death text').textContent, 'Died 1 Apr 2020');
+    assert.true(dated.width >= person.lifeDates.reduce((sum, d) => sum + renderer.dateBadgeWidth(d), 0));
+  });
+
   test('d3 tree renderer is available in renderer list', function (assert) {
     const displayNames = getRendererDisplayNames();
     assert.ok(

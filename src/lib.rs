@@ -5,6 +5,7 @@ use outline::Outline;
 use structopt::StructOpt;
 
 mod citations;
+mod life_dates;
 mod genea;
 mod html;
 mod json;
@@ -53,6 +54,7 @@ pub fn main() -> anyhow::Result<()> {
         } => {
             let genea = Genea::from_genea_doc(path)?;
             citations::CitationSources::load(path)?.validate(&genea)?;
+            life_dates::validate(&genea)?;
 
             if *dump {
                 eprintln!("{genea:#?}")

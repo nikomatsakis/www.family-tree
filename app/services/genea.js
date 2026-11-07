@@ -254,6 +254,10 @@ export class Person {
     return this.#attributes.comments;
   }
 
+  get lifeDates() {
+    return this.#attributes.lifeDates || [];
+  }
+
   get citations() {
     return this.#attributes.citations || [];
   }

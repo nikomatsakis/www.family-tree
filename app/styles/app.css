@@ -1469,3 +1469,30 @@ body {
   outline: 2px solid #1565c0;
   outline-offset: 2px;
 }
+
+
+/* Life dates use the same quiet badges in detail, search, and tree views. */
+.person-dates {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  vertical-align: middle;
+  margin: 3px 0 3px 8px;
+}
+.person-header > .person-dates { margin-left: 0; margin-bottom: 8px; }
+span.life-date-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border: 1px solid #cbd8d6;
+  border-radius: 999px;
+  background: #edf4f2;
+  color: #34534d;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+span.life-date-death { background: #f2f0f5; border-color: #d8d2df; color: #594d65; }
+g.life-date-badge > rect { fill: #edf4f2; stroke: #cbd8d6; stroke-width: 0.7; }
+g.life-date-death > rect { fill: #f2f0f5; stroke: #d8d2df; }
+g.life-date-badge > text { fill: #34534d; font: 11px system-ui, sans-serif; }
+g.life-date-death > text { fill: #594d65; }

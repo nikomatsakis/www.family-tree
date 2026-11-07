@@ -353,11 +353,14 @@ export default class D3TreeRenderer extends BaseRenderer {
 
     const person = renderData.data?.renderTree?.persons.find((p) => p.id === rect.id);
 
+    const dates = person?.lifeDates || [];
+    const nameY = rect.height / 2 - (dates.length ? 14 : 0);
+
     // Add text (centered in rectangle)
     rectGroup
       .append('text')
       .attr('x', (rect.width - (person?.citations?.length || 0) * 32) / 2)
-      .attr('y', rect.height / 2)
+      .attr('y', nameY)
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .attr('font-family', 'system-ui, -apple-system, sans-serif')
@@ -375,7 +378,7 @@ export default class D3TreeRenderer extends BaseRenderer {
         .attr('rel', 'noopener noreferrer')
         .attr('aria-label', label)
         .attr('class', 'person-citation')
-        .attr('transform', `translate(${rect.width - (citations.length - index) * 32 - 6}, ${rect.height / 2 - 16})`)
+        .attr('transform', `translate(${rect.width - (citations.length - index) * 32 - 6}, ${nameY - 16})`)
         .on('click', (event) => event.stopPropagation());
       link.append('title').text(label);
       link.append('rect').attr('class', 'citation-hit-area')
@@ -383,6 +386,22 @@ export default class D3TreeRenderer extends BaseRenderer {
       const icon = link.append('g').attr('class', 'source-icon')
         .attr('transform', 'translate(5, 4) scale(0.92)');
       SOURCE_ICON_PATHS.forEach((path) => icon.append('path').attr('d', path));
+    });
+
+    const badgeWidths = dates.map((date) => this.dateBadgeWidth(date));
+    const badgesWidth = badgeWidths.reduce((sum, width) => sum + width, 0) + Math.max(0, dates.length - 1) * 6;
+    let badgeX = (rect.width - badgesWidth) / 2;
+    dates.forEach((date, index) => {
+      const badge = rectGroup.append('g')
+        .attr('class', `life-date-badge life-date-${date.kind}`)
+        .attr('transform', `translate(${badgeX}, ${nameY + 14})`)
+        .attr('aria-label', date.label);
+      badge.append('title').text(date.yearRedacted ? 'Birth year withheld for the last 75 years' : date.label);
+      badge.append('rect').attr('width', badgeWidths[index]).attr('height', 20).attr('rx', 10);
+      badge.append('text').attr('x', badgeWidths[index] / 2).attr('y', 10)
+        .attr('dominant-baseline', 'middle').attr('text-anchor', 'middle')
+        .text(date.label);
+      badgeX += badgeWidths[index] + 6;
     });
 
     // Add click navigation and hover effects for person boxes (not buttons)
@@ -666,15 +685,20 @@ export default class D3TreeRenderer extends BaseRenderer {
    * @param {string} text - Text content for the person box
    * @returns {Object} Complete metrics for the person box
    */
-  personBoxMetrics(text, citations = []) {
+  dateBadgeWidth(date) {
+    return this.measureText(date.label) * (11 / 14) + 16;
+  }
+
+  personBoxMetrics(text, citations = [], dates = []) {
     const textWidth = this.measureText(text);
     const textHeight = this.charHeight;
 
     const width =
-      textWidth + citations.length * 32 +
+      Math.max(textWidth + citations.length * 32,
+        dates.reduce((sum, date) => sum + this.dateBadgeWidth(date), 0) + Math.max(0, dates.length - 1) * 6) +
       2 * (this.personPadding + this.personBorder + this.personMargin);
     const height =
-      textHeight +
+      textHeight + (dates.length ? 28 : 0) +
       2 * (this.personPadding + this.personBorder + this.personMargin);
 
     // Calculate port positions

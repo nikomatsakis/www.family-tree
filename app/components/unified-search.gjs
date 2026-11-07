@@ -1,3 +1,4 @@
+import PersonDates from './person-dates';
 import Component from '@glimmer/component';
 import { action } from '@ember/object';
 import { tracked } from '@glimmer/tracking';
@@ -38,6 +39,7 @@ export default class UnifiedSearch extends Component {
                   >
                     {{person.name}}
                   </a>
+                  <PersonDates @person={{person}} />
                 {{else}}
                   <PersonLink @person={{person}} />
                 {{/if}}

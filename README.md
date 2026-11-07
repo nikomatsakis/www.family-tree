@@ -179,3 +179,35 @@ The sidecar follows the source's public/encrypted visibility. The original PDF
 is preserved; its standalone download does not gain a text layer.
 
 `Image` and `Note` remain preserved metadata without rendering behavior.
+
+
+### Birth and death metadata
+
+Put dates on the primary person record, outside the biography and `Secret` notes:
+
+```text
+    - Birth: 1930-07-03
+    - Death: 2005-10
+```
+
+Use `YYYY`, `YYYY-MM`, or `YYYY-MM-DD`. A birthday without a known year uses
+`--MM-DD`. Births also support `circa 1924`, `1999?`, `1857 or 1850`, and
+`1889? or 1892–1893`. Keep uncertain numeric dates explicit, for example
+`1984 (12/9; day/month order uncertain)` or
+`unknown (9/12; day/month order uncertain)`. Death values may preserve historical
+wording such as `1930s` or an uncertain day/month order. Repeated annotations are
+allowed; identical displayed badges are deduplicated. Calendar dates are checked
+before generation. Marriage dates, places, and causes of death remain biography
+or private notes.
+
+The detail page, tree, and person links show date badges. Birth years greater than
+or equal to the current UTC build year minus 75 are withheld, including for
+people with a death date. In a 2026 build, 1951 and later are withheld. Month/day
+remain visible when known; year-only and uncertain recent dates show “Born year
+private”. If conflicting birth annotations include a recent year, all candidate
+birth years for that person are withheld. The cutoff advances on each build.
+
+Redaction happens during JSON generation: the browser gets only display labels,
+not raw birth dates or hidden year attributes. Original dates remain in the
+private genealogy file. Linked source PDFs and their OCR are unchanged by this
+badge/display policy.

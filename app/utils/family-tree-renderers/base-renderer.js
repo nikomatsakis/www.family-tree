@@ -72,6 +72,7 @@ export default class BaseRenderer {
       );
 
       renderPerson.citations = person.citations || [];
+      renderPerson.lifeDates = person.lifeDates || [];
 
       // Add to render tree and store index mapping
       const idx = renderTree.addPerson(renderPerson);

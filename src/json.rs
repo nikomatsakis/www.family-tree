@@ -11,6 +11,7 @@ use crate::{
 pub fn generate(genea: &Genea, genea_path: &Path, output_path: impl AsRef<Path>) -> anyhow::Result<()> {
     let sources = CitationSources::load(genea_path)?;
     sources.validate(genea)?;
+    crate::life_dates::validate(genea)?;
     let output_path = output_path.as_ref();
 
     if output_path.exists() {
@@ -31,6 +32,7 @@ pub fn generate(genea: &Genea, genea_path: &Path, output_path: impl AsRef<Path>)
 struct JsonGen<'a> {
     genea: &'a Genea,
     sources: &'a CitationSources,
+    year: i32,
 }
 
 #[derive(Serialize)]
@@ -51,6 +53,8 @@ struct PersonAttributes {
     comments: String,
     gender: String,
     citations: Vec<Citation>,
+    #[serde(rename = "lifeDates", skip_serializing_if = "Vec::is_empty")]
+    life_dates: Vec<crate::life_dates::LifeDate>,
     #[serde(rename = "isSpouse")]
     is_spouse: bool,
 }
@@ -71,7 +75,7 @@ struct PartnershipRelationships {
 
 impl<'a> JsonGen<'a> {
     fn new(genea: &'a Genea, sources: &'a CitationSources) -> Self {
-        Self { genea, sources }
+        Self { genea, sources, year: crate::life_dates::current_year() }
     }
 
     fn root_response(&self) -> Response {
@@ -113,6 +117,7 @@ impl<'a> JsonGen<'a> {
                 comments: person_data.comments.clone(),
                 gender: person_data.gender.to_string(),
                 citations: self.sources.extract_annotations(&person_data.annotations),
+                life_dates: crate::life_dates::extract(&person_data.annotations, self.year),
                 is_spouse: person_data.spousal_index.is_secondary(),
             },
             PersonRelationships {
@@ -169,6 +174,22 @@ impl<'a> JsonGen<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn public_json_contains_only_redacted_life_date_labels() {
+        let genea = Genea::from_genea_content(" 1 0 0 0 0 0 0 0 0 0 M 0 0 0         Example Person\\Teacher\n    - Birth: 2001-03-20\n    - Death: 2020-04-01\n    - Secret: private details\n").unwrap();
+        crate::life_dates::validate(&genea).unwrap();
+        let sources = CitationSources::default();
+        let gen = JsonGen { genea: &genea, sources: &sources, year: 2026 };
+        let json = serde_json::to_value(gen.root_response()).unwrap();
+        let attributes = &json["included"][0]["attributes"];
+        assert_eq!(attributes["comments"], "Teacher");
+        assert_eq!(attributes["lifeDates"][0]["label"], "Born 20 Mar");
+        assert_eq!(attributes["lifeDates"][0]["yearRedacted"], true);
+        assert_eq!(attributes["lifeDates"][1]["label"], "Died 1 Apr 2020");
+        assert!(!json.to_string().contains("2001"));
+        assert!(!json.to_string().contains("private details"));
+    }
 
     #[test]
     fn annotations_export_configured_sources_without_private_text() {
