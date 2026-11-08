@@ -63,8 +63,18 @@ export default class GeneaService extends Service {
 
   async _fetchAndDecryptData() {
     // Try encrypted version first
-    const encryptedResponse = await fetch('/api/v1/roots.json.enc');
-    if (encryptedResponse.ok) {
+    // 💡: When offline, the service worker can only answer from its cache. On
+    // an unencrypted deploy roots.json.enc was never cached (it doesn't
+    // exist), so this probe throws a network error; treat that as "no
+    // encrypted file" and fall through to the cached roots.json instead of
+    // failing to load entirely.
+    let encryptedResponse = null;
+    try {
+      encryptedResponse = await fetch('/api/v1/roots.json.enc');
+    } catch (error) {
+      console.log('No encrypted data available (offline?):', error);
+    }
+    if (encryptedResponse?.ok) {
       // Encrypted file exists - check if we have a password
       const password = localStorage.getItem('familyTreePassword');
       if (!password) {

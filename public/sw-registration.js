@@ -112,53 +112,24 @@
   // Simple update notification
   function showUpdateAvailable() {
     // You can enhance this later with a proper UI component
-    if (confirm('New family tree data is available! Reload to update?')) {
+    if (
+      confirm(
+        'A new version of the family tree app is available. Reload to update?',
+      )
+    ) {
       window.location.reload();
     }
   }
 
   // Export for use by family tree components
   window.FamilyTreePWA = {
-    // Force refresh family data - clears cache and reloads
+    // 💡: The service worker revalidates family data with ETags on every
+    // load (network first, cache fallback), so a plain reload picks up new
+    // data when online and keeps working offline. We deliberately do NOT
+    // clear caches here any more: that threw away the offline copy,
+    // including reference PDFs, and forced everything to re-download.
     refreshFamilyData: function () {
-      // Don't clear cache if offline - that would break everything!
-      if (!navigator.onLine) {
-        console.log('📱 Offline - cannot refresh data from server');
-        // Could show a notification to the user here
-        if (
-          confirm(
-            'You are offline. The app will reload but use cached data. Continue?',
-          )
-        ) {
-          window.location.reload();
-        }
-        return;
-      }
-
-      // Online - safe to clear cache and reload
-      if ('serviceWorker' in navigator && 'caches' in window) {
-        caches
-          .keys()
-          .then((cacheNames) => {
-            // Clear all family tree related caches
-            const familyDataCaches = cacheNames.filter(
-              (name) =>
-                name.includes('family-tree') ||
-                name.includes('family-data') ||
-                name.includes('api'),
-            );
-
-            return Promise.all(
-              familyDataCaches.map((cacheName) => caches.delete(cacheName)),
-            );
-          })
-          .then(() => {
-            console.log('🗑️ Family data cache cleared');
-            window.location.reload();
-          });
-      } else {
-        window.location.reload();
-      }
+      window.location.reload();
     },
 
     // Check if we're working offline
