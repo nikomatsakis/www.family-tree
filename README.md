@@ -34,7 +34,7 @@ FAMILY_TREE_PASSWORD="your-shared-secret" cargo run -- build
 
 ## Technologies in use
 
-* Rust to parse the `genea.doc` file and generate JSON data in `public/api/v1`
+* Rust to parse the `genea.txt` file and generate JSON data in `public/api/v1`
 * [Ember] for the website itself
 
 [Ember]: https://emberjs.com/
@@ -77,7 +77,7 @@ uses the same source IDs; no pattern or PDF filename is hardcoded in the parser.
 
 Files resolve relative to the configuration. `pageOffset` is added to a cited
 page number to get the physical PDF page (for example, use 2 for two cover pages).
-`cargo run -- build path/to/genea.doc` and `serve` package the configured PDFs.
+`cargo run -- build path/to/genea.txt` and `serve` package the configured PDFs.
 The lower-level `json` command generates data only.
 
 - `public`: copies the PDF into the site's reference-material directory. Access

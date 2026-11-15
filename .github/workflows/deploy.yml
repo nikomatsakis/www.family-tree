@@ -34,7 +34,7 @@ jobs:
       - name: Npm install
         run: npm install
       - name: Build
-        run: cargo run -- build genea.doc
+        run: cargo run -- build genea.txt
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Optional advisory audit: python3 scripts/audit-gender.py path/to/genea.doc.
+"""Optional advisory audit: python3 scripts/audit-gender.py path/to/genea.txt.
 
 Same-gender partnerships and names can be legitimate. Warnings request source
 review, never make corrections, and do not fail the normal consistency check.

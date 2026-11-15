@@ -14,12 +14,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 This is a family tree application that:
-1. Parses genealogy data from a custom `genea.doc` format using Rust
+1. Parses genealogy data from a custom `genea.txt` format using Rust
 2. Generates JSON API data in `public/api/v1/`
 3. Serves the data through an Ember.js web application
 
 ### Data Flow
-1. Rust parser reads `genea.doc`
+1. Rust parser reads `genea.txt`
 2. Generates JSON files in `public/api/v1/`
 3. Ember app fetches JSON via genea service
 4. Components render family tree visualization
@@ -60,7 +60,7 @@ This codebase values visual validation and real data flows over isolated unit te
 ## Key Commands
 
 ### Running the Application
-- `cargo run -- serve` - Parse genea.doc and serve the web app
+- `cargo run -- serve` - Parse genea.txt and serve the web app
 - `pnpm start` - Run Ember development server only
 
 ### Testing
@@ -105,7 +105,7 @@ test('my integration test', async function (assert) {
 
 ## Important Notes
 
-- The genea.doc file must be sorted by henry number
+- The genea.txt file must be sorted by henry number
 - JSON generation happens at build/serve time, not runtime
 - Ember uses tracked properties and async data patterns
 - All styling in `app/styles/app.css`

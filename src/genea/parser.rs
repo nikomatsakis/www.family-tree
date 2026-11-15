@@ -1,6 +1,6 @@
 //! # Genea Parser
 //!
-//! This module parses the genea.doc format into a structured family tree.
+//! This module parses the genea.txt format into a structured family tree.
 //!
 //! ## Linking people
 //!
@@ -1531,7 +1531,7 @@ impl FromStr for HenryNumber {
 
 impl HenryNumber {
     /// The "alt" str is a compact henry number with one digit per generation and no spaces.
-    /// It is used in `genea.doc` for when a person appears in more than one family line.
+    /// It is used in `genea.txt` for when a person appears in more than one family line.
     fn from_alt_str(s: &str) -> anyhow::Result<Self> {
         let expanded: String = Itertools::intersperse(s.chars(), ' ').collect();
         Self::from_str(&expanded)

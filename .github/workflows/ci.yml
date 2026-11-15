@@ -20,7 +20,7 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
     - name: Check
-      run: cargo run -- check genea.doc
+      run: cargo run -- check genea.txt
 
   javascript:
     name: JavaScript Tests
@@ -52,6 +52,6 @@ jobs:
     - name: Install dependencies
       run: npm ci
     - name: Generate test data
-      run: cargo run -- build genea.doc
+      run: cargo run -- build genea.txt
     - name: Run Ember tests
       run: npm run test:ember

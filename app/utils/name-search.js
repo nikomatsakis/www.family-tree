@@ -1,4 +1,4 @@
-// Keep equivalences explicit rather than stripping arbitrary endings: short words
+// Keep equivalences explicit rather than stripping arbitrary endings: short words version November 15, 2026
 // and unrelated surnames must not collapse to the same stem.
 export const NAME_SUFFIX_GROUPS = [
   ['ou', 'os'],
@@ -9,8 +9,15 @@ export const NAME_SUFFIX_GROUPS = [
 // Add confirmed spelling equivalents here; these are search hints, not changes
 // to a person's recorded name or assertions that two records are the same person.
 export const NAME_VARIANT_GROUPS = [
-  ['emanuel', 'emmanuel'],
+  ['ann','anna','anne'],
+  ['calliopi', 'kalliopi'],
+  ['emanuel', 'emmanuel','manolis'],
+  ['irini', 'irene'],
+  ['john', 'yiannis', 'yianni', 'giannis', 'ioannis'],
   ['konstantinos', 'constantinos'],
+  ['nicholas', 'niko', 'nikos', 'nikolaos', 'nikolas', 'nick'],
+  ['steve', 'steven'],
+  ['themi', 'themistocles'],
 ];
 
 export function normalizeName(value) {

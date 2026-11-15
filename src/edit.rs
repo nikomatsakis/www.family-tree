@@ -43,15 +43,15 @@ pub enum GitHubEditError {
     FileNotFound { path: String },
 }
 
-/// Prepares an edit operation for a person in a genea.doc file.
+/// Prepares an edit operation for a person in a genea.txt file.
 ///
-/// This function takes the current genea.doc content and prepares an updated version
+/// This function takes the current genea.txt content and prepares an updated version
 /// with the requested changes, while validating that the current state matches expectations
 /// to prevent conflicting edits.
 ///
 /// # Arguments
 ///
-/// * `genea_content` - The current contents of the genea.doc file
+/// * `genea_content` - The current contents of the genea.txt file
 /// * `coordinates` - Person coordinates in format "henry-number-spousal-index" (e.g., "1-2-3-0")
 /// * `expected_state` - The expected current state of the person (for conflict detection)
 /// * `updated_state` - The desired new state of the person
@@ -68,7 +68,7 @@ pub enum GitHubEditError {
 /// Returns an error if:
 /// - The coordinates are invalid or the person is not found
 /// - The expected state doesn't match the current state (conflicting edit)
-/// - The genea.doc content cannot be parsed
+/// - The genea.txt content cannot be parsed
 ///
 /// # Example
 ///
@@ -108,8 +108,8 @@ pub fn prepare_edit(
     // Parse coordinates
     let coords = Coordinates::parse(coordinates).context("Invalid person coordinates")?;
 
-    // Parse the genea.doc content
-    let genea = Genea::from_genea_content(genea_content).context("Failed to parse genea.doc")?;
+    // Parse the genea.txt content
+    let genea = Genea::from_genea_content(genea_content).context("Failed to parse genea.txt")?;
 
     // Find the person
     let person_id = genea
@@ -220,7 +220,7 @@ fn replace_line_in_content(
 
 /// Edit a person in GitHub with automatic retry logic for merge conflicts.
 ///
-/// This function fetches the current genea.doc from GitHub, applies the edit using
+/// This function fetches the current genea.txt from GitHub, applies the edit using
 /// `prepare_edit()`, and commits the changes back. If a merge conflict occurs due to
 /// concurrent edits, it will retry up to 3 times with fresh content.
 ///
@@ -229,7 +229,7 @@ fn replace_line_in_content(
 /// * `octocrab` - GitHub API client
 /// * `owner` - Repository owner
 /// * `repo` - Repository name  
-/// * `file_path` - Path to genea.doc file in the repository
+/// * `file_path` - Path to genea.txt file in the repository
 /// * `coordinates` - Person coordinates in "henry-number-spousal-index" format
 /// * `expected_state` - Expected current state (for conflict detection)
 /// * `updated_state` - Desired new state
@@ -269,7 +269,7 @@ fn replace_line_in_content(
 ///     &octocrab,
 ///     "owner",
 ///     "repo",
-///     "genea.doc",
+///     "genea.txt",
 ///     "1-2-0",
 ///     &expected,
 ///     &updated,
@@ -307,7 +307,7 @@ pub async fn edit_person_in_github(
             .decoded_content()
             .ok_or_else(|| anyhow!("File content is empty or invalid"))?;
 
-        // Prepare the edit by parsing genea.doc, validating state, and generating the updated line
+        // Prepare the edit by parsing genea.txt, validating state, and generating the updated line
         let prepared_edit = prepare_edit(&content_str, coordinates, expected_state, updated_state)
             .map_err(GitHubEditError::ContentPreparation)?;
 
@@ -441,7 +441,7 @@ mod tests {
     fn test_github_edit_error_types() {
         // Test error type construction
         let error = GitHubEditError::FileNotFound {
-            path: "genea.doc".to_string(),
+            path: "genea.txt".to_string(),
         };
         assert!(error.to_string().contains("File not found"));
 

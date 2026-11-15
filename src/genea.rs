@@ -176,7 +176,7 @@ impl Partnership {
     }
 }
 
-/// These "coordinates" map to the way the person is defined in the `genea.doc` file.
+/// These "coordinates" map to the way the person is defined in the `genea.txt` file.
 /// The combination of a (lowest) henry-number, gender, and spousal index is a unique identifier.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Coordinates {

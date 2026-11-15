@@ -21,7 +21,7 @@ test("packages public and encrypted sources without retaining public copies", as
       },
     };
     fs.writeFileSync("reference-material.json", JSON.stringify(config));
-    prepareCitations("genea.doc");
+    prepareCitations("genea.txt");
     assert.equal(
       JSON.parse(fs.readFileSync("public/reference-material/pages.json"))
         .pageOffset,
@@ -36,11 +36,11 @@ test("packages public and encrypted sources without retaining public copies", as
     fs.writeFileSync("reference-material.json", JSON.stringify(config));
     delete process.env.FAMILY_TREE_PASSWORD;
     assert.throws(
-      () => prepareCitations("genea.doc"),
+      () => prepareCitations("genea.txt"),
       /requires FAMILY_TREE_PASSWORD/,
     );
     process.env.FAMILY_TREE_PASSWORD = "test-only-password";
-    prepareCitations("genea.doc");
+    prepareCitations("genea.txt");
     assert.deepEqual(JSON.parse(fs.readFileSync("public/api/v1/source-pages.json")).ocr, ocr);
     await encryptDirectory("public/api/v1");
     assert.equal(fs.existsSync("public/reference-material/pages.pdf"), false);

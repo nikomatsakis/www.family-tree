@@ -134,6 +134,8 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
 
     let github_owner = env::var("GITHUB_OWNER").unwrap_or_else(|_| "nikomatsakis".to_string());
     let github_repo = env::var("GITHUB_REPO").unwrap_or_else(|_| "www.family-tree".to_string());
+    // 💡: Configurable alongside GITHUB_REPO so a site can point at a differently named file.
+    let genea_file = env::var("GENEA_FILE").unwrap_or_else(|_| "genea.txt".to_string());
 
     // 💡: Simple GitHub API test - just fetch repo info to verify connectivity
     let octocrab = match octocrab::OctocrabBuilder::new()
@@ -171,7 +173,7 @@ async fn function_handler(event: LambdaEvent<Value>) -> Result<Value, Error> {
         &octocrab,
         &github_owner,
         &github_repo,
-        "genea.doc",
+        &genea_file,
         &request.person_id,
         &expected_state,
         &updated_state,
