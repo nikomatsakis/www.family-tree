@@ -351,7 +351,9 @@ export default class D3TreeRenderer extends BaseRenderer {
       rectElement.attr('stroke', d3.color(strokeColor).brighter(0.5));
     }
 
-    const person = renderData.data?.renderTree?.persons.find((p) => p.id === rect.id);
+    const person = renderData.data?.renderTree?.persons.find(
+      (p) => p.id === rect.id,
+    );
 
     const dates = person?.lifeDates || [];
     const nameY = rect.height / 2 - (dates.length ? 14 : 0);
@@ -372,34 +374,61 @@ export default class D3TreeRenderer extends BaseRenderer {
     // Reserve a compact, keyboard-accessible source button beside the name.
     (person?.citations || []).forEach((citation, index, citations) => {
       const label = `Read ${citation.title || 'original source'}, page ${citation.page}, for ${person.name} (opens in a new tab)`;
-      const link = rectGroup.append('a')
+      const link = rectGroup
+        .append('a')
         .attr('href', citationLink(citation, person.name))
         .attr('target', '_blank')
         .attr('rel', 'noopener noreferrer')
         .attr('aria-label', label)
         .attr('class', 'person-citation')
-        .attr('transform', `translate(${rect.width - (citations.length - index) * 32 - 6}, ${nameY - 16})`)
+        .attr(
+          'transform',
+          `translate(${rect.width - (citations.length - index) * 32 - 6}, ${nameY - 16})`,
+        )
         .on('click', (event) => event.stopPropagation());
       link.append('title').text(label);
-      link.append('rect').attr('class', 'citation-hit-area')
-        .attr('width', 32).attr('height', 32).attr('rx', 6);
-      const icon = link.append('g').attr('class', 'source-icon')
+      link
+        .append('rect')
+        .attr('class', 'citation-hit-area')
+        .attr('width', 32)
+        .attr('height', 32)
+        .attr('rx', 6);
+      const icon = link
+        .append('g')
+        .attr('class', 'source-icon')
         .attr('transform', 'translate(5, 4) scale(0.92)');
       SOURCE_ICON_PATHS.forEach((path) => icon.append('path').attr('d', path));
     });
 
     const badgeWidths = dates.map((date) => this.dateBadgeWidth(date));
-    const badgesWidth = badgeWidths.reduce((sum, width) => sum + width, 0) + Math.max(0, dates.length - 1) * 6;
+    const badgesWidth =
+      badgeWidths.reduce((sum, width) => sum + width, 0) +
+      Math.max(0, dates.length - 1) * 6;
     let badgeX = (rect.width - badgesWidth) / 2;
     dates.forEach((date, index) => {
-      const badge = rectGroup.append('g')
+      const badge = rectGroup
+        .append('g')
         .attr('class', `life-date-badge life-date-${date.kind}`)
         .attr('transform', `translate(${badgeX}, ${nameY + 14})`)
         .attr('aria-label', date.label);
-      badge.append('title').text(date.yearRedacted ? 'Birth year withheld for the last 75 years' : date.label);
-      badge.append('rect').attr('width', badgeWidths[index]).attr('height', 20).attr('rx', 10);
-      badge.append('text').attr('x', badgeWidths[index] / 2).attr('y', 10)
-        .attr('dominant-baseline', 'middle').attr('text-anchor', 'middle')
+      badge
+        .append('title')
+        .text(
+          date.yearRedacted
+            ? 'Birth year withheld for the last 75 years'
+            : date.label,
+        );
+      badge
+        .append('rect')
+        .attr('width', badgeWidths[index])
+        .attr('height', 20)
+        .attr('rx', 10);
+      badge
+        .append('text')
+        .attr('x', badgeWidths[index] / 2)
+        .attr('y', 10)
+        .attr('dominant-baseline', 'middle')
+        .attr('text-anchor', 'middle')
         .text(date.label);
       badgeX += badgeWidths[index] + 6;
     });
@@ -694,11 +723,15 @@ export default class D3TreeRenderer extends BaseRenderer {
     const textHeight = this.charHeight;
 
     const width =
-      Math.max(textWidth + citations.length * 32,
-        dates.reduce((sum, date) => sum + this.dateBadgeWidth(date), 0) + Math.max(0, dates.length - 1) * 6) +
+      Math.max(
+        textWidth + citations.length * 32,
+        dates.reduce((sum, date) => sum + this.dateBadgeWidth(date), 0) +
+          Math.max(0, dates.length - 1) * 6,
+      ) +
       2 * (this.personPadding + this.personBorder + this.personMargin);
     const height =
-      textHeight + (dates.length ? 28 : 0) +
+      textHeight +
+      (dates.length ? 28 : 0) +
       2 * (this.personPadding + this.personBorder + this.personMargin);
 
     // Calculate port positions

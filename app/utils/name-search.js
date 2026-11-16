@@ -9,9 +9,9 @@ export const NAME_SUFFIX_GROUPS = [
 // Add confirmed spelling equivalents here; these are search hints, not changes
 // to a person's recorded name or assertions that two records are the same person.
 export const NAME_VARIANT_GROUPS = [
-  ['ann','anna','anne'],
+  ['ann', 'anna', 'anne'],
   ['calliopi', 'kalliopi'],
-  ['emanuel', 'emmanuel','manolis'],
+  ['emanuel', 'emmanuel', 'manolis'],
   ['irini', 'irene'],
   ['john', 'yiannis', 'yianni', 'giannis', 'ioannis'],
   ['konstantinos', 'constantinos'],

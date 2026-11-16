@@ -106,7 +106,9 @@ async function render() {
   await textLayer.render();
   if (version !== renderVersion) return;
   const ocr = metadata.ocr?.pages?.[pageNumber - 1];
-  const items = ocr ? ocr.words.map(word => ({ textContent: word.text })) : textLayer.textDivs;
+  const items = ocr
+    ? ocr.words.map((word) => ({ textContent: word.text }))
+    : textLayer.textDivs;
   const matches = matchingItems(items, $("name").value);
   const origin = $("sheet").getBoundingClientRect();
   for (const match of matches) {

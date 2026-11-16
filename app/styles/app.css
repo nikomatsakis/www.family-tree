@@ -187,7 +187,9 @@
   border-radius: 50%;
   cursor: pointer;
   color: white;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 10%), 0 2px 4px -1px rgb(0 0 0 / 6%);
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 10%),
+    0 2px 4px -1px rgb(0 0 0 / 6%);
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -197,7 +199,9 @@
 
 .floating-search-button:hover {
   background: #2563eb;
-  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%), 0 4px 6px -2px rgb(0 0 0 / 5%);
+  box-shadow:
+    0 10px 15px -3px rgb(0 0 0 / 10%),
+    0 4px 6px -2px rgb(0 0 0 / 5%);
   transform: translateY(-1px);
 }
 
@@ -775,15 +779,16 @@
   background: white;
   border: 1px solid #007bff;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  animation: slideIn 0.3s ease-out;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+  animation: slide-in 0.3s ease-out;
 }
 
-@keyframes slideIn {
+@keyframes slide-in {
   from {
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -846,7 +851,7 @@
   padding: 24px;
   margin: 2rem 0;
   text-align: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
 }
 
 .install-header {
@@ -868,14 +873,14 @@
 }
 
 .install-instructions p {
-  margin: 0 0 20px 0;
+  margin: 0 0 20px;
   opacity: 0.9;
   font-size: 16px;
 }
 
 .install-button {
-  background: rgba(255, 255, 255, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgb(255 255 255 / 20%);
+  border: 2px solid rgb(255 255 255 / 30%);
   color: white;
   padding: 12px 24px;
   border-radius: 8px;
@@ -887,8 +892,8 @@
 }
 
 .install-button:hover {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: rgb(255 255 255 / 30%);
+  border-color: rgb(255 255 255 / 50%);
   transform: translateY(-2px);
 }
 
@@ -902,7 +907,7 @@
 }
 
 .install-step {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgb(255 255 255 / 10%);
   padding: 12px 16px;
   border-radius: 8px;
   backdrop-filter: blur(10px);
@@ -914,33 +919,33 @@
   font-size: 14px;
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .landing-page {
     padding: 1rem;
   }
-  
+
   .search-container {
     margin-bottom: 2rem;
   }
-  
+
   .search-box {
     padding: 0.6rem 0.8rem;
     font-size: 16px; /* Prevents zoom on iOS */
   }
-  
+
   .install-instructions {
     margin: 1rem 0;
     padding: 20px;
   }
-  
+
   .install-instructions h3 {
     font-size: 18px;
   }
-  
+
   .install-instructions p {
     font-size: 14px;
   }
-  
+
   .install-button {
     padding: 10px 20px;
     font-size: 14px;
@@ -958,7 +963,7 @@
 }
 
 .btn-primary {
-  background: #0066cc;
+  background: #06c;
   color: white;
 }
 
@@ -987,7 +992,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgb(0 0 0 / 80%);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -998,7 +1003,7 @@
   background: white;
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px rgb(0 0 0 / 30%);
   max-width: 400px;
   width: 90%;
   text-align: center;
@@ -1040,7 +1045,7 @@
 .password-input-group input:focus {
   outline: none;
   border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  box-shadow: 0 0 0 2px rgb(0 123 255 / 25%);
 }
 
 .password-input-group input:disabled {
@@ -1089,7 +1094,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgb(255 255 255 / 90%);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -1107,11 +1112,11 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgb(255 255 255 / 95%);
   backdrop-filter: blur(5px);
   border-top: 1px solid #e0e0e0;
   padding: 0.5rem 1rem;
-  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -2px 4px rgb(0 0 0 / 10%);
   z-index: 100;
 }
 
@@ -1181,7 +1186,7 @@ body {
   color: white;
   border: none;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 20%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1192,7 +1197,7 @@ body {
 .floating-edit-button:hover {
   background: #0056b3;
   transform: scale(1.05);
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 12px rgb(0 0 0 / 30%);
 }
 
 .floating-edit-button.has-pending-edit {
@@ -1221,19 +1226,24 @@ body {
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Edit dialog */
 .edit-dialog-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgb(0 0 0 / 50%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1248,7 +1258,7 @@ body {
   width: 90%;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px rgb(0 0 0 / 30%);
 }
 
 .edit-dialog h3 {
@@ -1285,7 +1295,8 @@ body {
   margin-top: 0;
 }
 
-.edit-field-input, .edit-field-textarea {
+.edit-field-input,
+.edit-field-textarea {
   width: 100%;
   padding: 0.75rem;
   border: 1px solid #ccc;
@@ -1296,10 +1307,11 @@ body {
   transition: border-color 0.2s;
 }
 
-.edit-field-input:focus, .edit-field-textarea:focus {
+.edit-field-input:focus,
+.edit-field-textarea:focus {
   outline: none;
   border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  box-shadow: 0 0 0 2px rgb(0 123 255 / 25%);
 }
 
 .edit-field-textarea {
@@ -1313,7 +1325,7 @@ body {
 }
 
 .edit-user-info h4 {
-  margin: 0 0 1rem 0;
+  margin: 0 0 1rem;
   color: #666;
   font-size: 1rem;
   font-weight: bold;
@@ -1344,7 +1356,7 @@ body {
 .edit-user-info input:focus {
   outline: none;
   border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  box-shadow: 0 0 0 2px rgb(0 123 255 / 25%);
 }
 
 .edit-timing-note {
@@ -1360,7 +1372,8 @@ body {
   justify-content: flex-end;
 }
 
-.btn-submit-edit, .btn-cancel-edit {
+.btn-submit-edit,
+.btn-cancel-edit {
   padding: 0.75rem 1.5rem;
   border: 1px solid;
   border-radius: 4px;
@@ -1405,7 +1418,7 @@ body {
   border-radius: 4px;
   border: 1px solid #c3e6cb;
   z-index: 1001;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
 }
 
 .refresh-countdown {
@@ -1450,7 +1463,7 @@ body {
 
 .source-icon {
   fill: none;
-  stroke: currentColor;
+  stroke: currentcolor;
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -1470,7 +1483,6 @@ body {
   outline-offset: 2px;
 }
 
-
 /* Life dates use the same quiet badges in detail, search, and tree views. */
 .person-dates {
   display: inline-flex;
@@ -1479,7 +1491,12 @@ body {
   vertical-align: middle;
   margin: 3px 0 3px 8px;
 }
-.person-header > .person-dates { margin-left: 0; margin-bottom: 8px; }
+
+.person-header > .person-dates {
+  margin-left: 0;
+  margin-bottom: 8px;
+}
+
 span.life-date-badge {
   display: inline-block;
   padding: 3px 9px;
@@ -1491,8 +1508,31 @@ span.life-date-badge {
   font-weight: 500;
   line-height: 1.5;
 }
-span.life-date-death { background: #f2f0f5; border-color: #d8d2df; color: #594d65; }
-g.life-date-badge > rect { fill: #edf4f2; stroke: #cbd8d6; stroke-width: 0.7; }
-g.life-date-death > rect { fill: #f2f0f5; stroke: #d8d2df; }
-g.life-date-badge > text { fill: #34534d; font: 11px system-ui, sans-serif; }
-g.life-date-death > text { fill: #594d65; }
+
+span.life-date-death {
+  background: #f2f0f5;
+  border-color: #d8d2df;
+  color: #594d65;
+}
+
+g.life-date-badge > rect {
+  fill: #edf4f2;
+  stroke: #cbd8d6;
+  stroke-width: 0.7;
+}
+
+g.life-date-death > rect {
+  fill: #f2f0f5;
+  stroke: #d8d2df;
+}
+
+g.life-date-badge > text {
+  fill: #34534d;
+  font:
+    11px system-ui,
+    sans-serif;
+}
+
+g.life-date-death > text {
+  fill: #594d65;
+}

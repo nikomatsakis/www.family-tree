@@ -97,22 +97,19 @@ module('Unit | Service | genea - Relationship Calculations', function (hooks) {
       assert.ok(person1, `Should find person ${person1Name} in fixture`);
       assert.ok(person2, `Should find person ${person2Name} in fixture`);
 
-      if (person1 && person2) {
-        const relationships = person1.relationshipsTo(person2);
-        assert.ok(
-          relationships.length >= 1,
-          `Should find relationship from ${person1Name} to ${person2Name}`,
-        );
+      const relationships =
+        person1 && person2 ? person1.relationshipsTo(person2) : [];
+      assert.ok(
+        relationships.length >= 1,
+        `Should find relationship from ${person1Name} to ${person2Name}`,
+      );
 
-        if (relationships.length >= 1) {
-          const actualSentence = relationships[0].sentence;
-          assert.strictEqual(
-            actualSentence,
-            expectedSentence,
-            `${person1Name} → ${person2Name}: expected "${expectedSentence}", got "${actualSentence}"`,
-          );
-        }
-      }
+      const actualSentence = relationships[0]?.sentence;
+      assert.strictEqual(
+        actualSentence,
+        expectedSentence,
+        `${person1Name} → ${person2Name}: expected "${expectedSentence}", got "${actualSentence}"`,
+      );
     }
   });
 

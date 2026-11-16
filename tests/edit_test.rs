@@ -21,7 +21,7 @@ fn test_prepare_edit_comment_change() {
 
     let result = prepare_edit(
         genea_content,
-        "1-0",  // Father at position 1-0
+        "1",  // Father (primary person, henry number 1)
         &expected_state,
         &updated_state,
     ).unwrap();
@@ -52,7 +52,7 @@ fn test_prepare_edit_conflict_detection() {
 
     let result = prepare_edit(
         genea_content,
-        "1-0",
+        "1",
         &expected_state,
         &updated_state,
     );
@@ -79,7 +79,7 @@ fn test_prepare_edit_name_change() {
 
     let result = prepare_edit(
         genea_content,
-        "1-0",
+        "1",
         &expected_state,
         &updated_state,
     ).unwrap();
@@ -108,7 +108,7 @@ fn test_prepare_edit_both_name_and_comment() {
 
     let result = prepare_edit(
         genea_content,
-        "1-0",
+        "1",
         &expected_state,
         &updated_state,
     ).unwrap();
@@ -135,7 +135,7 @@ fn test_prepare_edit_secondary_spouse() {
 
     let result = prepare_edit(
         genea_content,
-        "1-1",  // Secondary spouse at position 1-1
+        "1--1",  // Secondary spouse of henry number 1
         &expected_state,
         &updated_state,
     ).unwrap();
@@ -163,7 +163,7 @@ fn test_prepare_edit_multi_digit_henry() {
 
     let result = prepare_edit(
         genea_content,
-        "1-0",
+        "1",
         &expected_state,
         &updated_state,
     ).unwrap();
@@ -190,7 +190,7 @@ fn test_prepare_edit_removes_comment() {
 
     let result = prepare_edit(
         genea_content,
-        "1-0",
+        "1",
         &expected_state,
         &updated_state,
     ).unwrap();
@@ -240,7 +240,7 @@ fn test_prepare_edit_deep_hierarchy() {
 
     let result = prepare_edit(
         genea_content,
-        "1-1-1-1-0",
+        "1-1-1-1",
         &expected_state,
         &updated_state,
     ).unwrap();

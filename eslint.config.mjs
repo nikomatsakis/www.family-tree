@@ -27,6 +27,8 @@ export default [
       ".node_modules.ember-try/**",
       // node_modules
       "node_modules/**",
+      // Generated copy of app/utils/name-search.js (see scripts/prepare-name-search.js)
+      "public/name-search.mjs",
     ],
   },
 
@@ -93,6 +95,22 @@ export default [
     },
     rules: {
       ...nodePlugin.configs.recommended.rules,
+    },
+  },
+
+  // 💡: encrypt-json.js is a standalone CommonJS CLI run by `cargo run -- build`; it only
+  // needs Node globals, not the stricter eslint-plugin-n rules used for module scripts.
+  {
+    files: ["scripts/encrypt-json.js"],
+    languageOptions: {
+      sourceType: "script",
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      // The script requires Node's crypto module under the same name as the global.
+      "no-redeclare": ["error", { builtinGlobals: false }],
     },
   },
 

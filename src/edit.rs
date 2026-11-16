@@ -77,8 +77,8 @@ pub enum GitHubEditError {
 ///
 /// let content = r#"Maintainer URL: <mailto:test@example.com>
 ///  1 0 0 0 0 0 0 0 0 0 M 1 1 0         John Doe\Original comment
-///  1 0 0 0 0 0 0 0 0 0 F 1 0 1         Jane Doe\Spouse comment
-///  1 2 0 0 0 0 0 0 0 0 M 0 0 0         Child Doe\Child comment
+///  1 0 0 0 0 0 0 0 0 0 F 0 0 1         Jane Doe\Spouse comment
+///  1 1 0 0 0 0 0 0 0 0 M 0 0 0         Child Doe\Child comment
 /// "#;
 ///
 /// let expected = PersonState {
@@ -89,7 +89,7 @@ pub enum GitHubEditError {
 ///     comments: Some("New comment".to_string()),
 ///     name: None,
 /// };
-/// let result = prepare_edit(content, "1-0", &expected, &updated)?;
+/// let result = prepare_edit(content, "1", &expected, &updated)?;
 ///
 /// assert_eq!(result.person_name, "John Doe");
 /// assert_eq!(result.line_number, 2);

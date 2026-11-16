@@ -1,4 +1,4 @@
-import { module, test, skip } from 'qunit';
+import { module, skip } from 'qunit';
 import { setupRenderingTest } from 'family-tree/tests/helpers';
 import { render, settled } from '@ember/test-helpers';
 import { hbs } from 'ember-cli-htmlbars';

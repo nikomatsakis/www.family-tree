@@ -14,7 +14,7 @@ import { DEFAULT_RENDERER_TYPE } from '../utils/family-tree-renderers';
 export default class Person extends Component {
   @service genea;
   @service router;
-  
+
   constructor() {
     super(...arguments);
     // Store initial model state to detect changes
@@ -61,7 +61,11 @@ export default class Person extends Component {
       type='button'
       class='floating-edit-button {{if this.hasPendingEdit "has-pending-edit"}}'
       {{on 'click' this.openEditDialog}}
-      title='{{if this.hasPendingEdit "Edit this person (edit pending)" "Edit this person"}}'
+      title='{{if
+        this.hasPendingEdit
+        "Edit this person (edit pending)"
+        "Edit this person"
+      }}'
     >
       <svg
         width='20'
@@ -83,7 +87,8 @@ export default class Person extends Component {
 
     <div class='person-detail'>
       <div class='person-header'>
-        <h1 class='person-name'>{{@model.name}} <PersonCitations @person={{@model}} /></h1>
+        <h1 class='person-name'>{{@model.name}}
+          <PersonCitations @person={{@model}} /></h1>
         <PersonDates @person={{@model}} />
         {{#if @model.comments}}
           <p class='person-comments'>{{@model.comments}}</p>
@@ -175,7 +180,7 @@ export default class Person extends Component {
       <div class='edit-dialog-overlay'>
         <div class='edit-dialog'>
           <h3>Edit {{@model.name}}</h3>
-          
+
           <div class='edit-fields'>
             <label for='edit-name-field'>Name:</label>
             <input
@@ -186,7 +191,7 @@ export default class Person extends Component {
               {{on 'input' this.updateEditedName}}
               placeholder='Person name'
             />
-            
+
             <label for='edit-comment-field'>Comment:</label>
             <textarea
               id='edit-comment-field'
@@ -197,7 +202,7 @@ export default class Person extends Component {
               placeholder='Optional comment about this person'
             />
           </div>
-          
+
           <div class='edit-user-info'>
             <h4>Your Information</h4>
             <label for='edit-username'>Your name:</label>
@@ -208,7 +213,7 @@ export default class Person extends Component {
               {{on 'input' this.updateUserName}}
               placeholder='Your name for edit history'
             />
-            
+
             <label for='edit-email'>Your email:</label>
             <input
               type='email'
@@ -217,7 +222,7 @@ export default class Person extends Component {
               {{on 'input' this.updateUserEmail}}
               placeholder='your@email.com'
             />
-            
+
             <label for='edit-password'>Edit password:</label>
             <input
               type='password'
@@ -227,17 +232,17 @@ export default class Person extends Component {
               placeholder='Edit password'
             />
           </div>
-          
+
           <p class='edit-timing-note'>
             Changes typically appear in 2-4 minutes after submission.
           </p>
-          
+
           {{#if this.editError}}
             <div class='edit-error'>
               {{this.editError}}
             </div>
           {{/if}}
-          
+
           <div class='edit-dialog-actions'>
             <button
               type='button'
@@ -251,7 +256,11 @@ export default class Person extends Component {
                 Submit Edit
               {{/if}}
             </button>
-            <button type='button' class='btn-cancel-edit' {{on 'click' this.closeEditDialog}}>
+            <button
+              type='button'
+              class='btn-cancel-edit'
+              {{on 'click' this.closeEditDialog}}
+            >
               Cancel
             </button>
           </div>
@@ -264,8 +273,14 @@ export default class Person extends Component {
         Edit submitted successfully! Changes will appear in a few minutes.
         {{#if this.refreshCountdown}}
           <div class='refresh-countdown'>
-            Refreshing in {{this.refreshCountdown}} seconds...
-            <button type='button' class='btn-cancel-refresh' {{on 'click' this.cancelRefresh}}>
+            Refreshing in
+            {{this.refreshCountdown}}
+            seconds...
+            <button
+              type='button'
+              class='btn-cancel-refresh'
+              {{on 'click' this.cancelRefresh}}
+            >
               Cancel
             </button>
           </div>
@@ -383,15 +398,21 @@ export default class Person extends Component {
 
   get hasPendingEdit() {
     // Check if model has changed (indicating data refresh)
-    if (this.lastKnownName !== this.args.model?.name || 
-        this.lastKnownComments !== this.args.model?.comments) {
+    if (
+      this.lastKnownName !== this.args.model?.name ||
+      this.lastKnownComments !== this.args.model?.comments
+    ) {
       // Model has changed, clear any pending edit for this person
       this.clearPendingEdit(this.args.model.id);
       // Update last known values
+      // 💡: Existing behavior: the getter records the last seen model so a data refresh
+      // clears the pending-edit badge. Moving this out of the getter is a separate refactor.
+      // eslint-disable-next-line ember/no-side-effects
       this.lastKnownName = this.args.model?.name;
+      // eslint-disable-next-line ember/no-side-effects
       this.lastKnownComments = this.args.model?.comments;
     }
-    
+
     // Access pendingEditsVersion to make this getter reactive
     this.pendingEditsVersion;
     const pending = this.getPendingEdits();
@@ -404,21 +425,25 @@ export default class Person extends Component {
 
   clearOldPendingEdits() {
     const pending = this.getPendingEdits();
-    const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-    
-    Object.keys(pending).forEach(personId => {
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+
+    Object.keys(pending).forEach((personId) => {
       if (new Date(pending[personId].timestamp) < fiveMinutesAgo) {
         delete pending[personId];
       }
     });
-    
+
     localStorage.setItem('familyTreePendingEdits', JSON.stringify(pending));
     this.pendingEditsVersion++; // Trigger reactivity
   }
 
   addPendingEdit(personId, field, newValue) {
     const pending = this.getPendingEdits();
-    pending[personId] = { field, newValue, timestamp: new Date().toISOString() };
+    pending[personId] = {
+      field,
+      newValue,
+      timestamp: new Date().toISOString(),
+    };
     localStorage.setItem('familyTreePendingEdits', JSON.stringify(pending));
     this.pendingEditsVersion++; // Trigger reactivity
   }
@@ -431,8 +456,10 @@ export default class Person extends Component {
   }
 
   loadSavedEditInfo() {
-    this.editPassword = localStorage.getItem('familyTreeEditPassword') || 
-                       localStorage.getItem('familyTreePassword') || '';
+    this.editPassword =
+      localStorage.getItem('familyTreeEditPassword') ||
+      localStorage.getItem('familyTreePassword') ||
+      '';
     this.editUserName = localStorage.getItem('familyTreeEditUserName') || '';
     this.editUserEmail = localStorage.getItem('familyTreeEditUserEmail') || '';
   }
@@ -490,8 +517,9 @@ export default class Person extends Component {
   async submitEdit() {
     // Check if anything actually changed
     const nameChanged = this.editedName !== this.args.model.name;
-    const commentChanged = this.editedComment !== (this.args.model.comments || '');
-    
+    const commentChanged =
+      this.editedComment !== (this.args.model.comments || '');
+
     if (!nameChanged && !commentChanged) {
       this.editError = 'No changes to save';
       return;
@@ -518,12 +546,12 @@ export default class Person extends Component {
       // Build expected and updated states based on what changed
       const expectedState = {};
       const updatedState = {};
-      
+
       if (nameChanged) {
         expectedState.name = this.args.model.name;
         updatedState.name = this.editedName;
       }
-      
+
       if (commentChanged) {
         expectedState.comments = this.args.model.comments || '';
         updatedState.comments = this.editedComment;
@@ -534,13 +562,13 @@ export default class Person extends Component {
         personId: this.args.model.id,
         updates: {
           expectedState,
-          updatedState
+          updatedState,
         },
         password: this.editPassword,
         userInfo: {
           name: this.editUserName,
-          email: this.editUserEmail
-        }
+          email: this.editUserEmail,
+        },
       };
 
       // Log request details (excluding password)
@@ -556,46 +584,52 @@ export default class Person extends Component {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestPayload)
+        body: JSON.stringify(requestPayload),
       });
 
       const responseText = await response.text();
       console.log('API Response Status:', response.status);
       console.log('API Response Text:', responseText);
-      
+
       let result;
       try {
         result = JSON.parse(responseText);
-      } catch (e) {
-        this.editError = `Invalid server response: ${responseText.substring(0, 100)}`;
+      } catch {
+        this.editError = `Invalid server response: ${responseText.substring(
+          0,
+          100,
+        )}`;
         return;
       }
 
       if (result.success) {
         // Save user info for next time
         this.saveEditInfo();
-        
+
         // Add to pending edits (we'll add the most significant change)
         if (nameChanged) {
           this.addPendingEdit(this.args.model.id, 'name', this.editedName);
         } else if (commentChanged) {
-          this.addPendingEdit(this.args.model.id, 'comments', this.editedComment);
+          this.addPendingEdit(
+            this.args.model.id,
+            'comments',
+            this.editedComment,
+          );
         }
-        
+
         // Show success and hide dialog
         this.showEditDialog = false;
         this.editSuccess = true;
-        
+
         // Start refresh countdown (120 seconds = 2 minutes)
         this.startRefreshCountdown(120);
-        
+
         // Hide success message after 5 seconds (but keep countdown if active)
         setTimeout(() => {
           if (this.refreshCountdown === 0) {
             this.editSuccess = false;
           }
         }, 5000);
-
       } else {
         // Handle various error types
         if (response.status === 401) {
@@ -619,15 +653,15 @@ export default class Person extends Component {
   @action
   startRefreshCountdown(seconds) {
     this.refreshCountdown = seconds;
-    
+
     // Clear any existing interval
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
     }
-    
+
     this.refreshInterval = setInterval(() => {
       this.refreshCountdown--;
-      
+
       if (this.refreshCountdown <= 0) {
         clearInterval(this.refreshInterval);
         this.refreshInterval = null;
@@ -656,7 +690,7 @@ export default class Person extends Component {
       window.location.reload();
     }
   }
-  
+
   willDestroy() {
     super.willDestroy(...arguments);
     // Clean up interval if component is destroyed

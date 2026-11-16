@@ -27,31 +27,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
     - name: Install Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '22'
+        cache: 'pnpm'
     - name: Install dependencies
-      run: npm ci
+      run: pnpm install --frozen-lockfile
+    - name: Citation tests
+      run: pnpm run test:citations
     - name: Lint
-      run: npm run lint
-    - name: Run headless tests
-      run: npm run test:node
+      run: pnpm run lint
     - name: Build Ember app
-      run: npm run build
+      run: pnpm run build
 
   ember:
     name: Ember Tests
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
     - name: Install Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '22'
+        cache: 'pnpm'
     - name: Install dependencies
-      run: npm ci
+      run: pnpm install --frozen-lockfile
     - name: Generate test data
       run: cargo run -- build genea.txt
     - name: Run Ember tests
-      run: npm run test:ember
+      run: pnpm run test:ember
