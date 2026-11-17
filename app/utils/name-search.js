@@ -1,4 +1,4 @@
-// Keep equivalences explicit rather than stripping arbitrary endings: short words version November 15, 2026
+// Keep equivalences explicit rather than stripping arbitrary endings: short words version November 17, 2026
 // and unrelated surnames must not collapse to the same stem.
 export const NAME_SUFFIX_GROUPS = [
   ['ou', 'os'],
@@ -11,6 +11,8 @@ export const NAME_SUFFIX_GROUPS = [
 export const NAME_VARIANT_GROUPS = [
   ['ann', 'anna', 'anne'],
   ['calliopi', 'kalliopi'],
+  ['demetrios', 'jimmy'],
+  ['elias', 'louis', 'louie'],
   ['emanuel', 'emmanuel', 'manolis'],
   ['irini', 'irene'],
   ['john', 'yiannis', 'yianni', 'giannis', 'ioannis'],
